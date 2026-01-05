@@ -1,0 +1,55 @@
+# Development Docker Compose Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# This file extends docker-compose.yml with:
+# - Volume mounts for live code editing
+# - Vite dev server port exposure
+# - Development-specific environment settings
+
+services:
+  laravel:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${APP_PORT:-8000}:80"
+      - "${VITE_PORT:-5173}:5173"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      VITE_HOST: "0.0.0.0"
+    volumes:
+      # Application code (live editing)
+      - ./app:/var/www/html/app
+      - ./bootstrap:/var/www/html/bootstrap
+      - ./config:/var/www/html/config
+      - ./database:/var/www/html/database
+      - ./public:/var/www/html/public
+      - ./resources:/var/www/html/resources
+      - ./routes:/var/www/html/routes
+      - ./tests:/var/www/html/tests
+      
+      # Composer files (for adding packages)
+      - ./composer.json:/var/www/html/composer.json
+      - ./composer.lock:/var/www/html/composer.lock
+      
+      # Frontend config files
+      - ./package.json:/var/www/html/package.json
+      - ./package-lock.json:/var/www/html/package-lock.json
+      - ./vite.config.js:/var/www/html/vite.config.js
+      - ./tailwind.config.js:/var/www/html/tailwind.config.js
+      - ./postcss.config.js:/var/www/html/postcss.config.js
+      
+      # Storage (persisted but writable)
+      - ./storage:/var/www/html/storage
+      
+      # Exclude vendor and node_modules (use container's versions)
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
+    healthcheck:
+      # Simpler healthcheck for development
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

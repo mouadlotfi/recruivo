@@ -1,0 +1,64 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Laravel cached data
+/bootstrap/cache/*.php
+!bootstrap/cache/.gitignore
+/storage/*.key
+/storage/app/*
+!/storage/app/.gitignore
+!/storage/app/public/
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+/public/storage
+/public/build
+/public/hot
+
+# Environment files
+/.env
+/.env.backup
+/.env.production
+/.env.staging
+.phpunit.result.cache
+
+# IDE & tooling
+/.idea
+/.phpstorm.meta.php
+/_ide_helper.php
+/_ide_helper_models.php
+/.vscode
+*.sublime-project
+*.sublime-workspace
+.php-cs-fixer.cache
+.php-cs-fixer.php
+
+# Logs
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Laravel specific
+Homestead.json
+Homestead.yaml
+auth.json
+.vagrant/
+
+# Deployment
+/.deployer/
