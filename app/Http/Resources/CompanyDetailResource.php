@@ -17,7 +17,7 @@ class CompanyDetailResource extends JsonResource
             'location' => $this->location,
             'website_url' => $this->website_url,
             'linkedin_url' => $this->linkedin_url,
-            'email' => $this->email,
+
             'size' => $this->size,
             'founded_year' => $this->founded_year,
             'mission' => $this->mission,

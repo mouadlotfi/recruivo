@@ -13,7 +13,11 @@ class DashboardController extends Controller
         $user = $request->user();
 
         $totalApplications = $user->applications()->count();
-        $pendingApplications = $user->applications()->where('status', ApplicationStatus::Pending)->count();
+        $inProgressApplications = $user->applications()->whereIn('status', [
+            ApplicationStatus::Pending,
+            ApplicationStatus::Shortlisted,
+            ApplicationStatus::Interview,
+        ])->count();
         $acceptedApplications = $user->applications()->where('status', ApplicationStatus::Accepted)->count();
         $rejectedApplications = $user->applications()->where('status', ApplicationStatus::Rejected)->count();
 
@@ -23,12 +27,16 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $user->loadMissing('candidateProfile');
+        $profileCompletion = $user->profileCompletion();
+
         return view('candidate.dashboard', compact(
             'totalApplications',
-            'pendingApplications',
+            'inProgressApplications',
             'acceptedApplications',
             'rejectedApplications',
-            'recentApplications'
+            'recentApplications',
+            'profileCompletion',
         ));
     }
 }

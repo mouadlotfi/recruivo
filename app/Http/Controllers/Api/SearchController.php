@@ -3,38 +3,28 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Company;
-use App\Models\Job;
+use App\Services\SmartSearchService;
 use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
-    public function suggestions(Request $request)
+    public function suggestions(Request $request, SmartSearchService $searchService)
     {
-        $query = $request->input('q', ''); // Fixed: was 'query', should be 'q'
+        $query = $searchService->normalize($request->input('q', ''));
         
         // Allow search from 1 character instead of 2
         if (strlen($query) < 1) {
-            return response()->json([]);
+            return response()->json([
+                'query' => '',
+                'sections' => [],
+                'search_url' => localized_route('search'),
+            ]);
         }
 
         $locale = app()->getLocale();
 
         // Search jobs - enhanced to match main search
-        $jobs = Job::published()
-            ->with('company:id,name,slug,logo_path')
-            ->where(function ($builder) use ($query) {
-                $builder->where('title', 'like', "{$query}%") // Start with query for first letter
-                    ->orWhere('location', 'like', "{$query}%")
-                    ->orWhere('category', 'like', "{$query}%")
-                    ->orWhere('description', 'like', "%{$query}%")
-                    ->orWhere('remote_type', 'like', "{$query}%")
-                    ->orWhereHas('company', function ($q) use ($query) {
-                        $q->where('name', 'like', "{$query}%");
-                    });
-            })
-            ->limit(5)
-            ->get()
+        $jobs = $searchService->jobs($query)->take(5)
             ->map(function ($job) use ($locale) {
                 return [
                     'id' => $job->id,
@@ -47,14 +37,7 @@ class SearchController extends Controller
             });
 
         // Search companies - enhanced
-        $companies = Company::where(function ($builder) use ($query) {
-                $builder->where('name', 'like', "{$query}%") // Start with query for first letter
-                    ->orWhere('location', 'like', "{$query}%")
-                    ->orWhere('tagline', 'like', "%{$query}%")
-                    ->orWhere('mission', 'like', "%{$query}%");
-            })
-            ->limit(5)
-            ->get()
+        $companies = $searchService->companies($query)->take(5)
             ->map(function ($company) use ($locale) {
                 return [
                     'id' => $company->id,
@@ -66,19 +49,15 @@ class SearchController extends Controller
                 ];
             });
 
-        // Interleave jobs and companies for better mix
-        $results = collect();
-        $maxLength = max($jobs->count(), $companies->count());
-        
-        for ($i = 0; $i < $maxLength; $i++) {
-            if (isset($companies[$i])) {
-                $results->push($companies[$i]); // Companies first
-            }
-            if (isset($jobs[$i])) {
-                $results->push($jobs[$i]);
-            }
-        }
-        
-        return response()->json($results->take(10));
+        $sections = collect([
+            ['type' => 'jobs', 'label' => __('common.jobs'), 'items' => $jobs->values()],
+            ['type' => 'companies', 'label' => __('common.companies'), 'items' => $companies->values()],
+        ])->filter(fn ($section) => $section['items']->isNotEmpty())->values();
+
+        return response()->json([
+            'query' => $query,
+            'sections' => $sections,
+            'search_url' => localized_route('search', ['search' => $query], $locale),
+        ]);
     }
 }

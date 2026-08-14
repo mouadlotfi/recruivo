@@ -71,7 +71,7 @@ return [
     'company_email_help' => 'Ceci sera utilisé pour les communications professionnelles et affiché sur votre profil d\'entreprise',
     'company_tagline_optional' => 'Slogan de l\'entreprise (Optionnel)',
     'company_tagline_placeholder' => 'Construire l\'avenir du travail',
-    'company_location_optional' => 'Localisation de l\'entreprise (Optionnel)',
+    'company_location' => 'Localisation de l\'entreprise',
     'company_location_placeholder' => 'Paris, France',
     'website_url_optional' => 'URL du site web (Optionnel)',
     'website_url_placeholder' => 'https://votreentreprise.fr',

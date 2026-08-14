@@ -103,6 +103,10 @@ class JobController extends Controller
     {
         $this->authorize('update', $job);
 
+        if ($job->isExpired()) {
+            return back()->with('error', __('recruiter.extend_closing_date_before_publishing'));
+        }
+
         if ($job->status === JobStatus::Published) {
             $job->update([
                 'status' => JobStatus::Draft,

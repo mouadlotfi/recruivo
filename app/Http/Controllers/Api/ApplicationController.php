@@ -2,32 +2,45 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\JobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreApplicationRequest;
 use App\Http\Requests\UpdateApplicationStatusRequest;
 use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
 use App\Models\Job;
+use App\Models\User;
 use App\Notifications\ApplicationStatusUpdatedNotification;
 use App\Notifications\NewApplicationNotification;
+use App\Services\DemoAccountGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 
 class ApplicationController extends Controller
 {
-    public function store(StoreApplicationRequest $request, $jobId): JsonResponse
+    public function store(StoreApplicationRequest $request, $jobId, DemoAccountGuard $demoAccountGuard): JsonResponse
     {
         $user = $request->user();
 
         abort_unless($user && $user->hasRole('Candidate'), 403, 'Only candidates can apply to jobs.');
 
+        $demoAccountGuard->ensureCanApply($user);
+
         $job = Job::with('recruiter')->findOrFail($jobId);
 
-        abort_unless($job->status === JobStatus::Published, 404);
+        abort_unless($job->isPubliclyVisible(), 404);
 
         $data = $request->validated();
+
+        if (Application::where('candidate_id', $user->id)->where('job_id', $job->id)->exists()) {
+            return response()->json([
+                'message' => 'You have already applied to this job.',
+                'errors' => [
+                    'application' => ['You can only apply to each job once.'],
+                ],
+            ], 422);
+        }
 
         $resumePath = null;
         
@@ -38,7 +51,7 @@ class ApplicationController extends Controller
         
         // If no existing resume or user uploaded a new one, use the uploaded file
         if ($request->hasFile('resume')) {
-            $resumePath = $request->file('resume')->store('resumes', 'public');
+            $resumePath = $request->file('resume')->store('resumes', 'private');
         }
         
         // If still no resume path, try to use existing one as fallback
@@ -55,12 +68,20 @@ class ApplicationController extends Controller
             ], 422);
         }
 
-        // Check if user has already applied to this job
-        $existingApplication = Application::where('candidate_id', $user->id)
-            ->where('job_id', $job->id)
-            ->first();
+        $application = Application::firstOrCreate(
+            ['candidate_id' => $user->id, 'job_id' => $job->id],
+            [
+                'resume_path' => $resumePath,
+                'cover_letter' => $data['cover_letter'] ?? null,
+                'original_status' => 'pending',
+            ]
+        );
 
-        if ($existingApplication) {
+        if (!$application->wasRecentlyCreated) {
+            if ($request->hasFile('resume')) {
+                Storage::disk('private')->delete($resumePath);
+            }
+
             return response()->json([
                 'message' => 'You have already applied to this job.',
                 'errors' => [
@@ -69,17 +90,15 @@ class ApplicationController extends Controller
             ], 422);
         }
 
-        $application = Application::create([
-            'candidate_id' => $user->id,
-            'job_id' => $job->id,
-            'resume_path' => $resumePath,
-            'cover_letter' => $data['cover_letter'] ?? null,
-            'original_status' => 'pending',
-        ])->load(['job.company', 'candidate']);
+        $application->load(['job.company', 'candidate']);
 
-        if ($job->recruiter) {
-            $job->recruiter->notify(new NewApplicationNotification($application));
-        }
+        collect([$job->recruiter])
+            ->merge($job->company?->recruiters ?? collect())
+            ->filter()
+            ->unique('id')
+            ->each(function (User $recruiter) use ($application) {
+                $recruiter->notify(new NewApplicationNotification($application));
+            });
 
         return (new ApplicationResource($application))
             ->additional(['message' => 'Application submitted successfully.'])
@@ -101,9 +120,13 @@ class ApplicationController extends Controller
         abort_unless($application->job->recruiter_id === auth()->id(), 403);
 
         $data = $request->validated();
+        $previousStatus = $application->status;
 
         $application->applyStatusUpdate($data);
-        $application->candidate->notify(new ApplicationStatusUpdatedNotification($application));
+
+        if ($previousStatus !== $application->status) {
+            $application->candidate->notify(new ApplicationStatusUpdatedNotification($application));
+        }
 
         return response()->noContent();
     }

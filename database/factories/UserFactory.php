@@ -15,8 +15,8 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'remember_token' => Str::random(10),
-            'location' => $this->faker->city(),
-            'profile_summary' => $this->faker->paragraph(),
+            'location' => $this->faker->randomElement(['Casablanca, Morocco', 'Rabat, Morocco', 'Dublin, Ireland', 'Berlin, Germany', 'Paris, France']),
+            'profile_summary' => 'Technology professional who values maintainable systems, clear communication, and measurable product outcomes.',
         ];
     }
 }

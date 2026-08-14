@@ -25,6 +25,7 @@ bootstrap/cache/*.php
 
 # User uploaded files (handled via volumes)
 storage/app/public/*
+storage/app/private/
 
 # Testing
 tests/
@@ -93,3 +94,10 @@ deploy/
 *.tmp
 *.temp
 *.cache
+
+# Compose files
+compose*.yaml
+compose*.yml
+
+# Docker bind-mounted data
+data/

@@ -17,14 +17,15 @@ class JobFactory extends Factory
             'recruiter_id' => User::factory()->for($companyFactory),
             'company_id' => $companyFactory,
             'title' => $this->faker->jobTitle(),
-            'description' => $this->faker->paragraphs(3, true),
-            'location' => $this->faker->city(),
+            'description' => 'Join a collaborative engineering team to deliver reliable product improvements, solve practical customer problems, and improve the quality of the systems you own.',
+            'location' => $this->faker->randomElement(['Casablanca, Morocco', 'Dublin, Ireland', 'Berlin, Germany', 'Paris, France', 'London, United Kingdom']),
             'category' => $this->faker->randomElement(['Engineering', 'Design', 'Marketing']),
-            'remote_type' => $this->faker->randomElement(['remote', 'hybrid', 'on-site']),
+            'remote_type' => $this->faker->randomElement(['remote', 'hybrid', 'onsite']),
             'salary_min' => $this->faker->numberBetween(50000, 80000),
             'salary_max' => $this->faker->numberBetween(80000, 150000),
             'status' => $this->faker->randomElement([JobStatus::Draft->value, JobStatus::Published->value]),
             'published_at' => now(),
+            'closes_at' => null,
         ];
     }
 }

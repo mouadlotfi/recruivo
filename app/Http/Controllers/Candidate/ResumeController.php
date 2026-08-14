@@ -22,13 +22,13 @@ class ResumeController extends Controller
         $resumePath = $user->candidateProfile->resume_path;
         
         // Check if file exists
-        if (!Storage::disk('public')->exists($resumePath)) {
+        if (!Storage::disk('private')->exists($resumePath)) {
             abort(404, __('profile.resume_file_not_found'));
         }
         
         // Get file content and MIME type
-        $file = Storage::disk('public')->get($resumePath);
-        $mimeType = Storage::disk('public')->mimeType($resumePath);
+        $file = Storage::disk('private')->get($resumePath);
+        $mimeType = Storage::disk('private')->mimeType($resumePath);
         $fileName = basename($resumePath);
         
         // Return file as inline (viewable in browser)

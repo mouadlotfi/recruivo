@@ -59,6 +59,7 @@
                     <button
                         type="button"
                         @click="show = !show"
+                        aria-label="{{ __('common.toggle_password_visibility') }}"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
                     >
                         <svg x-show="!show" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -89,6 +90,7 @@
                     <button
                         type="button"
                         @click="show = !show"
+                        aria-label="{{ __('common.toggle_password_visibility') }}"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
                     >
                         <svg x-show="!show" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -118,7 +120,5 @@
     </div>
 </div>
 
-<!-- Alpine.js for password toggle -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 @endsection
 

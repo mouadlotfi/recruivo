@@ -2,7 +2,12 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Scout\Scout;
 
@@ -15,6 +20,23 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        ResetPasswordNotification::createUrlUsing(fn ($user, string $token): string => route('password.reset', [
+            'locale' => app()->getLocale() ?: config('locales.default', 'en'),
+            'token' => $token,
+            'email' => $user->getEmailForPasswordReset(),
+        ]));
+
+        RateLimiter::for('auth-login', fn (Request $request) => Limit::perMinute(10)->by(
+            Str::lower((string) $request->input('email')).'|'.$request->ip()
+        ));
+        RateLimiter::for('auth-register', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
+        RateLimiter::for('verification-email', fn (Request $request) => Limit::perMinute(6)->by(
+            Str::lower((string) $request->input('email')).'|'.$request->ip()
+        ));
+        RateLimiter::for('password-reset', fn (Request $request) => Limit::perMinute(6)->by(
+            Str::lower((string) $request->input('email')).'|'.$request->ip()
+        ));
+
         // Scout configuration for local environment
         if (app()->environment('local') && config('scout.driver') === 'null') {
             // Disable Scout indexing in local environment when using null driver

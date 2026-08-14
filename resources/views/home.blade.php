@@ -98,11 +98,16 @@
 
     <!-- Jobs Section -->
     <section class="space-y-6">
+        @if(!empty($hasPreferences))
+            <h2 class="text-xl font-semibold text-stone-900 dark:text-white">{{ __('jobs.recommended_for_you') }}</h2>
+        @endif
         @if(count($jobs) > 0)
-            <div class="grid gap-6 md:grid-cols-2">
-                @foreach($jobs as $job)
-                    <x-job-card :job="$job" />
-                @endforeach
+            <div data-infinite-scroll data-infinite-key="home-jobs" data-next-url="{{ $jobs->nextPageUrl() }}" data-show-more-label="{{ __('common.show_more') }}" data-loading-label="{{ __('common.loading_more') }}" data-retry-label="{{ __('common.load_more_failed') }}">
+                <div class="grid gap-6 md:grid-cols-2" data-infinite-items>
+                    @foreach($jobs as $job)
+                        <x-job-card :job="$job" />
+                    @endforeach
+                </div>
             </div>
         @else
             <div class="rounded-xl border border-stone-200/60 bg-white/60 p-12 text-center backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/40">
@@ -119,11 +124,6 @@
                     </a>
                 </div>
             </div>
-        @endif
-
-        <!-- Pagination -->
-        @if($jobs->hasPages())
-            <x-pagination :paginator="$jobs" />
         @endif
     </section>
 </div>

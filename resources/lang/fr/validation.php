@@ -22,7 +22,16 @@ return [
     
     // Application validation
     'notes_required_status' => 'Veuillez inclure une note lors de l\'acceptation ou du rejet d\'une candidature.',
-    'status_invalid' => 'Le statut doit être en attente, accepté ou rejeté.',
+    'status_invalid' => 'Le statut doit être en attente, présélectionné, entretien, accepté ou rejeté.',
+    'interview_at_required' => 'Veuillez choisir une date et une heure d\'entretien.',
+    'interview_at_after' => 'L\'entretien doit être planifié dans le futur.',
+    'interview_location_required' => 'Veuillez indiquer un lieu d\'entretien.',
+    'interview_url_required' => 'Veuillez fournir un lien de réunion (http ou https).',
+    'interview_url_invalid' => 'Veuillez fournir un lien de réunion valide (http ou https).',
+    'interview_mode_invalid' => 'Veuillez choisir si l\'entretien est en ligne ou sur place.',
+    'status_withdrawn_not_allowed' => 'Le statut « retirée » ne peut être défini que par le candidat.',
+    'closes_at_after_or_equal' => 'La date de clôture doit être aujourd\'hui ou plus tard.',
+    'closes_at_date' => 'Veuillez fournir une date de clôture valide.',
     
     // Password validation
     'current_password_required' => 'Le mot de passe actuel est requis.',

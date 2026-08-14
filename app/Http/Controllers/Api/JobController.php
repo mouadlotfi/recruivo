@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\JobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\JobResource;
 use App\Models\Company;
@@ -74,7 +73,7 @@ class JobController extends Controller
 
     public function show(Request $request, Job $job): JobResource
     {
-        abort_unless($job->status === JobStatus::Published, 404);
+        abort_unless($job->isPubliclyVisible(), 404);
 
         $job->load('company');
 

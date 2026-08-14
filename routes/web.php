@@ -47,15 +47,15 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(\App\Http\Mi
     // Guest routes
     Route::middleware('guest')->group(function () {
         Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-        Route::post('/login', [LoginController::class, 'login']);
+        Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:auth-login');
         Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-        Route::post('/register', [RegisterController::class, 'register']);
+        Route::post('/register', [RegisterController::class, 'register'])->middleware('throttle:auth-register');
         
         // Password Reset Routes
         Route::get('/reset-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'showResetForm'])->name('password.request');
-        Route::post('/reset-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'sendResetLink'])->name('password.email');
+        Route::post('/reset-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'sendResetLink'])->middleware('throttle:password-reset')->name('password.email');
         Route::get('/reset-password/{token}', [\App\Http\Controllers\Auth\PasswordResetController::class, 'showResetPasswordForm'])->name('password.reset');
-        Route::post('/reset-password-submit', [\App\Http\Controllers\Auth\PasswordResetController::class, 'reset'])->name('password.update');
+        Route::post('/reset-password-submit', [\App\Http\Controllers\Auth\PasswordResetController::class, 'reset'])->middleware('throttle:password-reset')->name('password.update');
     });
 
     // Email Verification Routes
@@ -67,7 +67,7 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(\App\Http\Mi
         Route::post('/email/verification-notification', function (Request $request) {
             $request->user()->sendEmailVerificationNotification();
             return back()->with('message', 'Verification link sent!');
-        })->middleware(['throttle:6,1'])->name('verification.send');
+        })->middleware('throttle:verification-email')->name('verification.send');
     });
 
     Route::get('/email/verify/{id}/{hash}', function (Request $request, $locale, $id, $hash) {
@@ -99,25 +99,46 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(\App\Http\Mi
         return redirect(localized_route('home'))->with('verified', true);
     })->middleware(['signed'])->name('verification.verify');
 
+    Route::get('/profile/email/verify/{id}/{hash}', [\App\Http\Controllers\ProfileController::class, 'verifyEmailChange'])
+        ->middleware('signed')
+        ->name('profile.email.verify');
+
     // Authenticated routes
     Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+        Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])
+            ->name('notifications.read-all');
+        Route::post('/notifications/{notification}', [\App\Http\Controllers\NotificationController::class, 'open'])
+            ->whereUuid('notification')
+            ->name('notifications.open');
         
         // Candidate routes
         Route::middleware('role:Candidate')->prefix('candidate')->name('candidate.')->group(function () {
             Route::get('/applications', [\App\Http\Controllers\Candidate\ApplicationController::class, 'index'])->name('applications');
+            Route::patch('/applications/{application}/withdraw', [\App\Http\Controllers\Candidate\ApplicationController::class, 'withdraw'])
+                ->name('applications.withdraw');
             Route::get('/dashboard', [\App\Http\Controllers\Candidate\DashboardController::class, 'index'])->name('dashboard');
             Route::get('/resume', [\App\Http\Controllers\Candidate\ResumeController::class, 'view'])->name('resume.view');
+            Route::get('/saved-jobs', [\App\Http\Controllers\Candidate\SavedJobController::class, 'index'])->name('saved-jobs.index');
+            Route::post('/saved-jobs/{job}', [\App\Http\Controllers\Candidate\SavedJobController::class, 'store'])->name('saved-jobs.store');
+            Route::delete('/saved-jobs/{job}', [\App\Http\Controllers\Candidate\SavedJobController::class, 'destroy'])->name('saved-jobs.destroy');
         });
 
         // Recruiter routes
         Route::middleware('role:Recruiter')->prefix('recruiter')->name('recruiter.')->group(function () {
             Route::get('/dashboard', [\App\Http\Controllers\Recruiter\DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/applicants', [\App\Http\Controllers\Recruiter\ApplicantController::class, 'index'])->name('applicants.index');
+            Route::get('/applicants/{applicant}', [\App\Http\Controllers\Recruiter\ApplicantController::class, 'show'])->name('applicants.show');
+
             Route::resource('jobs', \App\Http\Controllers\Recruiter\JobController::class);
             Route::post('/jobs/{job}/toggle', [\App\Http\Controllers\Recruiter\JobController::class, 'toggle'])->name('jobs.toggle');
             Route::get('/jobs/{job}/applications', [\App\Http\Controllers\Recruiter\ApplicationController::class, 'index'])->name('jobs.applications');
             Route::patch('/applications/{application}', [\App\Http\Controllers\Recruiter\ApplicationController::class, 'update'])->name('applications.update');
             Route::get('/applications/{application}/resume', [\App\Http\Controllers\Recruiter\ApplicationController::class, 'downloadResume'])->name('applications.resume');
+            Route::get('/note-templates', [\App\Http\Controllers\Recruiter\NoteTemplateController::class, 'index'])->name('note-templates.index');
+            Route::post('/note-templates', [\App\Http\Controllers\Recruiter\NoteTemplateController::class, 'store'])->name('note-templates.store');
+            Route::put('/note-templates/{template}', [\App\Http\Controllers\Recruiter\NoteTemplateController::class, 'update'])->name('note-templates.update');
+            Route::delete('/note-templates/{template}', [\App\Http\Controllers\Recruiter\NoteTemplateController::class, 'destroy'])->name('note-templates.destroy');
         });
 
         // Admin routes
@@ -134,10 +155,17 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(\App\Http\Mi
 
         // Profile routes
         Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+        Route::get('/candidate/profile-preview', [\App\Http\Controllers\ProfileController::class, 'preview'])
+            ->name('candidate.profile-preview')
+            ->middleware('role:Candidate');
         Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
         Route::put('/profile/password', [\App\Http\Controllers\ProfileController::class, 'changePassword'])->name('profile.password');
         Route::put('/profile/email/request', [\App\Http\Controllers\ProfileController::class, 'requestEmailChange'])->name('profile.email.request');
-        Route::get('/profile/email/verify/{id}/{hash}', [\App\Http\Controllers\ProfileController::class, 'verifyEmailChange'])->name('profile.email.verify');
         Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+    });
+
+    // Candidate quick preferences (pre-verification popup: unverified candidates must be able to save/skip)
+    Route::middleware(['auth', 'role:Candidate'])->prefix('candidate')->name('candidate.')->group(function () {
+        Route::post('/preferences', [\App\Http\Controllers\ProfileController::class, 'saveQuickPreferences'])->name('preferences.quick');
     });
 });

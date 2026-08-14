@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\ApplicationStatus;
 use App\Models\Application;
 use App\Models\User;
 
@@ -38,6 +39,20 @@ class ApplicationPolicy
 
         // Admins can update any application
         return $user->hasRole('Admin');
+    }
+
+    /**
+     * Determine whether the candidate can withdraw their own application.
+     */
+    public function withdraw(User $user, Application $application): bool
+    {
+        return $user->hasRole('Candidate')
+            && $user->id === $application->candidate_id
+            && in_array($application->status, [
+                ApplicationStatus::Pending,
+                ApplicationStatus::Shortlisted,
+                ApplicationStatus::Interview,
+            ], true);
     }
 
     /**

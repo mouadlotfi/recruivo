@@ -10,6 +10,9 @@ return [
     // Stats
     'total_applications' => 'Total Applications',
     'pending' => 'Pending',
+    'in_progress' => 'In progress',
+    'shortlisted' => 'Shortlisted',
+    'interview' => 'Interview',
     'accepted' => 'Accepted',
     'rejected' => 'Rejected',
     
@@ -31,5 +34,16 @@ return [
     'tip_1' => 'Keep your profile and resume up to date',
     'tip_2' => 'Write personalized cover letters for each application',
     'tip_3' => 'Follow up on your applications regularly',
+
+    // Profile Completion
+    'profile_completion' => 'Profile completion',
+    'profile_completion_help' => 'Complete your profile to stand out to recruiters',
+    'profile_complete' => 'Your profile is complete!',
+    'completion_headline' => 'Add a professional headline',
+    'completion_profile_summary' => 'Add a profile summary',
+    'completion_skills' => 'Add your skills',
+    'completion_resume' => 'Upload a resume',
+    'completion_experience' => 'Add at least one work experience',
+    'complete_profile' => 'Complete profile',
 ];
 

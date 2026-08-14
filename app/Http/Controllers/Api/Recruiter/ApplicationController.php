@@ -20,7 +20,7 @@ class ApplicationController extends Controller
         $this->authorizeJob($job);
 
         $applications = $job->applications()
-            ->with('candidate')
+            ->with(['candidate', 'statusEvents.changedBy:id,name'])
             ->latest()
             ->paginate(12);
 
@@ -33,10 +33,14 @@ class ApplicationController extends Controller
         $this->authorizeJob($job);
 
         $data = $request->validated();
+        $previousStatus = $application->status;
 
         $application->applyStatusUpdate($data);
-        $application->loadMissing(['candidate', 'job.company']);
-        $application->candidate->notify(new ApplicationStatusUpdatedNotification($application));
+        $application->loadMissing(['candidate', 'job.company', 'statusEvents.changedBy:id,name']);
+
+        if ($previousStatus !== $application->status) {
+            $application->candidate->notify(new ApplicationStatusUpdatedNotification($application));
+        }
 
         return response()->json([
             'message' => 'Application updated successfully.',
@@ -49,11 +53,11 @@ class ApplicationController extends Controller
         $job = $application->job;
         $this->authorizeJob($job);
 
-        if (!$application->resume_path || !Storage::disk('public')->exists($application->resume_path)) {
+        if (!$application->resume_path || !Storage::disk('private')->exists($application->resume_path)) {
             return response()->json(['message' => 'Resume not found'], 404);
         }
 
-        return Storage::disk('public')->download($application->resume_path);
+        return Storage::disk('private')->download($application->resume_path);
     }
 
     protected function authorizeJob(Job $job): void

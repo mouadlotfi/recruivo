@@ -70,7 +70,11 @@ class JobController extends Controller
     public function toggle(Request $request, Job $job): JsonResponse
     {
         $this->authorizeJob($job);
-        
+
+        if ($job->isExpired()) {
+            return response()->json(['message' => 'This job is expired. Set a closing date of today or later before publishing it.'], 422);
+        }
+
         $job->status = $job->status === JobStatus::Published ? JobStatus::Draft : JobStatus::Published;
         $job->published_at = $job->status === JobStatus::Published ? now() : null;
         $job->save();

@@ -75,7 +75,9 @@ class JobApplicationTest extends TestCase
 
         Sanctum::actingAs($candidate);
 
-        $response = $this->postJson(route('api.jobs.apply', $job));
+        $response = $this->postJson(route('api.jobs.apply', $job), [
+            'cover_letter' => 'I am interested in this opportunity.',
+        ]);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors('resume');
@@ -97,5 +99,26 @@ class JobApplicationTest extends TestCase
         ]);
 
         $response->assertForbidden();
+    }
+
+    public function test_candidate_cannot_apply_to_expired_job(): void
+    {
+        $candidate = User::factory()->create();
+        $candidate->assignRole('Candidate');
+
+        $job = Job::factory()->create([
+            'closes_at' => today()->subDay(),
+            'status' => JobStatus::Published->value,
+        ]);
+
+        Sanctum::actingAs($candidate);
+
+        $response = $this->postJson(route('api.jobs.apply', $job), [
+            'cover_letter' => 'I would love to join the team.',
+        ]);
+
+        $response->assertNotFound();
+
+        $this->assertDatabaseCount('applications', 0);
     }
 }

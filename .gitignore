@@ -30,6 +30,7 @@
 /.env.backup
 /.env.production
 /.env.staging
+/.env.docker
 .phpunit.result.cache
 
 # IDE & tooling
@@ -62,3 +63,7 @@ auth.json
 
 # Deployment
 /.deployer/
+
+# Docker bind-mounted data
+/data/*
+!/data/.gitignore

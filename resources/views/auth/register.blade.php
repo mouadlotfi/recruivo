@@ -116,6 +116,7 @@
                     <button
                         type="button"
                         @click="showPassword = !showPassword"
+                        aria-label="{{ __('common.toggle_password_visibility') }}"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
                     >
                         <svg x-show="!showPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -147,6 +148,7 @@
                     <button
                         type="button"
                         @click="showPasswordConfirmation = !showPasswordConfirmation"
+                        aria-label="{{ __('common.toggle_password_visibility') }}"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300"
                     >
                         <svg x-show="!showPasswordConfirmation" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -180,22 +182,6 @@
             <!-- Company Fields -->
             <template x-if="accountType === 'company'">
                 <div class="space-y-6">
-                    <div class="space-y-2">
-                        <label for="recruiter_name" class="text-sm font-medium text-stone-700 dark:text-stone-200">
-                            {{ __('auth.your_full_name') }}
-                        </label>
-                        <input
-                            id="recruiter_name"
-                            name="name"
-                            type="text"
-                            placeholder="{{ __('auth.your_full_name_placeholder') }}"
-                            value="{{ old('name') }}"
-                            class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
-                        />
-                        <p class="text-xs text-stone-500 dark:text-stone-400">
-                            {{ __('auth.recruiter_name_help') }}
-                        </p>
-                    </div>
 
                     <div class="space-y-2">
                         <label for="company_name" class="text-sm font-medium text-stone-700 dark:text-stone-200">
@@ -211,22 +197,6 @@
                         />
                     </div>
 
-                    <div class="space-y-2">
-                        <label for="company_email" class="text-sm font-medium text-stone-700 dark:text-stone-200">
-                            {{ __('auth.company_email') }}
-                        </label>
-                        <input
-                            id="company_email"
-                            name="company[email]"
-                            type="email"
-                            placeholder="{{ __('auth.company_email_placeholder') }}"
-                            value="{{ old('company.email') }}"
-                            class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
-                        />
-                        <p class="text-xs text-stone-500 dark:text-stone-400">
-                            {{ __('auth.company_email_help') }}
-                        </p>
-                    </div>
 
                     <div class="space-y-2">
                         <label for="company_tagline" class="text-sm font-medium text-stone-700 dark:text-stone-200">
@@ -244,7 +214,7 @@
 
                     <div class="space-y-2">
                         <label for="company_location" class="text-sm font-medium text-stone-700 dark:text-stone-200">
-                            {{ __('auth.company_location_optional') }}
+                            {{ __('auth.company_location') }}
                         </label>
                         <input
                             id="company_location"
@@ -252,6 +222,7 @@
                             type="text"
                             placeholder="{{ __('auth.company_location_placeholder') }}"
                             value="{{ old('company.location') }}"
+                            required
                             class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
                         />
                     </div>
@@ -303,7 +274,5 @@
     </div>
 </div>
 
-<!-- Alpine.js -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 @endsection
 

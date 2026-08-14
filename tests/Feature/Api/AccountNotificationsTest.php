@@ -3,7 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\User;
-use App\Notifications\EmailChangedNotification;
+
 use App\Notifications\EmailChangeVerificationNotification;
 use App\Notifications\PasswordChangedNotification;
 use App\Notifications\SignupConfirmationNotification;
@@ -34,8 +34,8 @@ class AccountNotificationsTest extends TestCase
             'account_type' => 'candidate',
             'name' => 'Jane Candidate',
             'email' => 'jane.candidate@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'ValidPass123!',
+            'password_confirmation' => 'ValidPass123!',
             'phone' => '1234567890',
         ]);
 
@@ -54,11 +54,12 @@ class AccountNotificationsTest extends TestCase
             'account_type' => 'company',
             'name' => 'John Recruiter',
             'email' => 'john.recruiter@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'ValidPass123!',
+            'password_confirmation' => 'ValidPass123!',
             'phone' => '1234567890',
             'company' => [
                 'name' => 'Acme Inc',
+                'location' => 'Casablanca, Morocco',
                 'job_title' => 'Hiring Manager',
                 'email' => 'contact@acme.com', // Company email for business
             ],
@@ -76,14 +77,14 @@ class AccountNotificationsTest extends TestCase
         Notification::fake();
 
         $user = User::factory()->create([
-            'password' => bcrypt('password123'),
+            'password' => bcrypt('CurrentPass123!'),
         ]);
         Sanctum::actingAs($user);
 
         $response = $this->putJson('/api/profile/password', [
-            'current_password' => 'password123',
-            'password' => 'newpassword123',
-            'password_confirmation' => 'newpassword123',
+            'current_password' => 'CurrentPass123!',
+            'password' => 'ChangedPass123!',
+            'password_confirmation' => 'ChangedPass123!',
         ]);
 
         $response->assertOk()
@@ -108,24 +109,20 @@ class AccountNotificationsTest extends TestCase
 
         $response->assertOk();
 
-        Notification::assertSentOnDemand(
-            EmailChangedNotification::class,
-            function (EmailChangedNotification $notification, array $channels, $notifiable) use ($oldEmail, $user) {
-                return in_array('mail', $channels, true)
-                    && ($notifiable->routes['mail'] ?? null) === $oldEmail
-                    && $notification->toArray($user)['old_email'] === $oldEmail;
-            }
-        );
-
         $user->refresh();
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
-            'email' => $newEmail,
-            'email_verified_at' => null,
+            'email' => $oldEmail,
+            'pending_email' => $newEmail,
         ]);
 
-        Notification::assertSentTo($user, EmailChangeVerificationNotification::class);
+        Notification::assertSentOnDemand(
+            EmailChangeVerificationNotification::class,
+            fn (EmailChangeVerificationNotification $notification, array $channels, $notifiable) =>
+                in_array('mail', $channels, true)
+                && ($notifiable->routes['mail'] ?? null) === $newEmail
+        );
     }
 }
 

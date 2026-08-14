@@ -14,9 +14,11 @@
     <div class="rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
         <div class="flex items-start gap-6">
             @if($company->logo_url)
-                <img src="{{ $company->logo_url }}" alt="{{ $company->name }}" class="h-24 w-24 rounded-lg object-cover" />
+                <div class="h-28 w-28 flex-shrink-0 overflow-hidden rounded-xl sm:h-32 sm:w-32">
+                    <img src="{{ $company->logo_url }}" alt="{{ $company->name }}" class="h-full w-full object-cover" />
+                </div>
             @else
-                <div class="flex h-24 w-24 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-white text-3xl font-semibold">
+                <div class="flex h-28 w-28 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-4xl font-semibold text-white sm:h-32 sm:w-32">
                     {{ substr($company->name, 0, 1) }}
                 </div>
             @endif
@@ -79,17 +81,7 @@
                             {{ __('companies.linkedin') }}
                         </a>
                     @endif
-                    @if($company->email)
-                        <a
-                            href="mailto:{{ $company->email }}"
-                            class="inline-flex items-center gap-2 rounded-full border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-amber-300 hover:text-amber-600 dark:border-stone-700 dark:text-stone-300 dark:hover:border-amber-400 dark:hover:text-amber-300"
-                        >
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                            </svg>
-                            {{ __('companies.contact') }}
-                        </a>
-                    @endif
+
                 </div>
             </div>
         </div>
@@ -184,4 +176,3 @@
     @endif
 </div>
 @endsection
-

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateCompanyProfileRequest;
 use App\Models\Company;
+use App\Services\DemoAccountGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -27,16 +28,17 @@ class CompanyProfileController extends Controller
         $company = Company::findOrFail($user->company_id);
 
         return response()->json([
-            'data' => $company
+            'data' => $company->makeHidden('email'),
         ]);
     }
 
     /**
      * Update the company profile.
      */
-    public function update(UpdateCompanyProfileRequest $request)
+    public function update(UpdateCompanyProfileRequest $request, DemoAccountGuard $demoAccountGuard)
     {
         $user = Auth::user();
+        $demoAccountGuard->ensureProfileIsMutable($user);
         
         if (!$user->hasRole('Recruiter') || !$user->company_id) {
             return response()->json([
@@ -60,7 +62,7 @@ class CompanyProfileController extends Controller
         
         return response()->json([
             'message' => 'Company profile updated successfully',
-            'data' => $company->fresh()
+            'data' => $company->fresh()->makeHidden('email')
         ]);
     }
 

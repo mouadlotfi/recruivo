@@ -57,14 +57,14 @@ class RegisterRequest extends FormRequest
             'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'], // 5MB max
             'company.name' => ['required_if:account_type,company', 'string', 'max:255'],
             'company.tagline' => ['nullable', 'string', 'max:255'],
-            'company.location' => ['nullable', 'string', 'max:255'],
+            'company.location' => ['required_if:account_type,company', 'nullable', 'string', 'max:255'],
             'company.website_url' => ['nullable', 'url', 'max:255'],
             'company.linkedin_url' => ['nullable', 'url', 'max:255'],
             'company.size' => ['nullable', 'string', 'max:50'],
             'company.job_title' => ['nullable', 'string', 'max:120'],
             'company.mission' => ['nullable', 'string'],
             'company.culture' => ['nullable', 'string'],
-            'company.email' => ['required_if:account_type,company', 'email', 'max:255'],
+
         ];
     }
 

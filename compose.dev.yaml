@@ -1,0 +1,7 @@
+services:
+  laravel:
+    build:
+      target: development
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"

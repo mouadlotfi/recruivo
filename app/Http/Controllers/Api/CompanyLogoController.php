@@ -34,6 +34,13 @@ class CompanyLogoController extends Controller
             ], 404);
         }
         
-        return Storage::disk('public')->response($company->logo_path);
+        $response = Storage::disk('public')
+            ->response($company->logo_path);
+        $response->headers->set(
+            'Cache-Control',
+            'public, max-age=31536000, immutable'
+        );
+
+        return $response;
     }
 }

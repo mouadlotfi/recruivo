@@ -32,6 +32,20 @@ class ApplicationStatusUpdatedNotification extends Notification
             ->greeting('Hi '.$notifiable->name)
             ->line(''.$companyName.' has marked your application for '.$job->title.' as '.$statusLabel.'.');
 
+        // Add interview details if this is an interview update
+        if ($this->application->status === \App\Enums\ApplicationStatus::Interview && $this->application->interview_at) {
+            $mailMessage->line('Interview scheduled for '.$this->application->interview_at->translatedFormat('l, F j, Y \a\t g:i A'));
+            if ($this->application->interview_location) {
+                $mailMessage->line('Location: '.$this->application->interview_location);
+            }
+            if ($this->application->interview_url) {
+                $mailMessage->line('Meeting link: '.$this->application->interview_url);
+            }
+            if ($this->application->interview_instructions) {
+                $mailMessage->line($this->application->interview_instructions);
+            }
+        }
+
         // Add notes if they exist
         if ($this->application->notes) {
             $mailMessage->line('Additional notes from the recruiter:')
@@ -49,11 +63,25 @@ class ApplicationStatusUpdatedNotification extends Notification
 
     public function toArray($notifiable): array
     {
-        return [
+        $this->application->loadMissing('job.company');
+
+        $data = [
+            'kind' => 'application_status_updated',
             'job_id' => $this->application->job_id,
             'application_id' => $this->application->id,
             'status' => $this->application->status->value,
+            'job_title' => $this->application->job->title,
+            'company_name' => $this->application->job->company?->name,
         ];
+
+        if ($this->application->status === \App\Enums\ApplicationStatus::Interview) {
+            $data['interview_at'] = $this->application->interview_at?->format('Y-m-d H:i');
+            $data['interview_location'] = $this->application->interview_location;
+            $data['interview_url'] = $this->application->interview_url;
+            $data['interview_instructions'] = $this->application->interview_instructions;
+        }
+
+        return $data;
     }
 }
 

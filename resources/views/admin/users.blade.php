@@ -25,7 +25,9 @@
     <div class="rounded-xl border border-stone-200/60 bg-white/80 p-3 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60 sm:p-4">
         <form method="GET" action="{{ localized_route('admin.users') }}" class="flex flex-col gap-3 md:flex-row">
             <div class="flex-1">
+                <label for="admin-user-search" class="sr-only">{{ __('admin.search_placeholder') }}</label>
                 <input 
+                    id="admin-user-search"
                     type="text" 
                     name="search" 
                     placeholder="{{ __('admin.search_placeholder') }}" 
@@ -34,7 +36,9 @@
                 >
             </div>
             <div>
+                <label for="admin-role-filter" class="sr-only">{{ __('admin.all_roles') }}</label>
                 <select 
+                    id="admin-role-filter"
                     name="role" 
                     class="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:focus:border-amber-400 dark:focus:ring-amber-500/20 sm:px-4 md:w-auto"
                 >
@@ -60,7 +64,7 @@
                         class="inline-flex flex-1 items-center justify-center rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 sm:flex-none"
                     >
                         <span class="hidden sm:inline">{{ __('admin.clear_button') }}</span>
-                        <span class="sm:hidden">{{ __('Clear') }}</span>
+                        <span class="sm:hidden">{{ __('admin.clear_button') }}</span>
                     </a>
                 @endif
             </div>
@@ -84,7 +88,8 @@
             </p>
         </div>
     @else
-        <div class="space-y-4">
+        <div data-infinite-scroll data-infinite-key="admin-users" data-next-url="{{ $users->nextPageUrl() }}" data-show-more-label="{{ __('common.show_more') }}" data-loading-label="{{ __('common.loading_more') }}" data-retry-label="{{ __('common.load_more_failed') }}">
+        <div class="space-y-4" data-infinite-items>
             @foreach($users as $user)
                 <div class="rounded-xl border border-stone-200/60 bg-white/80 p-4 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60 transition hover:border-amber-200 dark:hover:border-amber-800 sm:p-6">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -119,6 +124,11 @@
                                             <circle cx="4" cy="4" r="3" />
                                         </svg>
                                         {{ __('admin.candidate') }}
+                                    </span>
+                                @endif
+                                @if($user->is_demo)
+                                    <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                                        {{ __('common.demo_account') }}
                                     </span>
                                 @endif
                             </div>
@@ -172,7 +182,7 @@
                         </div>
 
                         <div class="sm:ml-6">
-                            @if(!$user->hasRole('Admin'))
+                            @if(!$user->hasRole('Admin') && !$user->is_demo)
                                 <div x-data="{ showModal: false }">
                                     <button 
                                         @click="showModal = true"
@@ -188,7 +198,7 @@
 
                                     <!-- Delete User Modal -->
                                     <template x-teleport="body">
-                                        <div x-show="showModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                                        <div x-show="showModal" x-cloak @keydown.escape.window="showModal = false" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
                                             <div class="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                                                 <!-- Background overlay -->
                                                 <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm transition-opacity" @click="showModal = false"></div>
@@ -197,7 +207,7 @@
                                                 <span class="hidden sm:inline-block sm:h-screen sm:align-middle">&#8203;</span>
 
                                                 <!-- Modal panel -->
-                                                <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block transform overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 text-left align-bottom shadow-2xl backdrop-blur transition-all dark:border-stone-700/60 dark:bg-stone-900/95 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+                                                <div x-show="showModal" x-trap.noscroll="showModal" role="dialog" aria-modal="true" aria-labelledby="delete-user-title-{{ $user->id }}" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block transform overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 text-left align-bottom shadow-2xl backdrop-blur transition-all dark:border-stone-700/60 dark:bg-stone-900/95 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
                                                     <div class="p-6 sm:p-8">
                                                         <div class="flex items-start">
                                                             <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
@@ -207,7 +217,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="mt-4 text-center">
-                                                            <h3 class="text-xl font-semibold text-stone-900 dark:text-white">
+                                                            <h3 id="delete-user-title-{{ $user->id }}" class="text-xl font-semibold text-stone-900 dark:text-white">
                                                                 {{ __('admin.delete_user') }}
                                                             </h3>
                                                             <div class="mt-3">
@@ -244,13 +254,7 @@
                 </div>
             @endforeach
         </div>
-
-        <!-- Pagination -->
-        @if($users->hasPages())
-            <div class="mt-6">
-                <x-pagination :paginator="$users" />
-            </div>
-        @endif
+        </div>
     @endif
 </div>
 @endsection

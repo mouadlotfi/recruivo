@@ -10,9 +10,18 @@ class HomeController extends Controller
 {
     public function index()
     {
+        if (auth()->user()?->hasRole('Recruiter')) {
+            return redirect(localized_route('recruiter.dashboard'));
+        }
+
+        $user = auth()->user();
+        $preferred = $user?->hasRole('Candidate') ? $user->candidateProfile?->preferred_categories : null;
+        $hasPreferences = filled($preferred);
+
         $jobs = Job::published()
             ->with('company')
-            ->latest('published_at')
+            ->withSavedStateFor($user)
+            ->orderByPreference($preferred)
             ->paginate(12)
             ->withQueryString();
 
@@ -23,7 +32,7 @@ class HomeController extends Controller
             'active_companies' => Company::whereHas('jobs', fn ($q) => $q->published())->count(),
         ];
 
-        return view('home', compact('jobs', 'metrics'));
+        return view('home', compact('jobs', 'metrics', 'hasPreferences'));
     }
 }
 

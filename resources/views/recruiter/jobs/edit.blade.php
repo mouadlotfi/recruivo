@@ -133,6 +133,21 @@
                 </div>
             </div>
 
+            <div class="space-y-2">
+                <label for="closes_at" class="text-sm font-medium text-stone-700 dark:text-stone-200">
+                    {{ __('recruiter.closing_date') }}
+                </label>
+                <input
+                    id="closes_at"
+                    name="closes_at"
+                    type="date"
+                    min="{{ today()->toDateString() }}"
+                    value="{{ old('closes_at', isset($job) && $job->closes_at ? $job->closes_at->toDateString() : '') }}"
+                    class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
+                >
+                <p class="text-xs text-stone-500 dark:text-stone-400">{{ __('recruiter.closing_date_help') }}</p>
+            </div>
+
             <div class="grid gap-6 md:grid-cols-2">
                 <div class="space-y-2">
                     <label for="salary_min" class="text-sm font-medium text-stone-700 dark:text-stone-200">

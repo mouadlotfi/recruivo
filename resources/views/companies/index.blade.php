@@ -15,10 +15,12 @@
     <!-- Companies Grid -->
     <div>
         @if(count($companies) > 0)
-            <div class="grid gap-6 md:grid-cols-2">
-                @foreach($companies as $company)
-                    <x-company-card :company="$company" />
-                @endforeach
+            <div data-infinite-scroll data-infinite-key="companies" data-next-url="{{ $companies->nextPageUrl() }}" data-show-more-label="{{ __('common.show_more') }}" data-loading-label="{{ __('common.loading_more') }}" data-retry-label="{{ __('common.load_more_failed') }}">
+                <div class="grid gap-6 md:grid-cols-2" data-infinite-items>
+                    @foreach($companies as $company)
+                        <x-company-card :company="$company" />
+                    @endforeach
+                </div>
             </div>
         @else
             <div class="rounded-xl border border-stone-200/60 bg-white/60 p-12 text-center backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/40">
@@ -26,13 +28,6 @@
                 <p class="mt-2 text-stone-600 dark:text-stone-400">
                     {{ __('companies.check_back_for_companies') }}
                 </p>
-            </div>
-        @endif
-
-        <!-- Pagination -->
-        @if($companies->hasPages())
-            <div class="mt-8">
-                <x-pagination :paginator="$companies" />
             </div>
         @endif
     </div>

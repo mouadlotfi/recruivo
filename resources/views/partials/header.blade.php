@@ -9,7 +9,7 @@
 <header class="sticky top-0 z-[9999] border-b border-stone-200/60 bg-white/75 backdrop-blur-xl dark:border-stone-800/70 dark:bg-stone-950/80">
     <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
         <div class="flex items-center gap-8">
-            <a href="{{ localized_route('home') }}" class="group flex items-center gap-2.5 text-lg font-semibold">
+            <a href="{{ localized_route($isRecruiter ? 'recruiter.dashboard' : 'home') }}" class="group flex items-center gap-2.5 text-lg font-semibold">
                 <span class="inline-flex h-9 w-9 items-center justify-center transition group-hover:scale-105">
                     <svg viewBox="0 0 48 48" fill="none" class="h-9 w-9" xmlns="http://www.w3.org/2000/svg">
                         <defs>
@@ -31,47 +31,54 @@
                     Recruivo
                 </span>
             </a>
-            <nav class="hidden items-center gap-4 text-sm font-medium text-stone-600 lg:flex dark:text-stone-300">
-                <a href="{{ localized_route('jobs.index') }}" class="whitespace-nowrap transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('jobs.*') ? 'text-amber-600 dark:text-amber-400' : '' }}">
-                    {{ __('common.jobs') }}
-                </a>
-                <a href="{{ localized_route('companies.index') }}" class="whitespace-nowrap transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('companies.*') && !($isRecruiter && request()->routeIs('companies.show') && request()->route('slug') == $user->company?->slug) ? 'text-amber-600 dark:text-amber-400' : '' }}">
-                    {{ __('common.companies') }}
-                </a>
+            <nav class="hidden items-center gap-5 text-sm font-medium text-stone-600 lg:flex dark:text-stone-300">
                 @if($isRecruiter)
-                    <a href="{{ localized_route('recruiter.jobs.index') }}" class="whitespace-nowrap transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('recruiter.jobs.*') ? 'text-amber-600 dark:text-amber-400' : '' }}">
-                        {{ __('common.my_jobs') }}
-                    </a>
-                    <a href="{{ localized_route('recruiter.dashboard') }}" class="whitespace-nowrap transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('recruiter.dashboard') ? 'text-amber-600 dark:text-amber-400' : '' }}">
-                        {{ __('common.dashboard') }}
-                    </a>
-                    @if($user->company && $user->company->slug)
-                        <a href="{{ localized_route('companies.show', $user->company->slug) }}" class="whitespace-nowrap transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('companies.show') && request()->route('slug') == $user->company->slug ? 'text-amber-600 dark:text-amber-400' : '' }}">
-                            {{ __('common.profile') }}
-                        </a>
-                    @endif
-                @endif
-                @if($isAdmin)
+                    <div class="relative" x-data="{ open: false }" data-recruiter-explore-menu>
+                        <button
+                            type="button"
+                            @click="open = !open"
+                            @click.away="open = false"
+                            @keydown.escape.window="open = false"
+                            :aria-expanded="open.toString()"
+                            aria-haspopup="menu"
+                            class="inline-flex items-center gap-1 whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('jobs.*', 'companies.*') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}"
+                        >
+                            {{ __('common.explore') }}
+                            <svg class="h-4 w-4 transition-transform" :class="open && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25L12 15.75 4.5 8.25" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-transition style="display: none;" role="menu" class="absolute left-0 mt-2 w-44 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-xl dark:border-stone-700 dark:bg-stone-900">
+                            <a href="{{ localized_route('jobs.index') }}" role="menuitem" class="block px-4 py-2.5 text-sm transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-500/10 dark:hover:text-amber-300 {{ request()->routeIs('jobs.*') ? 'text-amber-600 dark:text-amber-400' : 'text-stone-700 dark:text-stone-200' }}">{{ __('common.jobs') }}</a>
+                            <a href="{{ localized_route('companies.index') }}" role="menuitem" class="block px-4 py-2.5 text-sm transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-500/10 dark:hover:text-amber-300 {{ request()->routeIs('companies.*') ? 'text-amber-600 dark:text-amber-400' : 'text-stone-700 dark:text-stone-200' }}">{{ __('common.companies') }}</a>
+                        </div>
+                    </div>
+                    <a href="{{ localized_route('recruiter.dashboard') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('recruiter.dashboard') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('common.dashboard') }}</a>
+                    <a href="{{ localized_route('recruiter.jobs.index') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('recruiter.jobs.*') && !request()->routeIs('recruiter.jobs.applications') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('recruiter.manage_jobs') }}</a>
+                    <a href="{{ localized_route('recruiter.applicants.index') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('recruiter.applicants.*') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('recruiter.applicants') }}</a>
+                @elseif($isCandidate)
+                    <a href="{{ localized_route('candidate.dashboard') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('candidate.dashboard') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('common.dashboard') }}</a>
+                    <a href="{{ localized_route('jobs.index') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('jobs.*') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('common.jobs') }}</a>
+                    <a href="{{ localized_route('companies.index') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('companies.*') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('common.companies') }}</a>
+                    <a href="{{ localized_route('candidate.applications') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('candidate.applications') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('common.my_applications') }}</a>
+                    <a href="{{ localized_route('candidate.saved-jobs.index') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('candidate.saved-jobs.*') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('common.saved_jobs') }}</a>
+                @elseif($isAdmin)
                     <a href="{{ localized_route('admin.dashboard') }}" class="whitespace-nowrap transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('admin.*') ? 'text-amber-600 dark:text-amber-400' : '' }}">
                         {{ __('common.dashboard') }}
                     </a>
-                @endif
-                @if($isCandidate)
-                    <a href="{{ localized_route('candidate.dashboard') }}" class="whitespace-nowrap transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('candidate.dashboard') ? 'text-amber-600 dark:text-amber-400' : '' }}">
-                        {{ __('common.dashboard') }}
-                    </a>
-                    <a href="{{ localized_route('candidate.applications') }}" class="whitespace-nowrap transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('candidate.applications') ? 'text-amber-600 dark:text-amber-400' : '' }}">
-                        {{ __('common.my_applications') }}
-                    </a>
+                @else
+                    <a href="{{ localized_route('jobs.index') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('jobs.*') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('common.jobs') }}</a>
+                    <a href="{{ localized_route('companies.index') }}" class="whitespace-nowrap border-b-2 py-2 transition {{ request()->routeIs('companies.*') ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent hover:text-amber-600 dark:hover:text-amber-400' }}">{{ __('common.companies') }}</a>
                 @endif
             </nav>
         </div>
         <div class="flex items-center gap-2 sm:gap-3">
-            {{-- Mobile Search Button --}}
+            {{-- Search Button (all roles, all viewports — opens the search modal) --}}
             <button
                 id="mobile-search-toggle"
                 type="button"
-                class="inline-flex items-center justify-center rounded-full p-1.5 text-stone-600 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800 sm:hidden"
+                aria-label="{{ __('common.search') }}"
+                class="inline-flex items-center justify-center rounded-full p-1.5 text-stone-600 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800"
             >
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -79,44 +86,27 @@
                 <span class="sr-only">{{ __('common.search') }}</span>
             </button>
             
-            {{-- Desktop Search --}}
-            <div class="relative hidden sm:block search-container">
-                <form action="{{ localized_route('search') }}" method="GET" class="relative">
-                    <label for="nav-search" class="sr-only">{{ __('common.search_jobs') }}</label>
-                    <input
-                        id="nav-search"
-                        name="search"
-                        value="{{ request('search') }}"
-                        type="search"
-                        placeholder="{{ __('common.search_placeholder') }}"
-                        autocomplete="off"
-                        class="search-input w-48 lg:w-64 rounded-full border border-stone-200 bg-white/80 py-1.5 pl-4 pr-10 text-sm text-stone-600 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-200 dark:focus:border-amber-500 text-ellipsis"
-                    />
-                    <button
-                        type="submit"
-                        class="absolute inset-y-0 right-2 flex items-center justify-center rounded-full bg-amber-100 px-2 text-amber-600 transition hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
-                    >
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                        </svg>
-                        <span class="sr-only">{{ __('common.search') }}</span>
-                    </button>
-                </form>
-            </div>
-            
             @auth
+                @if($isRecruiter)
+                    <a href="{{ localized_route('recruiter.jobs.create') }}" class="hidden whitespace-nowrap rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500 xl:inline-flex">
+                        {{ __('recruiter.post_new_job') }}
+                    </a>
+                @endif
                 @if(!$isAdmin)
+                    @include('partials.notification-center')
                     <div class="relative" x-data="{ open: false }">
                         <button
                             @click="open = !open"
                             @click.away="open = false"
+                            :aria-expanded="open.toString()"
+                            aria-haspopup="menu"
                             class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800"
                         >
                             @if($isRecruiter && $user->company && $user->company->logo_url)
                                 <img
                                     src="{{ $user->company->logo_url }}"
                                     alt="{{ $user->company->name }} logo"
-                                    class="h-5 w-5 rounded-full object-cover"
+                                    class="h-5 w-5 rounded-md object-cover"
                                 />
                             @elseif($isRecruiter)
                                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
@@ -221,6 +211,9 @@
                 <button
                     @click="open = !open"
                     @click.away="open = false"
+                    :aria-expanded="open.toString()"
+                    aria-haspopup="menu"
+                    aria-label="{{ __('common.language') }}"
                     class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800"
                 >
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -263,35 +256,46 @@
 </header>
 
 {{-- Mobile Search Modal --}}
-<div id="mobile-search-modal" class="fixed inset-0 z-[10000] hidden bg-black/60 backdrop-blur-sm">
+<div id="mobile-search-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-search-title" class="fixed inset-0 z-[10000] hidden bg-black/60 backdrop-blur-sm">
     <div class="flex min-h-full items-start justify-center p-3 pt-4">
         <div class="w-full max-w-md rounded-xl bg-white p-4 shadow-2xl dark:bg-stone-800">
             <div class="mb-3 flex items-center justify-between">
-                <h3 class="text-base font-semibold text-stone-900 dark:text-white">{{ __('common.search') }}</h3>
+                <h3 id="mobile-search-title" class="text-base font-semibold text-stone-900 dark:text-white">{{ __('common.search') }}</h3>
                 <button
                     id="mobile-search-close"
                     type="button"
                     class="rounded-full p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-700 dark:hover:text-stone-300"
                 >
+                    <span class="sr-only">{{ __('common.close') }}</span>
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
-            <div class="relative search-container">
+            <div class="relative search-container" data-search-surface="mobile" data-search-all-label="{{ __('common.search_all_results') }}" data-search-no-results="{{ __('common.no_search_suggestions') }}" data-search-error="{{ __('common.search_error') }}" data-search-recent="{{ __('common.recent_searches') }}" data-search-remove-recent="{{ __('common.remove_recent_search') }}">
                 <form action="{{ localized_route('search') }}" method="GET">
                     <input
+                        aria-label="{{ __('common.search_placeholder') }}"
                         type="search"
                         name="search"
                         placeholder="{{ __('common.search_placeholder') }}"
                         autocomplete="off"
                         autofocus
-                        class="search-input w-full rounded-lg border border-stone-200 bg-white py-2.5 pl-4 pr-11 text-sm text-stone-900 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-amber-500"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-controls="mobile-search-suggestions"
+                        aria-expanded="false"
+                        class="search-input w-full rounded-xl border border-stone-200 bg-white py-3 pl-11 pr-20 text-base text-stone-900 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-amber-500"
                     />
+                    <svg class="pointer-events-none absolute inset-y-0 left-3 my-auto h-5 w-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                    <button type="button" data-search-clear class="absolute inset-y-0 right-11 my-auto hidden h-10 w-10 items-center justify-center text-stone-400 transition-colors hover:text-stone-700 focus:outline-none focus-visible:rounded-full focus-visible:ring-2 focus-visible:ring-amber-400 dark:text-stone-500 dark:hover:text-stone-200" aria-label="{{ __('common.clear_search') }}">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
                     <button
                         type="submit"
-                        class="absolute inset-y-0 right-1.5 my-1 flex items-center justify-center rounded-md bg-amber-600 px-2.5 text-white transition hover:bg-amber-500"
+                        class="absolute inset-y-0 right-1 my-auto flex h-10 w-10 items-center justify-center rounded-lg bg-amber-600 text-white transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-300"
                     >
+                        <span class="sr-only">{{ __('common.search') }}</span>
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
@@ -302,7 +306,4 @@
         </div>
     </div>
 </div>
-
-<!-- Alpine.js for dropdown -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 

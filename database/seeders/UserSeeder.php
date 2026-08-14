@@ -24,6 +24,7 @@ class UserSeeder extends Seeder
             'email' => 'admin@recruivo.work',
             'password' => bcrypt('password'),
             'is_recruiter' => false,
+            'is_demo' => true,
         ]);
         $admin->assignRole('Admin');
         $this->command->info('Admin user created: admin@recruivo.work / password');
@@ -37,6 +38,7 @@ class UserSeeder extends Seeder
             'email' => 'recruiter@recruivo.work',
             'password' => bcrypt('password'),
             'is_recruiter' => true,
+            'is_demo' => true,
             'company_id' => $firstCompany->id,
             'job_title' => 'HR Manager',
         ]);
@@ -81,6 +83,7 @@ class UserSeeder extends Seeder
             'email' => 'candidate@recruivo.work',
             'password' => bcrypt('password'),
             'is_recruiter' => false,
+            'is_demo' => true,
             'location' => 'San Francisco, CA',
         ]);
         $demoCandidate->assignRole('Candidate');

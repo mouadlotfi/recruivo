@@ -73,127 +73,44 @@ Open: `http://localhost:8000/`
 
 ## Docker Setup
 
-Two Docker workflows are available:
+Docker Compose is the only Docker wrapper. Persistent data stays in relative host directories:
 
-| Workflow | Script | Use Case |
-|----------|--------|----------|
-| **Production** | `./deploy/docker-start.sh` | Pre-built assets, optimized image |
-| **Development** | `./deploy/docker-dev.sh` | Live editing, Xdebug |
+- ./storage — Laravel uploads, logs, cache, and sessions
+- ./data/mysql — MySQL data
+- ./data/redis — Redis data
 
-### Production (Quick Demo)
+Create the environment file before the first run:
 
-```bash
-chmod +x deploy/docker-start.sh
-./deploy/docker-start.sh --fresh
-```
+    cp .env.docker.example .env.docker
+    mkdir -p data/mysql data/redis
 
-This automatically:
-- Creates `.env` from `.env.docker.example` (if missing)
-- Generates `APP_KEY` (if empty)
-- Builds the multi-stage Docker image with pre-built assets
-- Waits for MySQL and Redis health checks
-- Runs database migrations and seeders
+Set APP_KEY in .env.docker before starting the application.
+Docker commands use .env.docker; keep .env for non-Docker Laravel deployments.
 
-Open: `http://localhost:8000/`
+### Production or staging
 
-**How it works**: Assets (CSS/JS) are "baked into" the Docker image during build. If you change frontend files, you must rebuild:
-```bash
-./deploy/docker-start.sh --build
-```
+    docker compose --env-file .env.docker up -d --build
+    docker compose --env-file .env.docker run --rm laravel php artisan migrate --force
 
-### Development (Active Coding)
+Queued notifications can be enabled with:
 
-```bash
-chmod +x deploy/docker-dev.sh
-./deploy/docker-dev.sh --fresh
-```
+    docker compose --env-file .env.docker --profile queue up -d
 
-**How it works**: Your local files are mounted into the container via volumes:
+### Development
 
-```
-Your Machine                    Docker Container
-─────────────                   ────────────────
-./app/           ──────────►    /var/www/html/app/
-./resources/     ──────────►    /var/www/html/resources/
-./routes/        ──────────►    /var/www/html/routes/
-./config/        ──────────►    /var/www/html/config/
-```
+The development image includes Composer development dependencies and Xdebug. Code and asset changes require an image rebuild:
 
-This means:
-- **PHP/Blade changes** → Instant (just refresh browser)
-- **CSS/JS changes** → Run `./deploy/docker-dev.sh --npm run build`
+    docker compose --env-file .env.docker -f compose.yaml -f compose.dev.yaml up -d --build
+    docker compose --env-file .env.docker -f compose.yaml -f compose.dev.yaml run --rm laravel php artisan migrate --seed
 
-Features:
-- **Live code editing**: PHP, Blade, config changes reflect immediately
-- **Xdebug**: Debugging enabled out of the box
-- **Node.js inside container**: Run npm commands without local Node
+### Common commands
 
-### Development Commands
+    docker compose --env-file .env.docker logs -f
+    docker compose --env-file .env.docker exec laravel bash
+    docker compose --env-file .env.docker run --rm laravel php artisan test
+    docker compose --env-file .env.docker down
 
-```bash
-./deploy/docker-dev.sh --shell           # Bash shell inside container
-./deploy/docker-dev.sh --artisan tinker  # Run artisan commands
-./deploy/docker-dev.sh --npm run build   # Rebuild CSS/JS after changes
-./deploy/docker-dev.sh --logs            # View container logs
-./deploy/docker-dev.sh --down            # Stop containers
-```
-
-### Quick Comparison
-
-| Aspect | Production | Development |
-|--------|------------|-------------|
-| Script | `docker-start.sh` | `docker-dev.sh` |
-| PHP changes | Requires rebuild | Instant |
-| CSS/JS changes | Requires rebuild | Run `--npm run build` |
-| Xdebug | No | Yes |
-| Use case | Demo / Deploy | Active development |
-
-### CLI Options (both scripts)
-
-| Option | Description |
-|--------|-------------|
-| `--fresh` | Fresh install with migrations and seeders |
-| `--seed` | Run database seeders |
-| `--no-migrate` | Skip database migrations |
-| `--build` | Force rebuild containers |
-| `--down` | Stop and remove containers |
-| `--logs` | View container logs |
-| `--help` | Show help message |
-
-### Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Docker Compose                        │
-├─────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │
-│  │   Laravel   │  │    MySQL    │  │    Redis    │     │
-│  │  (Apache)   │  │     8.0     │  │   7-alpine  │     │
-│  │  Port 8000  │  │  Port 3306  │  │  Port 6379  │     │
-│  └─────────────┘  └─────────────┘  └─────────────┘     │
-└─────────────────────────────────────────────────────────┘
-```
-
-| Container | Description |
-|-----------|-------------|
-| `recruivo` | PHP 8.2 + Apache |
-| `recruivo_mysql` | MySQL 8.0 |
-| `recruivo_redis` | Redis 7 (cache, sessions, queues) |
-
-### Common Operations
-
-```bash
-# Shell access (production)
-docker compose exec laravel bash
-
-# Shell access (development)
-./deploy/docker-dev.sh --shell
-
-# Full reset (wipe all data)
-docker compose down -v && ./deploy/docker-start.sh --fresh
-```
-
----
+docker compose down stops containers but leaves ./storage and ./data/ intact. Do not remove those directories unless you intentionally want to delete application data.
 
 ## Demo Accounts (Seeded)
 

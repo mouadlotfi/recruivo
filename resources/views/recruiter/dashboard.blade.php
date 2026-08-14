@@ -14,8 +14,7 @@
             <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            <span class="hidden sm:inline">{{ __('recruiter.post_new_job') }}</span>
-            <span class="sm:hidden">{{ __('Post Job') }}</span>
+            <span>{{ __('recruiter.post_new_job') }}</span>
         </a>
     </div>
 
@@ -103,31 +102,34 @@
         @else
             <div class="space-y-4">
                 @foreach($recentApplications as $application)
-                    <div class="flex items-center justify-between rounded-lg border border-stone-200 p-4 dark:border-stone-700">
-                        <div class="flex items-center gap-4">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                    <div class="flex flex-col gap-3 rounded-lg border border-stone-200 p-4 dark:border-stone-700 sm:flex-row sm:items-center sm:justify-between">
+                        <a
+                            href="{{ localized_route('recruiter.applicants.show', $application->candidate) }}"
+                            data-recent-applicant-link
+                            class="group flex min-w-0 items-center gap-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
+                        >
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700 transition group-hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:group-hover:bg-amber-500/20">
                                 {{ substr($application->candidate->name, 0, 1) }}
-                            </div>
-                            <div>
-                                <h3 class="font-medium text-stone-900 dark:text-white">{{ $application->candidate->name }}</h3>
-                                <p class="text-sm text-stone-600 dark:text-stone-400">{{ $application->job->title }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            @if($application->status->value === 'pending')
-                                <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400">
-                                    {{ __('recruiter.pending') }}
-                                </span>
-                            @elseif($application->status->value === 'accepted')
-                                <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-500/10 dark:text-green-400">
-                                    {{ __('recruiter.accepted') }}
-                                </span>
-                            @elseif($application->status->value === 'rejected')
-                                <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400">
-                                    {{ __('recruiter.rejected') }}
-                                </span>
-                            @endif
-                            <span class="text-sm text-stone-500 dark:text-stone-500">
+                            </span>
+                            <span class="min-w-0">
+                                <span class="block truncate font-medium text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">{{ $application->candidate->name }}</span>
+                                <p class="truncate text-sm text-stone-600 dark:text-stone-400">{{ $application->job->title }}</p>
+                            </span>
+                        </a>
+                        <div class="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1">
+                            @php
+                                $rStatusClasses = [
+                                    'pending' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
+                                    'shortlisted' => 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
+                                    'interview' => 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
+                                    'accepted' => 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400',
+                                    'rejected' => 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400',
+                                ];
+                            @endphp
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $rStatusClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }}">
+                                {{ __('recruiter.'.$application->status->value) }}
+                            </span>
+                            <span class="whitespace-nowrap text-sm text-stone-500 dark:text-stone-500">
                                 {{ $application->created_at->diffForHumans() }}
                             </span>
                             <a 
@@ -144,7 +146,7 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="grid gap-6 md:grid-cols-2">
+    <div>
         <div class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
             <h3 class="text-lg font-semibold text-stone-900 dark:text-white mb-4">{{ __('recruiter.quick_actions') }}</h3>
             <div class="space-y-3">
@@ -169,29 +171,6 @@
             </div>
         </div>
 
-        <div class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
-            <h3 class="text-lg font-semibold text-stone-900 dark:text-white mb-4">{{ __('recruiter.tips_for_success') }}</h3>
-            <div class="space-y-3 text-sm text-stone-600 dark:text-stone-400">
-                <div class="flex items-start gap-2">
-                    <svg class="h-4 w-4 mt-0.5 text-green-500" fill="currentColor" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="3" />
-                    </svg>
-                    <p>{{ __('recruiter.tip_1') }}</p>
-                </div>
-                <div class="flex items-start gap-2">
-                    <svg class="h-4 w-4 mt-0.5 text-green-500" fill="currentColor" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="3" />
-                    </svg>
-                    <p>{{ __('recruiter.tip_2') }}</p>
-                </div>
-                <div class="flex items-start gap-2">
-                    <svg class="h-4 w-4 mt-0.5 text-green-500" fill="currentColor" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="3" />
-                    </svg>
-                    <p>{{ __('recruiter.tip_3') }}</p>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 @endsection

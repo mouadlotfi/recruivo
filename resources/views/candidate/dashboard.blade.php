@@ -43,8 +43,8 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-stone-600 dark:text-stone-400">{{ __('candidate.pending') }}</p>
-                    <p class="text-2xl font-semibold text-stone-900 dark:text-white">{{ $pendingApplications ?? 0 }}</p>
+                    <p class="text-sm font-medium text-stone-600 dark:text-stone-400">{{ __('candidate.in_progress') }}</p>
+                    <p class="text-2xl font-semibold text-stone-900 dark:text-white">{{ $inProgressApplications ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -77,6 +77,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Profile Completion (only while incomplete) -->
+    @if($profileCompletion['percentage'] < 100)
+    <div data-profile-completion class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
+        <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-stone-900 dark:text-white">{{ __('candidate.profile_completion') }}</h2>
+                <p class="text-sm text-stone-600 dark:text-stone-400">{{ __('candidate.profile_completion_help') }}</p>
+            </div>
+            <a href="{{ localized_route('profile.edit') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-amber-500/40 dark:text-amber-300 dark:hover:bg-amber-500/10">
+                {{ __('candidate.complete_profile') }}
+            </a>
+        </div>
+
+        <div class="mb-3 flex items-center gap-3">
+            <span class="text-2xl font-bold text-stone-900 dark:text-white">{{ $profileCompletion['percentage'] }}%</span>
+            <div class="flex-1" role="progressbar" aria-valuenow="{{ $profileCompletion['percentage'] }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ __('candidate.profile_completion') }}">
+                <div class="h-2.5 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+                    <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500" style="width: {{ $profileCompletion['percentage'] }}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        @if($profileCompletion['missing'] !== [])
+            <ul class="space-y-1.5">
+                @foreach($profileCompletion['missing'] as $item)
+                    <li class="flex items-center gap-2 text-sm">
+                        <svg class="h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                        </svg>
+                        <a href="{{ localized_route('profile.edit', [], app()->getLocale()) . '#' . ($item === 'resume' ? 'resume-section' : $item) }}" class="text-stone-700 underline decoration-stone-300 underline-offset-2 hover:text-amber-700 dark:text-stone-300 dark:hover:text-amber-400">
+                            {{ __('candidate.completion_' . $item) }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        @else
+            <p class="text-sm font-medium text-green-700 dark:text-green-400">{{ __('candidate.profile_complete') }}</p>
+        @endif
+    </div>
+    @endif
 
     <!-- Recent Applications -->
     <div class="rounded-xl border border-stone-200/60 bg-white/80 p-4 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60 sm:p-8">
@@ -118,19 +159,18 @@
                             </div>
                         </div>
                         <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                            @if($application->status->value === 'pending')
-                                <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400">
-                                    {{ __('candidate.pending') }}
-                                </span>
-                            @elseif($application->status->value === 'accepted')
-                                <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-500/10 dark:text-green-400">
-                                    {{ __('candidate.accepted') }}
-                                </span>
-                            @elseif($application->status->value === 'rejected')
-                                <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400">
-                                    {{ __('candidate.rejected') }}
-                                </span>
-                            @endif
+                            @php
+                                $cStatusClasses = [
+                                    'pending' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
+                                    'shortlisted' => 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
+                                    'interview' => 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
+                                    'accepted' => 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400',
+                                    'rejected' => 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400',
+                                ];
+                            @endphp
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $cStatusClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }}">
+                                {{ __('candidate.'.$application->status->value) }}
+                            </span>
                             <span class="text-xs text-stone-500 dark:text-stone-500 sm:text-sm">
                                 {{ $application->created_at->diffForHumans() }}
                             </span>
@@ -179,30 +219,6 @@
                     </svg>
                     {{ __('candidate.update_my_profile') }}
                 </a>
-            </div>
-        </div>
-
-        <div class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
-            <h3 class="text-lg font-semibold text-stone-900 dark:text-white mb-4">{{ __('candidate.tips_for_success') }}</h3>
-            <div class="space-y-3 text-sm text-stone-600 dark:text-stone-400">
-                <div class="flex items-start gap-2">
-                    <svg class="h-4 w-4 mt-0.5 text-green-500" fill="currentColor" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="3" />
-                    </svg>
-                    <p>{{ __('candidate.tip_1') }}</p>
-                </div>
-                <div class="flex items-start gap-2">
-                    <svg class="h-4 w-4 mt-0.5 text-green-500" fill="currentColor" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="3" />
-                    </svg>
-                    <p>{{ __('candidate.tip_2') }}</p>
-                </div>
-                <div class="flex items-start gap-2">
-                    <svg class="h-4 w-4 mt-0.5 text-green-500" fill="currentColor" viewBox="0 0 8 8">
-                        <circle cx="4" cy="4" r="3" />
-                    </svg>
-                    <p>{{ __('candidate.tip_3') }}</p>
-                </div>
             </div>
         </div>
     </div>

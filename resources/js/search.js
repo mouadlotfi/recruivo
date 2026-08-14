@@ -1,141 +1,287 @@
-// Live search functionality with suggestions
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInputs = document.querySelectorAll('.search-input');
-    let debounceTimer;
+const SEARCH_CACHE = new Map();
+const RECENT_KEY = 'recruivo:recent-searches';
+let searchIdCounter = 0;
 
-    searchInputs.forEach(input => {
-        const container = input.closest('.search-container');
-        if (!container) return;
-
-        // Create suggestions dropdown if it doesn't exist
-        let suggestionsEl = container.querySelector('.search-suggestions');
-        if (!suggestionsEl) {
-            suggestionsEl = document.createElement('div');
-            suggestionsEl.className = 'search-suggestions hidden absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-white dark:bg-stone-800 rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-700 max-h-[500px] overflow-hidden z-[9999]';
-            container.appendChild(suggestionsEl);
-            
-            // Ensure container has relative positioning
-            container.style.position = 'relative';
-        }
-        
-        // Update dropdown width to be responsive - 3x the input width or max 700px on desktop, smaller on mobile
-        const updateDropdownWidth = () => {
-            const inputWidth = input.offsetWidth;
-            const dropdownWidth = Math.min(inputWidth * 3, 700);
-            suggestionsEl.style.width = window.innerWidth < 640 ? '85vw' : `${dropdownWidth}px`;
-        };
-        updateDropdownWidth();
-        window.addEventListener('resize', updateDropdownWidth);
-
-        input.addEventListener('input', function(e) {
-            const query = e.target.value.trim();
-
-            clearTimeout(debounceTimer);
-
-            if (query.length < 1) {
-                suggestionsEl.classList.add('hidden');
-                return;
-            }
-
-            // Show dropdown immediately with loading state
-            suggestionsEl.innerHTML = `
-                <div class="p-4 sm:p-8">
-                    <div class="text-center">
-                        <div class="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-4 border-stone-200 border-t-amber-600 dark:border-stone-700 dark:border-t-amber-400"></div>
-                    </div>
-                </div>
-            `;
-            suggestionsEl.classList.remove('hidden');
-
-            debounceTimer = setTimeout(() => {
-                fetchSuggestions(query, suggestionsEl, input);
-            }, 300);
-        });
-
-        // Close suggestions when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!container.contains(e.target)) {
-                suggestionsEl.classList.add('hidden');
-            }
-        });
-
-        // Close on escape key
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                suggestionsEl.classList.add('hidden');
-            }
-        });
-    });
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.search-input').forEach(setupSearch);
 });
 
-async function fetchSuggestions(query, suggestionsEl, input) {
-    try {
-        const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
-        const results = await response.json();
+function setupSearch(input) {
+    const container = input.closest('.search-container');
+    if (!container) return;
 
-        const noResultsText = document.documentElement.lang === 'fr' ? 'Aucun résultat trouvé' : 'No results found';
+    const form = input.closest('form');
+    const clearButton = container.querySelector('[data-search-clear]');
+    const listbox = document.createElement('div');
+    const listboxId = input.getAttribute('aria-controls') || nextSearchId('search-suggestions');
+    listbox.id = listboxId;
+    listbox.setAttribute('role', 'listbox');
+    listbox.setAttribute('aria-live', 'polite');
+    listbox.setAttribute('aria-atomic', 'false');
+    listbox.className = 'search-suggestions absolute inset-x-0 top-full z-[10000] mt-2 hidden max-h-[min(70vh,34rem)] w-full overflow-y-auto rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/10 dark:border-stone-700 dark:bg-stone-900';
+    container.appendChild(listbox);
+    input.setAttribute('aria-controls', listboxId);
 
-        if (results.length === 0) {
-            suggestionsEl.innerHTML = `
-                <div class="p-4 sm:p-6">
-                    <div class="py-4 sm:py-8 text-center text-stone-500 dark:text-stone-400">
-                        <svg class="mx-auto h-8 w-8 sm:h-12 sm:w-12 mb-2 sm:mb-3 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <p class="text-sm sm:text-base">${noResultsText}</p>
-                    </div>
-                </div>
-            `;
-            suggestionsEl.classList.remove('hidden');
+    let activeIndex = -1;
+    let options = [];
+    let debounceTimer = null;
+    let controller = null;
+
+    const syncClear = () => clearButton?.classList.toggle('hidden', input.value.length === 0);
+    const close = () => {
+        listbox.classList.add('hidden');
+        input.setAttribute('aria-expanded', 'false');
+        input.removeAttribute('aria-activedescendant');
+        activeIndex = -1;
+        options = [];
+    };
+    const open = () => {
+        listbox.classList.remove('hidden');
+        input.setAttribute('aria-expanded', 'true');
+    };
+    const refreshOptions = () => {
+        options = [...listbox.querySelectorAll('[role="option"]')];
+        activeIndex = -1;
+    };
+    const select = index => {
+        if (!options.length) return;
+        activeIndex = (index + options.length) % options.length;
+        options.forEach((option, optionIndex) => {
+            const active = optionIndex === activeIndex;
+            option.setAttribute('aria-selected', String(active));
+            option.classList.toggle('bg-amber-50', active);
+            option.classList.toggle('dark:bg-amber-500/10', active);
+        });
+        const option = options[activeIndex];
+        input.setAttribute('aria-activedescendant', option.id);
+        option.scrollIntoView({ block: 'nearest' });
+    };
+
+    input.addEventListener('input', () => {
+        syncClear();
+        clearTimeout(debounceTimer);
+        controller?.abort();
+        const query = normalize(input.value);
+
+        if (!query) {
+            renderRecent(listbox, container, input);
+            refreshOptions();
+            listbox.children.length ? open() : close();
             return;
         }
 
-        const jobLabel = document.documentElement.lang === 'fr' ? 'Emploi' : 'Job';
-        const companyLabel = document.documentElement.lang === 'fr' ? 'Entreprise' : 'Company';
+        renderLoading(listbox);
+        open();
+        debounceTimer = setTimeout(async () => {
+            controller = new AbortController();
+            try {
+                const data = await fetchSuggestions(query, controller.signal);
+                if (normalize(input.value) !== data.query) return;
+                renderSuggestions(data, listbox, container, input);
+                refreshOptions();
+                open();
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+                renderMessage(listbox, container.dataset.searchError || 'Search is temporarily unavailable.');
+                open();
+            }
+        }, 180);
+    });
 
-        const resultsHtml = results.map(item => {
-            const typeLabel = item.type === 'job' ? jobLabel : companyLabel;
-            const typeBadgeClass = item.type === 'job' 
-                ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
-                : 'bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300';
+    input.addEventListener('focus', () => {
+        syncClear();
+        if (!input.value.trim()) {
+            renderRecent(listbox, container, input);
+            refreshOptions();
+            if (listbox.children.length) open();
+        }
+    });
 
-            return `
-                <a href="${item.url}" class="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-stone-50 dark:hover:bg-stone-700/50 transition border-b border-stone-100 dark:border-stone-700 last:border-0">
-                    ${item.logo ? `
-                        <img src="${item.logo}" alt="${item.title}" class="w-8 h-8 sm:w-10 sm:h-10 rounded object-cover flex-shrink-0" />
-                    ` : `
-                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white text-sm sm:text-base font-semibold flex-shrink-0">
-                            ${item.title.charAt(0).toUpperCase()}
-                        </div>
-                    `}
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-1.5 sm:gap-2">
-                            <p class="text-sm sm:text-base font-medium text-stone-900 dark:text-stone-100 truncate">${escapeHtml(item.title)}</p>
-                            <span class="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-full ${typeBadgeClass} flex-shrink-0">
-                                ${typeLabel}
-                            </span>
-                        </div>
-                        <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 truncate">${escapeHtml(item.subtitle)}</p>
-                    </div>
-                </a>
-            `;
-        }).join('');
+    input.addEventListener('search-options-updated', () => {
+        refreshOptions();
+        if (!listbox.querySelector('[role="option"]')) close();
+    });
 
-        suggestionsEl.innerHTML = `
-            <div class="max-h-[400px] sm:max-h-[500px] overflow-y-auto">
-                ${resultsHtml}
+    input.addEventListener('keydown', event => {
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (listbox.classList.contains('hidden')) open();
+            select(activeIndex + 1);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            select(activeIndex - 1);
+        } else if (event.key === 'Enter' && activeIndex >= 0) {
+            event.preventDefault();
+            options[activeIndex].click();
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            close();
+        }
+    });
+
+    clearButton?.addEventListener('click', () => {
+        input.value = '';
+        syncClear();
+        close();
+        input.focus();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    form?.addEventListener('submit', () => rememberSearch(input.value));
+    document.addEventListener('click', event => {
+        if (!container.contains(event.target)) close();
+    });
+
+    syncClear();
+}
+
+async function fetchSuggestions(query, signal) {
+    if (SEARCH_CACHE.has(query)) return SEARCH_CACHE.get(query);
+    const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`, {
+        signal,
+        headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+    const data = await response.json();
+    SEARCH_CACHE.set(query, data);
+    return data;
+}
+
+function renderSuggestions(data, listbox, container, input) {
+    const sections = data.sections || [];
+    if (!sections.length) {
+        listbox.innerHTML = `
+            <div class="p-5">
+                <p class="font-medium text-stone-900 dark:text-white">${escapeHtml(container.dataset.searchNoResults || 'No direct matches')}</p>
+                <p class="mt-1 text-sm text-stone-500 dark:text-stone-400">${escapeHtml(input.value.trim())}</p>
             </div>
+            ${searchAllOption(data.search_url, container.dataset.searchAllLabel, data.query, 0)}
         `;
+        return;
+    }
 
-        suggestionsEl.classList.remove('hidden');
-    } catch (error) {
-        console.error('Error fetching suggestions:', error);
+    let optionIndex = 0;
+    listbox.innerHTML = sections.map(section => {
+        const items = section.items.map(item => resultOption(item, data.query, optionIndex++)).join('');
+        return `<section aria-labelledby="${escapeHtml(section.type)}-heading">
+            <h2 id="${escapeHtml(section.type)}-heading" class="sticky top-0 border-b border-stone-100 bg-stone-50/95 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-stone-500 backdrop-blur dark:border-stone-800 dark:bg-stone-900/95 dark:text-stone-400">${escapeHtml(section.label)}</h2>
+            ${items}
+        </section>`;
+    }).join('') + searchAllOption(data.search_url, container.dataset.searchAllLabel, data.query, optionIndex);
+}
+
+function resultOption(item, query, index) {
+    const id = nextSearchId('search-option');
+    const url = safeUrl(item.url);
+    const logo = safeUrl(item.logo);
+    return `<a id="${id}" role="option" aria-selected="false" data-search-option href="${escapeHtml(url)}" class="flex min-h-14 items-center gap-3 border-b border-stone-100 px-4 py-3 transition hover:bg-stone-50 focus:bg-amber-50 focus:outline-none dark:border-stone-800 dark:hover:bg-stone-800/70 dark:focus:bg-amber-500/10">
+        ${logo ? `<img src="${escapeHtml(logo)}" alt="" class="h-10 w-10 shrink-0 rounded-lg object-cover">` : `<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">${escapeHtml(item.title.charAt(0).toUpperCase())}</span>`}
+        <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold text-stone-900 dark:text-white">${highlight(item.title, query)}</span>
+            <span class="mt-0.5 block truncate text-xs text-stone-500 dark:text-stone-400">${highlight(item.subtitle, query)}</span>
+        </span>
+    </a>`;
+}
+
+function searchAllOption(url, label, query, index) {
+    return `<a id="search-option-all-${index}" role="option" aria-selected="false" data-search-option href="${escapeHtml(safeUrl(url))}" class="flex min-h-12 items-center justify-between bg-stone-50 px-4 py-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 focus:bg-amber-50 focus:outline-none dark:bg-stone-800/50 dark:text-amber-300 dark:hover:bg-amber-500/10 dark:focus:bg-amber-500/10">
+        <span>${escapeHtml(label || 'See all results')} “${escapeHtml(query)}”</span><span aria-hidden="true">→</span>
+    </a>`;
+}
+
+function renderLoading(listbox) {
+    listbox.innerHTML = `<div class="space-y-3 p-4" aria-live="polite" aria-label="Loading suggestions">
+        ${[1, 2, 3].map(() => '<div class="flex animate-pulse items-center gap-3"><div class="h-10 w-10 rounded-lg bg-stone-200 dark:bg-stone-700"></div><div class="flex-1 space-y-2"><div class="h-3 w-2/3 rounded bg-stone-200 dark:bg-stone-700"></div><div class="h-2 w-1/2 rounded bg-stone-100 dark:bg-stone-800"></div></div></div>').join('')}
+    </div>`;
+}
+
+function renderMessage(listbox, message) {
+    listbox.innerHTML = `<div class="p-5 text-sm text-stone-600 dark:text-stone-300" role="status">${escapeHtml(message)}</div>`;
+}
+
+function renderRecent(listbox, container, input) {
+    const recent = getRecentSearches();
+    if (!recent.length) {
+        listbox.innerHTML = '';
+        return;
+    }
+    const removeLabel = container.dataset.searchRemoveRecent || 'Remove recent search';
+    listbox.innerHTML = `<h2 class="border-b border-stone-100 bg-stone-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400">${escapeHtml(container.dataset.searchRecent || 'Recent searches')}</h2>` + recent.map((query, index) =>
+        `<div class="flex items-stretch border-b border-stone-100 dark:border-stone-800">
+            <button id="recent-search-${index}" type="button" role="option" aria-selected="false" data-search-option class="flex min-h-12 min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left text-sm text-stone-700 hover:bg-stone-50 focus:bg-amber-50 focus:outline-none dark:text-stone-200 dark:hover:bg-stone-800 dark:focus:bg-amber-500/10"><span aria-hidden="true">↻</span><span class="truncate">${escapeHtml(query)}</span></button>
+            <button type="button" data-remove-recent-search data-recent-query="${escapeHtml(query)}" aria-label="${escapeHtml(`${removeLabel}: ${query}`)}" class="inline-flex min-h-11 w-11 shrink-0 items-center justify-center text-stone-400 transition-colors hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400 dark:text-stone-500 dark:hover:text-red-400"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+        </div>`
+    ).join('');
+    listbox.querySelectorAll('button[data-search-option]').forEach((button, index) => {
+        button.addEventListener('click', () => {
+            input.value = recent[index];
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+    });
+    listbox.querySelectorAll('[data-remove-recent-search]').forEach(button => {
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            removeRecentSearch(button.dataset.recentQuery);
+            renderRecent(listbox, container, input);
+            input.dispatchEvent(new Event('search-options-updated'));
+        });
+    });
+}
+
+function rememberSearch(value) {
+    const query = normalize(value);
+    if (!query) return;
+    const recent = [query, ...getRecentSearches().filter(item => item !== query)].slice(0, 5);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+}
+
+function getRecentSearches() {
+    try {
+        return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]').filter(Boolean).slice(0, 5);
+    } catch {
+        return [];
     }
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function removeRecentSearch(value) {
+    const recent = getRecentSearches().filter(item => item !== value);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
 }
 
+function highlight(text, query) {
+    const safeText = escapeHtml(text);
+    const terms = normalize(query).split(' ').filter(term => term.length > 1);
+    if (!terms.length) return safeText;
+    const pattern = new RegExp(`(${terms.map(escapeRegExp).join('|')})`, 'gi');
+    return safeText.replace(pattern, '<mark class="rounded bg-amber-100 px-0.5 text-inherit dark:bg-amber-500/20">$1</mark>');
+}
+
+function normalize(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function escapeHtml(text) {
+    return String(text ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
+    })[character]);
+}
+
+function safeUrl(value) {
+    if (!value) return '';
+
+    try {
+        const url = new URL(value, window.location.origin);
+        return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+    } catch {
+        return '';
+    }
+}
+
+function nextSearchId(prefix) {
+    searchIdCounter += 1;
+    return `${prefix}-${searchIdCounter}`;
+}

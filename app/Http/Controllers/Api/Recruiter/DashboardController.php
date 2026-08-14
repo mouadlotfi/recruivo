@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Recruiter;
 use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ApplicationResource;
+use App\Models\Application;
 use App\Models\Job;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,10 @@ class DashboardController extends Controller
         $metrics = [
             'active' => (clone $jobsBuilder)->published()->count(),
             'drafts' => (clone $jobsBuilder)->where('status', 'draft')->count(),
-            'total_applicants' => (clone $jobsBuilder)->withCount('applications')->get()->sum('applications_count'),
+            'total_applicants' => Application::whereHas(
+                'job',
+                fn ($query) => $query->where('recruiter_id', $request->user()->id)
+            )->count(),
         ];
 
         return response()->json([

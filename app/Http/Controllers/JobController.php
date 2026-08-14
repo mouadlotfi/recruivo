@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\JobStatus;
 use App\Models\Job;
+use App\Services\SmartSearchService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class JobController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Job::published()->with('company');
+        $query = Job::published()->with('company')->withSavedStateFor(auth()->user());
 
         if ($search = $request->input('search')) {
             $query->where(function ($builder) use ($search) {
@@ -36,21 +38,41 @@ class JobController extends Controller
             $query->where('salary_max', '<=', (int) $salaryMax);
         }
 
+        $user = auth()->user();
+        $hasFilters = $request->filled('search') || $request->filled('location') || $request->filled('category')
+            || $request->filled('salary_min') || $request->filled('salary_max');
+        $preferred = !$hasFilters && $user?->hasRole('Candidate')
+            ? $user->candidateProfile?->preferred_categories
+            : null;
+        $hasPreferences = filled($preferred);
+
         $jobs = $query
-            ->latest('published_at')
+            ->orderByPreference($preferred)
             ->paginate(12)
             ->withQueryString();
 
-        return view('jobs.index', compact('jobs'));
+        if ($request->header('X-Infinite-Scroll') === '1') {
+            return response()->json([
+                'html' => view('jobs.partials.cards', compact('jobs'))->render(),
+                'next_url' => $jobs->nextPageUrl(),
+            ]);
+        }
+
+        return view('jobs.index', compact('jobs', 'hasPreferences'));
     }
 
     public function show(string $locale, Job $job)
     {
-        abort_unless($job->status === JobStatus::Published, 404);
+        abort_unless($job->isPubliclyVisible(), 404);
 
         $job->load('company');
 
         $user = auth()->user();
+
+        if ($user?->hasRole('Candidate')) {
+            $job->loadExists(['savedByCandidates as is_saved' => fn ($q) => $q->whereKey($user->id)]);
+        }
+
         $includeSimilarJobs = !($user?->hasRole('Admin') || $user?->hasRole('Recruiter'));
 
         $similarJobs = $includeSimilarJobs
@@ -59,89 +81,109 @@ class JobController extends Controller
                 ->when($job->category, fn ($builder) => $builder->where('category', $job->category))
                 ->when($job->company_id, fn ($builder) => $builder->where('company_id', '!=', $job->company_id))
                 ->with('company')
+                ->withSavedStateFor(auth()->user())
                 ->latest('published_at')
                 ->take(4)
                 ->get()
             : collect();
 
-        $canApply = $user?->hasRole('Candidate') ?? false;
+        $canApply = ($user?->hasRole('Candidate') ?? false) && !$user->is_demo;
+        $isDemoCandidate = ($user?->hasRole('Candidate') ?? false) && $user->is_demo;
         $hasApplied = $canApply
             ? $user->applications()->where('job_id', $job->id)->exists()
             : false;
 
-        return view('jobs.show', compact('job', 'similarJobs', 'canApply', 'hasApplied'));
+        $applicationSubmissionToken = null;
+        if ($canApply && !$hasApplied) {
+            $applicationSubmissionToken = (string) Str::uuid();
+            request()->session()->put("job_application_submission.{$job->id}", [
+                'token' => $applicationSubmissionToken,
+                'completed' => false,
+            ]);
+        }
+
+        return view('jobs.show', compact('job', 'similarJobs', 'canApply', 'hasApplied', 'isDemoCandidate', 'applicationSubmissionToken'));
     }
 
-    public function search(Request $request)
+    public function search(Request $request, SmartSearchService $searchService)
     {
-        $searchQuery = $request->input('search', '');
+        $searchQuery = $searchService->normalize($request->input('search', ''));
         $filter = $request->input('filter', 'all'); // all, jobs, companies
         $remoteType = $request->input('remote_type');
         $location = $request->input('location');
 
-        // Initialize as empty paginators instead of collections
-        $jobs = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12, 1, [
-            'path' => $request->url(),
-            'query' => $request->query(),
-            'pageName' => 'jobs_page',
-        ]);
-        
-        $companies = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12, 1, [
-            'path' => $request->url(),
-            'query' => $request->query(),
-            'pageName' => 'companies_page',
-        ]);
+        $hasCriteria = (bool) ($searchQuery || $remoteType || $location);
+        $hasTextQuery = (bool) $searchQuery;
+
+        $jobResults = collect();
+        $companyResults = collect();
 
         // Show results if there's any search criteria
-        if ($searchQuery || $remoteType || $location) {
+        if ($hasCriteria) {
             // Search jobs
-            if (in_array($filter, ['all', 'jobs'])) {
-                $jobsQuery = Job::published()->with('company');
-                
-                // Apply filters
-                if ($searchQuery) {
-                    $jobsQuery->where(function ($builder) use ($searchQuery) {
-                        $builder->where('title', 'like', "%{$searchQuery}%")
-                            ->orWhere('location', 'like', "%{$searchQuery}%")
-                            ->orWhere('category', 'like', "%{$searchQuery}%")
-                            ->orWhere('description', 'like', "%{$searchQuery}%")
-                            ->orWhere('remote_type', 'like', "%{$searchQuery}%")
-                            ->orWhereHas('company', function ($q) use ($searchQuery) {
-                                $q->where('name', 'like', "%{$searchQuery}%");
-                            });
-                    });
-                }
-                
-                if ($remoteType) {
-                    $jobsQuery->where('remote_type', $remoteType);
-                }
-
-                if ($location) {
-                    $jobsQuery->where('location', 'like', "%{$location}%");
-                }
-                
-                $jobs = $jobsQuery
-                    ->latest('published_at')
-                    ->paginate(12, ['*'], 'jobs_page')
-                    ->withQueryString();
-            }
+            $jobResults = $searchQuery
+                ? $searchService->jobs($searchQuery)
+                : Job::published()->with('company')->latest('published_at')->get();
+            $jobResults = $jobResults
+                ->when($remoteType, fn ($items) => $items->where('remote_type', $remoteType))
+                ->when($location, fn ($items) => $items->filter(fn ($job) => str_contains(mb_strtolower($job->location ?? ''), mb_strtolower($location))))
+                ->values();
 
             // Search companies
-            if (in_array($filter, ['all', 'companies']) && $searchQuery) {
-                $companies = \App\Models\Company::where(function ($builder) use ($searchQuery) {
-                        $builder->where('name', 'like', "%{$searchQuery}%")
-                            ->orWhere('location', 'like', "%{$searchQuery}%")
-                            ->orWhere('tagline', 'like', "%{$searchQuery}%")
-                            ->orWhere('mission', 'like', "%{$searchQuery}%")
-                            ->orWhere('culture', 'like', "%{$searchQuery}%");
-                    })
-                    ->withCount('jobs')
-                    ->paginate(12, ['*'], 'companies_page')
-                    ->withQueryString();
+            if ($hasTextQuery) {
+                $companyResults = $searchService->companies($searchQuery)->values();
             }
         }
 
-        return view('search', compact('jobs', 'companies', 'searchQuery', 'filter', 'remoteType', 'location'));
+        $jobs = $hasCriteria && in_array($filter, ['all', 'jobs'])
+            ? $this->paginateCollection($jobResults, 12, 'jobs_page', $request)
+            : $this->paginateCollection(collect(), 12, 'jobs_page', $request);
+
+        $companies = $hasTextQuery && in_array($filter, ['all', 'companies'])
+            ? $this->paginateCollection($companyResults, 12, 'companies_page', $request)
+            : $this->paginateCollection(collect(), 12, 'companies_page', $request);
+
+        $jobsCount = $jobResults->count();
+        $companiesCount = $companyResults->count();
+
+        $suggestedCorrection = $searchQuery
+            ? $searchService->suggestedCorrection($searchQuery, collect($jobs->items()), collect($companies->items()))
+            : null;
+
+        $popularSearches = $hasCriteria
+            ? collect()
+            : Job::published()
+                ->whereNotNull('category')
+                ->select('category')
+                ->groupBy('category')
+                ->orderByRaw('COUNT(*) DESC')
+                ->limit(6)
+                ->pluck('category');
+
+        $locations = Job::published()
+            ->whereNotNull('location')
+            ->where('location', '!=', '')
+            ->distinct()
+            ->orderBy('location')
+            ->pluck('location');
+
+        return view('search', compact(
+            'jobs', 'companies', 'searchQuery', 'filter', 'remoteType', 'location',
+            'suggestedCorrection', 'jobsCount', 'companiesCount', 'popularSearches', 'locations'
+        ));
+    }
+
+    private function paginateCollection($items, int $perPage, string $pageName, Request $request): LengthAwarePaginator
+    {
+        $page = LengthAwarePaginator::resolveCurrentPage($pageName);
+
+        return (new LengthAwarePaginator(
+            $items->forPage($page, $perPage)->values(),
+            $items->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'pageName' => $pageName]
+        ))->withQueryString();
     }
 }
 

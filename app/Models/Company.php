@@ -49,8 +49,13 @@ class Company extends Model
             return null;
         }
 
-        // Return the public API endpoint URL for the company logo
-        return url('/api/companies/' . $this->slug . '/logo');
+        $url = url('/api/companies/' . $this->slug . '/logo');
+
+        if ($this->updated_at) {
+            $url .= '?v=' . $this->updated_at->timestamp;
+        }
+
+        return $url;
     }
 
     public static function generateUniqueSlug(string $name): string

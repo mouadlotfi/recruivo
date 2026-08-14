@@ -22,7 +22,16 @@ return [
     
     // Application validation
     'notes_required_status' => 'Please include a note when accepting or rejecting an application.',
-    'status_invalid' => 'Status must be either pending, accepted, or rejected.',
+    'status_invalid' => 'Status must be either pending, shortlisted, interview, accepted, or rejected.',
+    'interview_at_required' => 'Please choose an interview date and time.',
+    'interview_at_after' => 'The interview must be scheduled in the future.',
+    'interview_location_required' => 'Please provide an interview location.',
+    'interview_url_required' => 'Please provide a meeting link (http or https).',
+    'interview_url_invalid' => 'Please provide a valid meeting link (http or https).',
+    'interview_mode_invalid' => 'Please choose whether the interview is online or on-site.',
+    'status_withdrawn_not_allowed' => 'Withdrawn can only be set by the candidate.',
+    'closes_at_after_or_equal' => 'The closing date must be today or later.',
+    'closes_at_date' => 'Please provide a valid closing date.',
     
     // Password validation
     'current_password_required' => 'Current password is required.',

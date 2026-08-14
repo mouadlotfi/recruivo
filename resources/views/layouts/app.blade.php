@@ -7,7 +7,7 @@
     <script>
         (function() {
             var theme = localStorage.getItem('recruivo:theme');
-            if (theme === 'dark') document.documentElement.classList.add('dark');
+            if (theme !== 'light') document.documentElement.classList.add('dark');
         })();
     </script>
 
@@ -50,6 +50,9 @@
     @stack('styles')
 </head>
 <body class="bg-stone-50 text-stone-900 antialiased transition-colors duration-300 dark:bg-stone-950 dark:text-stone-100">
+    <a href="#main-content" class="sr-only z-[100] rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+        {{ __('common.skip_to_content') }}
+    </a>
     <div class="min-h-screen flex flex-col pb-16 sm:pb-0">
         <div class="relative isolate overflow-hidden flex-1">
             <div class="pointer-events-none absolute inset-x-0 top-0 -z-10">
@@ -59,13 +62,14 @@
             
             @include('partials.header')
             
-            <main class="mx-auto max-w-6xl px-4 pb-20 pt-10 sm:px-6 sm:pb-16">
+            <main id="main-content" tabindex="-1" class="mx-auto max-w-6xl px-4 pb-20 pt-10 sm:px-6 sm:pb-16">
                 @yield('content')
             </main>
         </div>
         
         @include('partials.footer')
         @include('partials.mobile-nav')
+        @include('partials.scroll-to-top')
     </div>
     
     @stack('scripts')

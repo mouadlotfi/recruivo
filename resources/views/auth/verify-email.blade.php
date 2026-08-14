@@ -42,5 +42,9 @@
         </form>
     </div>
 </div>
+
+@if(auth()->user()?->hasRole('Candidate') && session('show_preferences_picker'))
+    @include('profile.partials.preference-modal')
+@endif
 @endsection
 

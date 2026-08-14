@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Recruiter;
 
 use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Application;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -14,22 +15,21 @@ class DashboardController extends Controller
         $company = $user->company;
 
         if (!$company) {
-            return redirect(localized_route('home'))->with('error', __('recruiter.company_required'));
+            return redirect(localized_route('profile.edit'))->with('error', __('recruiter.company_required'));
         }
 
         $totalJobs = $company->jobs()->count();
         $activeJobs = $company->jobs()->published()->count();
-        $totalApplications = $company->jobs()->withCount('applications')->get()->sum('applications_count');
-        $pendingApplications = $company->jobs()
-            ->with(['applications' => function ($query) {
-                $query->where('status', ApplicationStatus::Pending);
-            }])
-            ->get()
-            ->sum(function ($job) {
-                return $job->applications->count();
-            });
+        $companyApplications = Application::query()->whereHas(
+            'job',
+            fn ($query) => $query->where('company_id', $company->id)
+        );
+        $totalApplications = (clone $companyApplications)->count();
+        $pendingApplications = (clone $companyApplications)
+            ->where('status', ApplicationStatus::Pending->value)
+            ->count();
 
-        $recentApplications = \App\Models\Application::whereHas('job', function ($query) use ($company) {
+        $recentApplications = Application::whereHas('job', function ($query) use ($company) {
             $query->where('company_id', $company->id);
         })
             ->with(['candidate', 'job'])

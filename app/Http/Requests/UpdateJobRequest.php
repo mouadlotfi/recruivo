@@ -22,6 +22,7 @@ class UpdateJobRequest extends FormRequest
             'category' => ['nullable', 'string', 'max:100'],
             'remote_type' => ['sometimes', 'required', 'in:remote,hybrid,onsite'],
             'status' => ['sometimes', 'required', 'in:draft,published'],
+            'closes_at' => ['sometimes', 'nullable', 'date', 'after_or_equal:today'],
         ];
     }
 }

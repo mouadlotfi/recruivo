@@ -76,6 +76,18 @@ class Post extends Model
         return localized_route('posts.show', $this->getLocalizedSlugAttribute());
     }
 
+    public function getFeaturedImageUrlAttribute(): string
+    {
+        $url = (string) $this->featured_image;
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if ($url === '' || in_array($host, ['via.placeholder.com', 'placeholder.com'], true)) {
+            return asset('images/post-placeholder.svg');
+        }
+
+        return $url;
+    }
+
     /**
      * Scope a query to only include published posts.
      *

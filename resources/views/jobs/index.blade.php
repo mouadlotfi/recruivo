@@ -2,23 +2,27 @@
 
 @section('content')
 <div class="space-y-8">
-    <!-- Header -->
-    <div>
+    @php($isRecruiter = auth()->user()?->hasRole('Recruiter') ?? false)
+    <header>
         <h1 class="text-3xl font-bold text-stone-900 dark:text-white">
-            {{ __('jobs.find_opportunity') }}
+            {{ $isRecruiter ? __('jobs.recruiter_explore_title') : __('jobs.find_opportunity') }}
         </h1>
         <p class="mt-2 text-stone-600 dark:text-stone-400">
-            {{ __('jobs.discover_jobs') }}
+            {{ $isRecruiter ? __('jobs.recruiter_explore_subtitle') : __('jobs.discover_jobs') }}
         </p>
-    </div>
+    </header>
 
     <!-- Results -->
     <div>
+        @if(!empty($hasPreferences))
+            <h2 class="mb-4 text-xl font-semibold text-stone-900 dark:text-white">{{ __('jobs.recommended_for_you') }}</h2>
+        @endif
         @if(count($jobs) > 0)
-            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                @foreach($jobs as $job)
-                    <x-job-card :job="$job" />
-                @endforeach
+            <div data-infinite-scroll data-infinite-key="jobs" data-infinite-response="json" data-next-url="{{ $jobs->nextPageUrl() }}" data-show-more-label="{{ __('common.show_more') }}" data-loading-label="{{ __('common.loading_more') }}" data-retry-label="{{ __('common.load_more_failed') }}">
+                <div class="grid gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3" data-infinite-items>
+                    @include('jobs.partials.cards', ['jobs' => $jobs])
+                </div>
+
             </div>
         @else
             <div class="rounded-xl border border-stone-200/60 bg-white/60 p-12 text-center backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/40">
@@ -37,12 +41,6 @@
             </div>
         @endif
 
-        <!-- Pagination -->
-        @if($jobs->hasPages())
-            <div class="mt-8">
-                <x-pagination :paginator="$jobs" />
-            </div>
-        @endif
     </div>
 </div>
 @endsection

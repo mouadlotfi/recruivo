@@ -13,10 +13,27 @@ class CandidateProfile extends Model
         'user_id',
         'headline',
         'experience',
+        'education',
+        'languages',
         'skills',
         'resume_path',
         'linkedin_url',
         'portfolio_url',
+        'github_url',
+        'website_url',
+        'languages_data',
+        'profile_links',
+        'experiences',
+        'educations',
+        'preferred_categories',
+    ];
+
+    protected $casts = [
+        'languages_data' => 'array',
+        'profile_links' => 'array',
+        'experiences' => 'array',
+        'educations' => 'array',
+        'preferred_categories' => 'array',
     ];
 
     public function user()

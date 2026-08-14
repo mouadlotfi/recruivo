@@ -11,14 +11,14 @@ trait FormatsAuthenticatedUsers
         $user->loadMissing(['company', 'candidateProfile']);
 
         $personalEmail = $user->email;
-        $companyEmail = $user->company?->email;
+
 
         $response = [
             'id' => $user->id,
             'name' => $user->isRecruiter() ? $user->display_name : $user->name,
             'email' => $personalEmail,
             'personal_email' => $personalEmail,
-            'company_contact_email' => $companyEmail,
+
             'email_verified_at' => $user->email_verified_at,
             'company_id' => $user->company_id,
             'is_recruiter' => $user->is_recruiter,
@@ -32,7 +32,7 @@ trait FormatsAuthenticatedUsers
                 'id' => $user->company->id,
                 'name' => $user->company->name,
                 'slug' => $user->company->slug,
-                'email' => $user->company->email,
+
                 'logo_url' => $user->company->logo_url,
                 'tagline' => $user->company->tagline,
                 'location' => $user->company->location,

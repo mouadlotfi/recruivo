@@ -15,7 +15,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             <span class="hidden sm:inline">{{ __('recruiter.post_new_job') }}</span>
-            <span class="sm:hidden">{{ __('Post Job') }}</span>
+            <span class="sm:hidden">{{ __('recruiter.post_new_job') }}</span>
         </a>
     </div>
 
@@ -48,16 +48,23 @@
             </a>
         </div>
     @else
-        <div class="space-y-4">
+        <div data-infinite-scroll data-infinite-key="recruiter-jobs" data-next-url="{{ $jobs->nextPageUrl() }}" data-show-more-label="{{ __('common.show_more') }}" data-loading-label="{{ __('common.loading_more') }}" data-retry-label="{{ __('common.load_more_failed') }}">
+        <div class="space-y-4" data-infinite-items>
             @foreach($jobs as $job)
-                <div class="rounded-xl border border-stone-200/60 bg-white/80 p-4 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60 transition hover:border-amber-200 dark:hover:border-amber-800 sm:p-6">
+                <article data-recruiter-job-card class="group relative rounded-xl border border-stone-200/60 bg-white/80 p-4 backdrop-blur transition hover:border-amber-300 hover:shadow-md dark:border-stone-700/60 dark:bg-stone-900/60 dark:hover:border-amber-700 sm:p-6">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div class="flex-1">
                             <div class="flex items-center gap-3 mb-2">
-                                <h3 class="text-xl font-semibold text-stone-900 dark:text-white">
-                                    {{ $job->title }}
+                                <h3 class="text-xl font-semibold text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
+                                    <a href="{{ localized_route('recruiter.jobs.show', $job) }}" class="before:absolute before:inset-0 focus:outline-none focus-visible:before:rounded-xl focus-visible:before:ring-2 focus-visible:before:ring-amber-500 focus-visible:before:ring-offset-2 dark:focus-visible:before:ring-offset-stone-950">
+                                        {{ $job->title }}
+                                    </a>
                                 </h3>
-                                @if($job->status->value === 'published')
+                                @if($job->isExpired())
+                                    <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400">
+                                        {{ __('recruiter.expired') }}
+                                    </span>
+                                @elseif($job->status->value === 'published')
                                     <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-500/10 dark:text-green-400">
                                         <svg class="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 8 8">
                                             <circle cx="4" cy="4" r="3" />
@@ -101,8 +108,7 @@
                                     <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                                     </svg>
-                                    <span class="font-medium text-stone-900 dark:text-white">{{ $job->applications_count }}</span>
-                                    <span class="text-stone-600 dark:text-stone-400">{{ trans_choice('recruiter.applications_count', $job->applications_count) }}</span>
+                                    <span class="text-stone-600 dark:text-stone-400">{{ trans_choice('recruiter.applications_count', $job->applications_count, ['count' => $job->applications_count]) }}</span>
                                 </div>
                                 <div class="text-stone-500 dark:text-stone-500">
                                     {{ __('recruiter.posted_time', ['time' => $job->created_at->diffForHumans()]) }}
@@ -110,7 +116,7 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-2 sm:ml-4">
+                        <div data-job-actions class="relative z-10 flex flex-wrap items-center gap-2 sm:ml-4">
                             <a 
                                 href="{{ localized_route('recruiter.jobs.applications', $job) }}" 
                                 class="inline-flex items-center justify-center rounded-lg bg-stone-100 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
@@ -165,7 +171,7 @@
 
                                 <!-- Delete Job Modal -->
                                 <template x-teleport="body">
-                                    <div x-show="showModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                                    <div x-show="showModal" x-cloak @keydown.escape.window="showModal = false" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
                                         <div class="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                                             <!-- Background overlay -->
                                             <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm transition-opacity" @click="showModal = false"></div>
@@ -174,7 +180,7 @@
                                             <span class="hidden sm:inline-block sm:h-screen sm:align-middle">&#8203;</span>
 
                                             <!-- Modal panel -->
-                                            <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block transform overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 text-left align-bottom shadow-2xl backdrop-blur transition-all dark:border-stone-700/60 dark:bg-stone-900/95 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+                                            <div x-show="showModal" x-trap.noscroll="showModal" role="dialog" aria-modal="true" aria-labelledby="delete-job-title-{{ $job->id }}" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block transform overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 text-left align-bottom shadow-2xl backdrop-blur transition-all dark:border-stone-700/60 dark:bg-stone-900/95 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
                                                 <div class="p-6 sm:p-8">
                                                     <div class="flex items-start">
                                                         <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
@@ -184,7 +190,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="mt-4 text-center">
-                                                        <h3 class="text-xl font-semibold text-stone-900 dark:text-white">
+                                                        <h3 id="delete-job-title-{{ $job->id }}" class="text-xl font-semibold text-stone-900 dark:text-white">
                                                             {{ __('recruiter.delete_job_title') }}
                                                         </h3>
                                                         <div class="mt-3">
@@ -213,16 +219,10 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </article>
             @endforeach
         </div>
-
-        <!-- Pagination -->
-        @if($jobs->hasPages())
-            <div class="mt-6">
-                {{ $jobs->links() }}
-            </div>
-        @endif
+        </div>
     @endif
 </div>
 @endsection

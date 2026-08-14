@@ -57,7 +57,7 @@ class UserRegistrationService
             'size',
             'mission',
             'culture',
-            'email',
+
         ]);
 
         // Filter out empty values
@@ -89,9 +89,9 @@ class UserRegistrationService
         ];
 
         if ($isRecruiter) {
-            // For recruiters, use personal email for login
+            // Company accounts use the company identity instead of a personal name.
             $userData['email'] = $data['email'];
-            $userData['name'] = $data['name'] ?? null;
+            $userData['name'] = Arr::get($data, 'company.name');
             $userData['phone'] = null;
             $userData['job_title'] = Arr::get($data, 'company.job_title');
         } else {
@@ -131,7 +131,7 @@ class UserRegistrationService
      */
     protected function createCandidateProfile(User $user, UploadedFile $resumeFile): CandidateProfile
     {
-        $resumePath = $resumeFile->store('resumes', 'public');
+        $resumePath = $resumeFile->store('resumes', 'private');
         
         return CandidateProfile::create([
             'user_id' => $user->id,

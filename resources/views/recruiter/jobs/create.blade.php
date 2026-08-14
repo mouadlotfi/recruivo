@@ -33,7 +33,7 @@
     @endif
 
     <div class="rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
-        <form method="POST" action="{{ localized_route('recruiter.jobs.store') }}" class="space-y-6">
+        <form method="POST" action="{{ localized_route('recruiter.jobs.store') }}" class="space-y-6" x-data="{ salaryMin: @js(old('salary_min', '')) }">
             @csrf
 
             <div class="grid gap-6 md:grid-cols-2">
@@ -61,6 +61,7 @@
                         name="location"
                         type="text"
                         value="{{ old('location') }}"
+                        required
                         class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
                         placeholder="{{ __('recruiter.location_placeholder') }}"
                     />
@@ -89,6 +90,7 @@
                     <select
                         id="category"
                         name="category"
+                        required
                         class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
                     >
                         <option value="">{{ __('recruiter.select_category') }}</option>
@@ -108,6 +110,7 @@
                     <select
                         id="remote_type"
                         name="remote_type"
+                        required
                         class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
                     >
                         <option value="">{{ __('recruiter.select_remote_type') }}</option>
@@ -124,12 +127,28 @@
                     <select
                         id="status"
                         name="status"
+                        required
                         class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
                     >
                         <option value="draft" {{ old('status') === 'draft' ? 'selected' : '' }}>{{ __('recruiter.draft') }}</option>
                         <option value="published" {{ old('status') === 'published' ? 'selected' : '' }}>{{ __('recruiter.published') }}</option>
                     </select>
                 </div>
+            </div>
+
+            <div class="space-y-2">
+                <label for="closes_at" class="text-sm font-medium text-stone-700 dark:text-stone-200">
+                    {{ __('recruiter.closing_date') }}
+                </label>
+                <input
+                    id="closes_at"
+                    name="closes_at"
+                    type="date"
+                    min="{{ today()->toDateString() }}"
+                    value="{{ old('closes_at') }}"
+                    class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
+                >
+                <p class="text-xs text-stone-500 dark:text-stone-400">{{ __('recruiter.closing_date_help') }}</p>
             </div>
 
             <div class="grid gap-6 md:grid-cols-2">
@@ -142,6 +161,9 @@
                         name="salary_min"
                         type="number"
                         value="{{ old('salary_min') }}"
+                        required
+                        min="0"
+                        x-model.number="salaryMin"
                         class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
                         placeholder="{{ __('recruiter.salary_placeholder_min') }}"
                     />
@@ -156,6 +178,8 @@
                         name="salary_max"
                         type="number"
                         value="{{ old('salary_max') }}"
+                        required
+                        :min="salaryMin || 0"
                         class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500"
                         placeholder="{{ __('recruiter.salary_placeholder_max') }}"
                     />

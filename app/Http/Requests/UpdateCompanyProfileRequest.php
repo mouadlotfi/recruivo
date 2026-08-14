@@ -25,7 +25,7 @@ class UpdateCompanyProfileRequest extends FormRequest
             'location' => 'sometimes|nullable|string|max:255',
             'website_url' => 'sometimes|nullable|url|max:255',
             'linkedin_url' => 'sometimes|nullable|url|max:255',
-            'email' => 'sometimes|nullable|email|max:255',
+
             'size' => 'sometimes|nullable|string|max:50',
             'founded_year' => 'sometimes|nullable|integer|min:1800|max:' . date('Y'),
             'mission' => 'sometimes|nullable|string',
@@ -45,7 +45,7 @@ class UpdateCompanyProfileRequest extends FormRequest
             'location.max' => __('validation.location_max', ['max' => 255]),
             'website_url.url' => __('validation.website_url_invalid'),
             'linkedin_url.url' => __('validation.linkedin_url_invalid'),
-            'email.email' => __('validation.email_invalid'),
+
             'size.max' => __('validation.company_size_max', ['max' => 50]),
             'founded_year.integer' => __('validation.founded_year_invalid'),
             'founded_year.min' => __('validation.founded_year_min', ['min' => 1800]),

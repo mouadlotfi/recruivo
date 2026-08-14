@@ -9,35 +9,19 @@
     ];
 @endphp
 
-<div x-data="{ show: true }" x-show="show" x-transition {{ $attributes->merge(['class' => 'rounded-lg border p-4 relative ' . ($classes[$type] ?? $classes['info'])]) }}>
-    <div class="flex items-start justify-between">
-        <div class="flex-1">
+<div data-alert x-data="{ show: true }" x-show="show" x-transition @if($dismissible) x-init="setTimeout(() => show = false, 5000)" @endif role="status" {{ $attributes->merge(['class' => 'rounded-xl border px-4 py-2.5 ' . ($classes[$type] ?? $classes['info'])]) }}>
+    <div class="flex items-center gap-3">
+        <div class="min-w-0 flex-1 text-sm leading-5 sm:text-base sm:leading-6">
             {{ $slot }}
         </div>
         @if($dismissible)
-            <button @click="show = false" type="button" class="ml-3 inline-flex flex-shrink-0 rounded-md p-1.5 hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $type === 'success' ? 'text-green-600 dark:text-green-400 focus:ring-green-500' : ($type === 'error' ? 'text-red-600 dark:text-red-400 focus:ring-red-500' : 'text-blue-600 dark:text-blue-400 focus:ring-blue-500') }}">
+            <button @click="show = false" type="button" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-offset-1 {{ $type === 'success' ? 'text-green-600 dark:text-green-400 focus:ring-green-500' : ($type === 'error' ? 'text-red-600 dark:text-red-400 focus:ring-red-500' : 'text-blue-600 dark:text-blue-400 focus:ring-blue-500') }}">
                 <span class="sr-only">{{ __('common.dismiss') }}</span>
-                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                 </svg>
             </button>
         @endif
     </div>
 </div>
-
-@if($dismissible)
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('[x-data*="show"]');
-                alerts.forEach(function(alert) {
-                    const alpineData = alert.__x;
-                    if (alpineData && alpineData.$data.show !== undefined) {
-                        alpineData.$data.show = false;
-                    }
-                });
-            }, 5000); // Auto-dismiss after 5 seconds
-        });
-    </script>
-@endif
 

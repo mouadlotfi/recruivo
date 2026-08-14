@@ -21,6 +21,8 @@ class JobResource extends JsonResource
             'salary_max' => $this->salary_max,
             'status' => $this->status instanceof \App\Enums\JobStatus ? $this->status->value : $this->status,
             'published_at' => optional($this->published_at)->toIso8601String(),
+            'closes_at' => $this->closes_at?->toDateString(),
+            'is_expired' => $this->isExpired(),
             'excerpt' => Str::limit(strip_tags($this->description), 180),
             'applications_count' => $this->whenCounted('applications'),
             'company' => CompanySummaryResource::make($this->whenLoaded('company')),

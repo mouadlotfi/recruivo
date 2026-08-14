@@ -14,12 +14,16 @@ class CandidateProfileFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'headline' => $this->faker->sentence(),
-            'experience' => $this->faker->paragraphs(3, true),
-            'skills' => implode(', ', $this->faker->words(6)),
+            'headline' => 'Software Engineer',
+            'experience' => 'Built and maintained customer-facing software, improved automated test coverage, and collaborated with product teams to deliver reliable features.',
+            'education' => 'Bachelor’s degree in Computer Science',
+            'languages' => 'English, French',
+            'skills' => 'PHP, Laravel, JavaScript, SQL, Docker, Automated Testing',
             'resume_path' => 'resumes/'.$this->faker->uuid.'.pdf',
             'linkedin_url' => $this->faker->url(),
             'portfolio_url' => $this->faker->url(),
+            'github_url' => 'https://github.com/'.$this->faker->userName(),
+            'website_url' => $this->faker->url(),
         ];
     }
 }

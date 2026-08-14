@@ -52,7 +52,7 @@ class UserController extends Controller
             ], 422);
         }
 
-        $this->userAccountDeletionService->delete($user);
+        $this->userAccountDeletionService->deleteUserAccount($user, false);
 
         return response()->json([
             'message' => 'User deleted successfully.'

@@ -36,10 +36,16 @@ class NewApplicationNotification extends Notification
 
     public function toArray($notifiable): array
     {
+        $this->application->loadMissing(['job.company', 'candidate']);
+
         return [
+            'kind' => 'new_application',
             'job_id' => $this->application->job_id,
             'application_id' => $this->application->id,
             'candidate_id' => $this->application->candidate_id,
+            'candidate_name' => $this->application->candidate->name,
+            'job_title' => $this->application->job->title,
+            'company_name' => $this->application->job->company?->name,
         ];
     }
 }

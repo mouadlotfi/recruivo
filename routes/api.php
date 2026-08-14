@@ -48,24 +48,25 @@ Route::get('/companies/{slug}/logo', [CompanyLogoController::class, 'show'])->na
 Route::get('/search/suggestions', [\App\Http\Controllers\Api\SearchController::class, 'suggestions'])->name('api.search.suggestions');
 
 // Authentication routes
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth-login');
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth-register');
 
 // Email verification routes (no authentication required)
 Route::post('/email/verification-notification', function (Request $request) {
     $request->validate([
-        'email' => 'required|email|exists:users,email'
+        'email' => 'required|email'
     ]);
 
     $user = \App\Models\User::where('email', $request->email)->first();
     
     if ($user && !$user->hasVerifiedEmail()) {
         $user->sendEmailVerificationNotification();
-        return response()->json(['message' => 'Verification link sent']);
     }
 
-    return response()->json(['message' => 'Email already verified or not found'], 400);
-})->middleware('throttle:6,1')->name('verification.resend');
+    return response()->json([
+        'message' => 'If the account exists and needs verification, a link has been sent.',
+    ]);
+})->middleware('throttle:verification-email')->name('verification.resend');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -106,6 +107,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Candidate routes
     Route::middleware('role:Candidate')->group(function () {
         Route::get('/candidate/applications', [\App\Http\Controllers\Api\Candidate\ApplicationController::class, 'index']);
+        Route::get('/candidate/resume', [\App\Http\Controllers\Candidate\ResumeController::class, 'view'])
+            ->name('api.candidate.resume');
     });
 
     Route::middleware('role:Admin')->prefix('admin')->group(function () {

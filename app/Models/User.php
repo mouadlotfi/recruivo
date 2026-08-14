@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -19,6 +20,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
     protected $fillable = [
         'company_id',
         'is_recruiter',
+        'is_demo',
         'name',
         'email',
         'password',
@@ -44,7 +46,19 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'password' => 'hashed',
         'email_change_requested_at' => 'datetime',
         'last_login_at' => 'datetime',
+        'is_demo' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            if ($user->is_demo) {
+                throw ValidationException::withMessages([
+                    'account' => __('common.demo_account_cannot_be_deleted'),
+                ]);
+            }
+        });
+    }
 
     public function jobs()
     {
@@ -59,6 +73,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function applications()
     {
         return $this->hasMany(Application::class, 'candidate_id');
+    }
+
+    public function noteTemplates()
+    {
+        return $this->hasMany(RecruiterNoteTemplate::class, 'recruiter_id');
+    }
+
+    public function savedJobs()
+    {
+        return $this->belongsToMany(Job::class, 'saved_jobs')->withTimestamps();
     }
 
     public function candidateProfile()
@@ -87,7 +111,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
             return null;
         }
 
-        return asset('storage/' . $this->candidateProfile->resume_path);
+        return route('api.candidate.resume');
     }
 
     /**
@@ -102,6 +126,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
             'verification.verify',
             now()->addMinutes(config('auth.verification.expire', 60)),
             [
+                'locale' => app()->getLocale() ?: config('locales.default', 'en'),
                 'id' => $this->getKey(),
                 'hash' => sha1($this->getEmailForVerification()),
             ]
@@ -135,7 +160,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function getEmailChangeVerificationUrl(): string
     {
         // Generate backend route URL
-        $url = route('profile.email.verify', [
+        $url = URL::temporarySignedRoute('profile.email.verify', now()->addHour(), [
             'locale' => app()->getLocale(),
             'id' => $this->getKey(),
             'hash' => sha1($this->pending_email ?? $this->email),
@@ -150,6 +175,33 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function isRecruiter(): bool
     {
         return $this->is_recruiter || $this->hasRole('Recruiter');
+    }
+
+    /**
+     * Compute profile completion score from 5 signals (20% each).
+     */
+    public function profileCompletion(): array
+    {
+        $profile = $this->relationLoaded('candidateProfile')
+            ? $this->candidateProfile
+            : $this->candidateProfile()->first();
+
+        $items = [
+            'headline' => filled($profile?->headline),
+            'profile_summary' => filled($this->profile_summary),
+            'skills' => filled($profile?->skills),
+            'resume' => filled($profile?->resume_path),
+            'experience' => ! empty($profile?->experiences),
+        ];
+
+        $completed = count(array_filter($items));
+
+        return [
+            'percentage' => $completed * 20,
+            'completed' => $completed,
+            'total' => count($items),
+            'missing' => array_keys(array_filter($items, fn (bool $complete) => ! $complete)),
+        ];
     }
 
     /**

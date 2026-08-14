@@ -23,7 +23,7 @@ class JobPolicy
         }
 
         // Candidates can view published jobs
-        return $job->status->value === 'published';
+        return $job->isPubliclyVisible();
     }
 
     /**

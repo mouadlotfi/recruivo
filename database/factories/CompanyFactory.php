@@ -20,14 +20,14 @@ class CompanyFactory extends Factory
         return [
             'name' => $name,
             'slug' => Company::generateUniqueSlug($name.'-'.Str::random(4)),
-            'tagline' => $this->faker->catchPhrase(),
-            'location' => $this->faker->city().', '.$this->faker->country(),
+            'tagline' => 'Practical technology for ambitious teams',
+            'location' => $this->faker->randomElement(['Casablanca, Morocco', 'Dublin, Ireland', 'Berlin, Germany', 'Paris, France', 'London, United Kingdom']),
             'website_url' => $this->faker->url(),
             'linkedin_url' => 'https://www.linkedin.com/company/'.Str::slug($name),
             'size' => $this->faker->randomElement(['1-10', '11-50', '51-200', '201-500', '500+']),
             'founded_year' => $this->faker->numberBetween(1990, now()->year),
-            'mission' => $this->faker->paragraph(),
-            'culture' => $this->faker->paragraph(),
+            'mission' => 'Build useful technology that helps customers work more effectively and make confident decisions.',
+            'culture' => 'The team values clear communication, dependable delivery, continuous learning, and shared ownership of customer outcomes.',
         ];
     }
 }

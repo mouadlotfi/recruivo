@@ -10,6 +10,9 @@ return [
     // Stats
     'total_applications' => 'Total des candidatures',
     'pending' => 'En attente',
+    'in_progress' => 'En cours',
+    'shortlisted' => 'Présélectionnée',
+    'interview' => 'Entretien',
     'accepted' => 'Acceptée',
     'rejected' => 'Rejetée',
     
@@ -31,5 +34,16 @@ return [
     'tip_1' => 'Gardez votre profil et CV à jour',
     'tip_2' => 'Rédigez des lettres de motivation personnalisées pour chaque candidature',
     'tip_3' => 'Faites un suivi régulier de vos candidatures',
+
+    // Profile Completion
+    'profile_completion' => 'Complétion du profil',
+    'profile_completion_help' => 'Complétez votre profil pour vous démarquer auprès des recruteurs',
+    'profile_complete' => 'Votre profil est complet !',
+    'completion_headline' => 'Ajoutez un titre professionnel',
+    'completion_profile_summary' => 'Ajoutez un résumé de profil',
+    'completion_skills' => 'Ajoutez vos compétences',
+    'completion_resume' => 'Téléversez un CV',
+    'completion_experience' => 'Ajoutez au moins une expérience professionnelle',
+    'complete_profile' => 'Compléter le profil',
 ];
 

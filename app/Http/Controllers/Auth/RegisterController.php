@@ -27,6 +27,10 @@ class RegisterController extends Controller
         // Auto-login the user so they can access the verification notice page
         auth()->login($user);
 
+        if ($user->hasRole('Candidate')) {
+            session()->put('show_preferences_picker', true);
+        }
+
         // Send email verification notification directly
         // Note: We send it directly to avoid duplicate emails from event listeners
         $user->sendEmailVerificationNotification();

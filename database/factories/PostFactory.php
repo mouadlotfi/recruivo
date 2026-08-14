@@ -26,9 +26,10 @@ class PostFactory extends Factory
      */
     public function definition(): array
     {
-        $titleEn = fake()->sentence();
-        $titleFr = fake('fr_FR')->sentence();
-        $titleAr = 'مقالة عن ' . fake()->word();
+        $edition = fake()->unique()->numberBetween(1, 100000);
+        $titleEn = "A Practical Guide to Better Hiring — Edition {$edition}";
+        $titleFr = "Guide pratique pour un meilleur recrutement — Édition {$edition}";
+        $titleAr = "دليل عملي لتوظيف أفضل — الإصدار {$edition}";
 
         return [
             'user_id' => User::factory(),
@@ -43,11 +44,11 @@ class PostFactory extends Factory
                 'ar' => Str::slug($titleAr),
             ],
             'content' => [
-                'en' => fake()->paragraphs(5, true),
-                'fr' => fake('fr_FR')->paragraphs(5, true),
-                'ar' => 'محتوى المقالة باللغة العربية. ' . fake()->paragraphs(3, true),
+                'en' => 'A good hiring process starts with clear expectations. Describe the outcome of the role, explain how the team works, and tell candidates what each interview stage will cover. Direct communication helps everyone make better decisions and avoids wasting time.',
+                'fr' => 'Un bon processus de recrutement commence par des attentes claires. Décrivez le résultat attendu du poste, expliquez le fonctionnement de l’équipe et précisez le contenu de chaque étape. Une communication directe aide chacun à prendre une meilleure décision.',
+                'ar' => 'تبدأ عملية التوظيف الجيدة بتوقعات واضحة. اشرح نتائج الدور وطريقة عمل الفريق ومحتوى كل مرحلة من مراحل المقابلة. يساعد التواصل المباشر الجميع على اتخاذ قرارات أفضل ويحترم وقت المرشحين.',
             ],
-            'featured_image' => fake()->imageUrl(800, 600, 'blog', true),
+            'featured_image' => '/images/post-placeholder.svg',
             'is_published' => fake()->boolean(80),
             'published_at' => fake()->dateTimeBetween('-1 year', 'now'),
         ];

@@ -7,12 +7,19 @@ use App\Notifications\AccountDeletedNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class UserAccountDeletionService
 {
     public function deleteUserAccount(User $user, bool $initiatedByUser = true): void
     {
-        $user->loadMissing(['candidateProfile', 'jobs.applications']);
+        if ($user->is_demo) {
+            throw ValidationException::withMessages([
+                'account' => __('common.demo_account_cannot_be_deleted'),
+            ]);
+        }
+
+        $user->loadMissing('candidateProfile');
 
         $email = $user->email;
         $name = $user->name ?? $user->email; // For recruiters who might not have a name
@@ -34,19 +41,10 @@ class UserAccountDeletionService
 
         $paths = $paths->merge($candidateApplicationResumes);
 
-        if ($user->hasRole('Recruiter')) {
-            $recruiterApplicationResumes = $user->jobs
-                ->flatMap(fn ($job) => $job->applications->pluck('resume_path'))
-                ->filter()
-                ->all();
-
-            $paths = $paths->merge($recruiterApplicationResumes);
-        }
-
         $paths->filter()
             ->unique()
             ->each(function (string $path) {
-                Storage::disk('public')->delete($path);
+                Storage::disk('private')->delete($path);
             });
 
         $user->tokens()->delete();

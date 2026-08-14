@@ -56,7 +56,7 @@ RUN composer dump-autoload --optimize --no-dev
 # =============================================================================
 # Stage 3: Final production image
 # =============================================================================
-FROM php:8.2-apache AS final
+FROM php:8.2-apache AS production
 
 # Build arguments for flexibility
 ARG APP_ENV=production
@@ -132,6 +132,7 @@ COPY --from=node-builder /app/public/build ./public/build
 # Create Laravel directories with correct permissions
 RUN mkdir -p \
         storage/app/public \
+        storage/app/private \
         storage/framework/cache/data \
         storage/framework/sessions \
         storage/framework/views \
@@ -158,3 +159,24 @@ EXPOSE 80
 # Entrypoint
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
+
+FROM production AS development
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+RUN composer install \
+        --prefer-dist \
+        --no-interaction \
+        --no-progress \
+        --no-scripts \
+    && composer dump-autoload --optimize
+
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug \
+    && printf '%s\n' \
+        'xdebug.mode=develop,debug' \
+        'xdebug.client_host=host.docker.internal' \
+        'xdebug.start_with_request=trigger' \
+        > /usr/local/etc/php/conf.d/xdebug.ini
+
+FROM production AS final

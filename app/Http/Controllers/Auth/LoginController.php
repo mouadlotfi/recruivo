@@ -20,10 +20,15 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // Check if email is verified
-        $user = \App\Models\User::where('email', $credentials['email'])->first();
+        if (!Auth::validate($credentials)) {
+            return back()->withErrors([
+                'email' => __('auth.invalid_credentials'),
+            ])->withInput();
+        }
 
-        if ($user && !$user->hasVerifiedEmail()) {
+        $user = \App\Models\User::where('email', $credentials['email'])->firstOrFail();
+
+        if (!$user->hasVerifiedEmail()) {
             return back()->withErrors([
                 'email' => __('auth.email_not_verified'),
             ])->withInput();
@@ -46,12 +51,14 @@ class LoginController extends Controller
                 return redirect()->intended(localized_route('admin.dashboard'));
             }
 
+            if ($user->hasRole('Recruiter')) {
+                return redirect()->intended(localized_route('recruiter.dashboard'));
+            }
+
             return redirect()->intended(localized_route('home'));
         }
 
-        return back()->withErrors([
-            'email' => __('auth.invalid_credentials'),
-        ])->withInput();
+        abort(500, 'Authentication validation succeeded but login failed.');
     }
 
     public function logout(Request $request)
