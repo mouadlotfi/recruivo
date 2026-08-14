@@ -27,7 +27,6 @@ class PaginationRemovalTest extends TestCase
             'candidate/applications.blade.php',
             'recruiter/jobs/index.blade.php',
             'recruiter/applications/index.blade.php',
-            'recruiter/applicants/index.blade.php',
 
             'admin/users.blade.php',
         ];

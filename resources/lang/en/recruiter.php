@@ -15,6 +15,7 @@ return [
     'recent_applications' => 'Recent Applications',
     'all_applications' => 'Applications',
     'review_application' => 'Review application',
+    'select_status' => 'Select status…',
     'view_all_jobs' => 'View all jobs →',
     'no_applications_yet' => 'No applications yet',
     'applications_will_appear' => 'Applications will appear here once candidates start applying to your jobs.',

@@ -13,7 +13,7 @@
     ];
 @endphp
 
-<div class="group relative rounded-xl border border-stone-200/60 bg-white/80 p-6 shadow-sm transition hover:shadow-md dark:border-stone-700/60 dark:bg-stone-900/60">
+<div class="group relative h-full rounded-xl border border-stone-200/60 bg-white/80 p-6 shadow-sm transition hover:shadow-md dark:border-stone-700/60 dark:bg-stone-900/60">
     {{-- Applied Badge + Bookmark Control --}}
     @if($userHasApplied || $isCandidate)
         <div class="absolute right-3 top-3 z-10 flex items-center gap-2">
@@ -68,7 +68,7 @@
         </div>
     @endif
     
-    <div class="flex items-start gap-4 {{ ($userHasApplied || $isCandidate) ? 'pr-44' : '' }}">
+    <div class="flex items-start gap-4 {{ $userHasApplied ? 'pr-36' : ($isCandidate ? 'pr-16' : '') }}">
             @if($job->company && $job->company->logo_url)
                 <div class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
                     <img src="{{ $job->company->logo_url }}" alt="{{ $job->company->name }}" class="h-full w-full object-cover" />

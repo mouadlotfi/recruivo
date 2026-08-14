@@ -127,8 +127,6 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(\App\Http\Mi
         // Recruiter routes
         Route::middleware('role:Recruiter')->prefix('recruiter')->name('recruiter.')->group(function () {
             Route::get('/dashboard', [\App\Http\Controllers\Recruiter\DashboardController::class, 'index'])->name('dashboard');
-            Route::get('/applicants', [\App\Http\Controllers\Recruiter\ApplicantController::class, 'index'])->name('applicants.index');
-            Route::get('/applicants/{applicant}', [\App\Http\Controllers\Recruiter\ApplicantController::class, 'show'])->name('applicants.show');
 
             Route::resource('jobs', \App\Http\Controllers\Recruiter\JobController::class);
             Route::post('/jobs/{job}/toggle', [\App\Http\Controllers\Recruiter\JobController::class, 'toggle'])->name('jobs.toggle');

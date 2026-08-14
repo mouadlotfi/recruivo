@@ -89,7 +89,7 @@ class RoleNavigationTest extends TestCase
         $this->assertStringNotContainsString("__('recruiter.tip_1')", $dashboard);
     }
 
-    public function test_recent_dashboard_applications_link_to_the_applicant_profile(): void
+    public function test_recent_dashboard_applications_link_to_the_job_applications(): void
     {
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create(['email_verified_at' => now()]);
@@ -103,7 +103,6 @@ class RoleNavigationTest extends TestCase
             ->get('/en/recruiter/dashboard')
             ->assertOk()
             ->assertSee('data-recent-applicant-link', false)
-            ->assertSee('href="'.localized_route('recruiter.applicants.show', $candidate).'"', false)
             ->assertSee('href="'.localized_route('recruiter.jobs.applications', $job).'"', false);
     }
 

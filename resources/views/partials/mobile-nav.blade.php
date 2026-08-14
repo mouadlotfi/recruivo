@@ -9,7 +9,7 @@
 @endphp
 
 <nav aria-label="{{ __('common.primary_navigation') }}" class="fixed bottom-0 left-0 right-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur-xl dark:border-stone-800 dark:bg-stone-950/95 sm:hidden">
-    <div class="grid grid-cols-4 gap-1 px-2 py-2">
+    <div class="grid gap-1 px-2 py-2 {{ $isRecruiter ? 'grid-cols-3' : 'grid-cols-4' }}">
         @auth
             @if(!$isRecruiter && ($isCandidate || $isAdmin))
                 <a href="{{ localized_route($isCandidate ? 'candidate.dashboard' : 'admin.dashboard') }}" class="{{ $itemClass }} {{ request()->routeIs($isCandidate ? 'candidate.dashboard' : 'admin.*') ? $activeClass : $inactiveClass }}">
@@ -56,10 +56,6 @@
             <a href="{{ localized_route('recruiter.jobs.index') }}" class="{{ $itemClass }} {{ request()->routeIs('recruiter.jobs.*') && !request()->routeIs('recruiter.jobs.applications') ? $activeClass : $inactiveClass }}">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h10.5M6.75 12h10.5M6.75 17.25h10.5" /></svg>
                 <span class="mt-1 truncate text-[11px] font-medium">{{ __('common.manage') }}</span>
-            </a>
-            <a href="{{ localized_route('recruiter.applicants.index') }}" class="{{ $itemClass }} {{ request()->routeIs('recruiter.applicants.*') ? $activeClass : $inactiveClass }}">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                <span class="mt-1 truncate text-[11px] font-medium">{{ __('recruiter.applicants') }}</span>
             </a>
 
         @elseif($isCandidate)

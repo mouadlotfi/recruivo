@@ -160,6 +160,12 @@ class ProfileController extends Controller
             ]);
         }
 
+        // The picker only shows after email verification; unverified users must
+        // finish verifying first (keep the flag so the modal returns afterwards).
+        if (!$user->hasVerifiedEmail()) {
+            return redirect(localized_route('verification.notice'));
+        }
+
         $request->session()->forget('show_preferences_picker');
 
         return redirect(localized_route('home'));

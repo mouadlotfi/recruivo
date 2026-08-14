@@ -69,17 +69,19 @@
             <div class="space-y-4" data-infinite-items>
                 @foreach($applications as $application)
                     <article class="rounded-2xl border border-stone-200/70 bg-white/85 p-5 shadow-sm backdrop-blur transition hover:border-amber-300/70 sm:p-6 dark:border-stone-800 dark:bg-stone-900/70 dark:hover:border-amber-700/70">
-                        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
-                            <div class="min-w-0 space-y-5">
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">{{ substr($application->candidate->name, 0, 1) }}</div>
-                                    <div class="min-w-0 flex-1">
-                                        <h2 class="truncate text-lg font-semibold text-stone-900 dark:text-white"><a href="{{ localized_route('recruiter.applicants.show', $application->candidate) }}" class="transition hover:text-amber-600 dark:hover:text-amber-400">{{ $application->candidate->name }}</a></h2>
-                                        <p class="truncate text-sm text-stone-600 dark:text-stone-400">{{ $application->candidate->email }}</p>
-                                    </div>
-                                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $statusBadgeClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }}">{{ __('recruiter.'.$application->status->value) }}</span>
+                        <details data-application-card-collapsible class="group" @if($errors->any()) open @endif>
+                            <summary class="flex cursor-pointer list-none flex-wrap items-center gap-3 [&::-webkit-details-marker]:hidden">
+                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">{{ substr($application->candidate->name, 0, 1) }}</div>
+                                <div class="min-w-0 flex-1">
+                                    <h2 class="truncate text-lg font-semibold text-stone-900 dark:text-white">{{ $application->candidate->name }}</h2>
+                                    <p class="truncate text-sm text-stone-600 dark:text-stone-400">{{ $application->candidate->email }}</p>
                                 </div>
+                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $statusBadgeClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }}">{{ __('recruiter.'.$application->status->value) }}</span>
+                                <svg class="h-4 w-4 text-stone-500 transition group-open:rotate-180 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                            </summary>
 
+                            <div class="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                            <div class="min-w-0 space-y-5">
                                 <div class="flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-600 dark:text-stone-400">
                                     <span>{{ __('recruiter.applied_time', ['time' => $application->created_at->diffForHumans()]) }}</span>
                                     <span><strong>{{ __('recruiter.phone') }}</strong> {{ $application->candidate->phone ?? __('recruiter.not_provided') }}</span>
@@ -132,14 +134,15 @@
                                         <p class="mt-2 text-sm leading-5 text-stone-600 dark:text-stone-400">{{ __('recruiter.decision_final_message', ['status' => __('recruiter.'.$application->status->value)]) }}</p>
                                     @endif
                                 @else
-                                    <form action="{{ localized_route('recruiter.applications.update', $application) }}" method="POST" class="space-y-3" x-data="{ status: @js(old('status', $application->status->value)), interviewMode: @js(old('interview_mode', $application->interview_mode ?? 'onsite')), notes: @js(old('notes', $application->notes)) }">
+                                    <form action="{{ localized_route('recruiter.applications.update', $application) }}" method="POST" class="space-y-3" x-data="{ status: @js(old('status', '')), interviewMode: @js(old('interview_mode', 'onsite')), notes: @js(old('notes', '')) }">
                                         @csrf @method('PATCH')
                                         <label for="status-{{ $application->id }}" class="block text-sm font-semibold text-stone-700 dark:text-stone-300">{{ __('recruiter.review_application') }}</label>
                                         <div class="relative">
                                             <select id="status-{{ $application->id }}" name="status" x-model="status" class="min-h-11 w-full appearance-none rounded-lg border border-stone-300 bg-white py-2 pl-3 pr-10 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:focus:ring-amber-500/20">
+                                                <option value="" disabled @selected(old('status', '') === '')>{{ __('recruiter.select_status') }}</option>
                                                 @foreach(\App\Enums\ApplicationStatus::cases() as $optionStatus)
                                                     @continue($optionStatus === \App\Enums\ApplicationStatus::Withdrawn)
-                                                    <option value="{{ $optionStatus->value }}" @selected($application->status === $optionStatus)>{{ __('recruiter.'.$optionStatus->value) }}</option>
+                                                    <option value="{{ $optionStatus->value }}" @selected(old('status', '') === $optionStatus->value)>{{ __('recruiter.'.$optionStatus->value) }}</option>
                                                 @endforeach
                                             </select>
                                             <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
@@ -164,12 +167,12 @@
                                             <div class="space-y-2">
                                                 <span class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ __('recruiter.interview_mode') }}</span>
                                                 <div class="grid grid-cols-2 gap-2">
-                                                    <label class="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition focus-within:ring-2 focus-within:ring-amber-400 dark:focus-within:ring-amber-500/40 {{ old('interview_mode', $application->interview_mode ?? 'onsite') === 'onsite' ? 'border-amber-400 bg-amber-50 dark:bg-amber-500/10' : 'border-stone-300 dark:border-stone-600' }}">
+                                                    <label class="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition focus-within:ring-2 focus-within:ring-amber-400 dark:focus-within:ring-amber-500/40 {{ old('interview_mode', 'onsite') === 'onsite' ? 'border-amber-400 bg-amber-50 dark:bg-amber-500/10' : 'border-stone-300 dark:border-stone-600' }}">
                                                         <input type="radio" name="interview_mode" value="onsite" x-model="interviewMode" class="sr-only">
                                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
                                                         {{ __('recruiter.interview_onsite') }}
                                                     </label>
-                                                    <label class="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition focus-within:ring-2 focus-within:ring-amber-400 dark:focus-within:ring-amber-500/40 {{ old('interview_mode', $application->interview_mode ?? 'onsite') === 'online' ? 'border-amber-400 bg-amber-50 dark:bg-amber-500/10' : 'border-stone-300 dark:border-stone-600' }}">
+                                                    <label class="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition focus-within:ring-2 focus-within:ring-amber-400 dark:focus-within:ring-amber-500/40 {{ old('interview_mode', 'onsite') === 'online' ? 'border-amber-400 bg-amber-50 dark:bg-amber-500/10' : 'border-stone-300 dark:border-stone-600' }}">
                                                         <input type="radio" name="interview_mode" value="online" x-model="interviewMode" class="sr-only">
                                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" /></svg>
                                                         {{ __('recruiter.interview_online') }}
@@ -178,22 +181,22 @@
                                             </div>
                                             <div>
                                                 <label for="interview_at-{{ $application->id }}" class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ __('recruiter.interview_at') }}</label>
-                                                <input id="interview_at-{{ $application->id }}" type="datetime-local" name="interview_at" value="{{ old('interview_at', $application->interview_at?->format('Y-m-d\TH:i')) }}" class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:focus:ring-amber-500/20">
+                                                <input id="interview_at-{{ $application->id }}" type="datetime-local" name="interview_at" value="{{ old('interview_at') }}" class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:focus:ring-amber-500/20">
                                                 @error('interview_at') <p class="text-xs text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                             </div>
                                             <div x-show="interviewMode === 'onsite'" x-cloak>
                                                 <label for="interview_location-{{ $application->id }}" class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ __('recruiter.interview_location') }}</label>
-                                                <input id="interview_location-{{ $application->id }}" type="text" name="interview_location" value="{{ old('interview_location', $application->interview_location) }}" class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:focus:ring-amber-500/20">
+                                                <input id="interview_location-{{ $application->id }}" type="text" name="interview_location" value="{{ old('interview_location') }}" class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:focus:ring-amber-500/20">
                                                 @error('interview_location') <p class="text-xs text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                             </div>
                                             <div x-show="interviewMode === 'online'" x-cloak>
                                                 <label for="interview_url-{{ $application->id }}" class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ __('recruiter.interview_url') }}</label>
-                                                <input id="interview_url-{{ $application->id }}" type="url" name="interview_url" value="{{ old('interview_url', $application->interview_url) }}" class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:focus:ring-amber-500/20">
+                                                <input id="interview_url-{{ $application->id }}" type="url" name="interview_url" value="{{ old('interview_url') }}" class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:focus:ring-amber-500/20">
                                                 @error('interview_url') <p class="text-xs text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                             </div>
                                             <div>
                                                 <label for="interview_instructions-{{ $application->id }}" class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ __('recruiter.interview_instructions') }}</label>
-                                                <textarea id="interview_instructions-{{ $application->id }}" name="interview_instructions" rows="2" class="mt-1 w-full resize-y rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:focus:ring-amber-500/20">{{ old('interview_instructions', $application->interview_instructions) }}</textarea>
+                                                <textarea id="interview_instructions-{{ $application->id }}" name="interview_instructions" rows="2" class="mt-1 w-full resize-y rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200 dark:focus:ring-amber-500/20">{{ old('interview_instructions') }}</textarea>
                                                 @error('interview_instructions') <p class="text-xs text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                             </div>
                                             <p class="text-xs text-stone-500 dark:text-stone-400">{{ __('recruiter.interview_details_hint') }}</p>
@@ -202,7 +205,8 @@
                                     </form>
                                 @endif
                             </aside>
-                        </div>
+                            </div>
+                        </details>
                     </article>
                 @endforeach
             </div>

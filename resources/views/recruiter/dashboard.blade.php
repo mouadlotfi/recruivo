@@ -104,7 +104,7 @@
                 @foreach($recentApplications as $application)
                     <div class="flex flex-col gap-3 rounded-lg border border-stone-200 p-4 dark:border-stone-700 sm:flex-row sm:items-center sm:justify-between">
                         <a
-                            href="{{ localized_route('recruiter.applicants.show', $application->candidate) }}"
+                            href="{{ localized_route('recruiter.jobs.applications', $application->job) }}"
                             data-recent-applicant-link
                             class="group flex min-w-0 items-center gap-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
                         >

@@ -40,22 +40,54 @@ class ApplicationUiPolishTest extends TestCase
         $this->assertStringNotContainsString('<details data-cover-letter-collapsible open', $html);
     }
 
-    public function test_recruiter_cover_letter_is_collapsed_by_default(): void
+    public function test_recruiter_application_card_is_collapsed_by_default(): void
     {
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
         $job = Job::factory()->for($company)->for($recruiter, 'recruiter')->create(['status' => JobStatus::Published->value]);
-        $application = Application::factory()->for($job)->create([
-            'cover_letter' => 'A fairly long cover letter for the recruiter view.',
+        Application::factory()->for($job)->create([
+            'cover_letter' => 'A cover letter for the collapsed card test.',
         ]);
 
         $html = (string) $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs/'.$job->id.'/applications')
             ->getContent();
 
+        $this->assertStringContainsString('data-application-card-collapsible', $html);
+        // No `open` attribute => collapsed by default
+        $this->assertStringNotContainsString('<details data-application-card-collapsible open', $html);
+        // The review panel lives inside the collapsed card
+        $this->assertStringContainsString('data-application-review-panel', $html);
+        // Cover letter stays collapsible within the card
         $this->assertStringContainsString('data-cover-letter-collapsible', $html);
-        $this->assertStringNotContainsString('<details data-cover-letter-collapsible open', $html);
+    }
+
+    public function test_recruiter_review_form_starts_at_default_state(): void
+    {
+        $company = Company::factory()->create();
+        $recruiter = User::factory()->for($company)->create();
+        $recruiter->assignRole('Recruiter');
+        $job = Job::factory()->for($company)->for($recruiter, 'recruiter')->create(['status' => JobStatus::Published->value]);
+        $application = Application::factory()->for($job)->create([
+            'status' => 'shortlisted',
+            'notes' => 'Existing recruiter notes',
+            'cover_letter' => 'A cover letter.',
+            'interview_at' => now()->addDays(2),
+            'interview_location' => 'Paris Office',
+        ]);
+
+        $html = (string) $this->actingAs($recruiter)
+            ->get('/en/recruiter/jobs/'.$job->id.'/applications')
+            ->getContent();
+
+        // Form must NOT pre-select the application's current status
+        $this->assertStringContainsString("status: ''", $html);
+        // Notes field starts empty, not pre-filled with existing notes
+        $this->assertStringContainsString("notes: ''", $html);
+        // Interview fields are not pre-filled from the application
+        $this->assertStringNotContainsString('value="'.now()->addDays(2)->format('Y-m-d\TH:i').'"', $html);
+        $this->assertStringNotContainsString('value="Paris Office"', $html);
     }
 
     public function test_apply_cover_letter_textarea_is_autosize_enabled(): void

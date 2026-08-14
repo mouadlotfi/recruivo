@@ -78,7 +78,7 @@ class CandidatePreferencesTest extends TestCase
         );
     }
 
-    public function test_verify_email_page_shows_preference_modal_for_fresh_candidate(): void
+    public function test_verify_email_page_does_not_show_preference_modal(): void
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
@@ -90,7 +90,37 @@ class CandidatePreferencesTest extends TestCase
             ->get('/en/email/verify')
             ->getContent();
 
+        $this->assertStringNotContainsString('data-preferences-modal', $html);
+    }
+
+    public function test_home_shows_preference_modal_for_verified_candidate(): void
+    {
+        $candidate = User::factory()->create();
+        $candidate->assignRole('Candidate');
+        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+
+        session(['show_preferences_picker' => true]);
+
+        $html = (string) $this->actingAs($candidate)
+            ->get('/en/')
+            ->getContent();
+
         $this->assertStringContainsString('data-preferences-modal', $html);
+    }
+
+    public function test_home_hides_preference_modal_for_unverified_candidate(): void
+    {
+        $candidate = User::factory()->create(['email_verified_at' => null]);
+        $candidate->assignRole('Candidate');
+        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+
+        session(['show_preferences_picker' => true]);
+
+        $html = (string) $this->actingAs($candidate)
+            ->get('/en/')
+            ->getContent();
+
+        $this->assertStringNotContainsString('data-preferences-modal', $html);
     }
 
     public function test_recruiter_never_sees_preference_modal(): void
@@ -145,7 +175,7 @@ class CandidatePreferencesTest extends TestCase
         $this->assertFalse(session()->has('show_preferences_picker'));
     }
 
-    public function test_unverified_candidate_can_save_quick_preferences(): void
+    public function test_unverified_candidate_quick_save_redirects_back_to_verification(): void
     {
         $candidate = User::factory()->create(['email_verified_at' => null]);
         $candidate->assignRole('Candidate');
@@ -157,10 +187,26 @@ class CandidatePreferencesTest extends TestCase
             ->post('/en/candidate/preferences', [
                 'preferred_categories' => ['DevOps'],
             ])
-            ->assertRedirect();
+            ->assertRedirect(localized_route('verification.notice'));
 
+        // Preferences are saved, but the flag stays so the modal shows again after verifying.
         $this->assertSame(['DevOps'], $candidate->candidateProfile->fresh()->preferred_categories);
-        $this->assertFalse(session()->has('show_preferences_picker'));
+        $this->assertTrue(session()->has('show_preferences_picker'));
+    }
+
+    public function test_unverified_candidate_skip_redirects_back_to_verification(): void
+    {
+        $candidate = User::factory()->create(['email_verified_at' => null]);
+        $candidate->assignRole('Candidate');
+        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+
+        session(['show_preferences_picker' => true]);
+
+        $this->actingAs($candidate)
+            ->post('/en/candidate/preferences', ['skip' => '1'])
+            ->assertRedirect(localized_route('verification.notice'));
+
+        $this->assertTrue(session()->has('show_preferences_picker'));
     }
 
     public function test_matching_jobs_appear_first_for_candidate_with_preferences(): void

@@ -1,7 +1,5 @@
 services:
   laravel:
-    build:
-      target: development
     ports:
       - "${APP_PORT:-8000}:80"
       - "5173:5173"

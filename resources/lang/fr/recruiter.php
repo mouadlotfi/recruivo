@@ -15,6 +15,7 @@ return [
     'recent_applications' => 'Candidatures récentes',
     'all_applications' => 'Candidatures',
     'review_application' => 'Examiner la candidature',
+    'select_status' => 'Sélectionner le statut…',
     'view_all_jobs' => 'Voir toutes les offres →',
     'no_applications_yet' => 'Aucune candidature pour le moment',
     'applications_will_appear' => 'Les candidatures apparaîtront ici une fois que les candidats commenceront à postuler à vos offres.',
