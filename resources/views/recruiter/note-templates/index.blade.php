@@ -7,7 +7,7 @@
             <h1 class="text-2xl font-bold text-stone-900 dark:text-white sm:text-3xl">{{ __('recruiter.note_templates') }}</h1>
             <p class="mt-2 text-sm text-stone-600 dark:text-stone-400 sm:text-base">{{ __('recruiter.note_templates_subtitle') }}</p>
         </div>
-        <a href="{{ localized_route('recruiter.jobs.index') }}" class="inline-flex shrink-0 items-center justify-center self-start rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700">
+        <a href="{{ request('back') ?: localized_route('recruiter.jobs.index') }}" class="inline-flex shrink-0 items-center justify-center self-start rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700">
             <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
             {{ __('recruiter.back_to_jobs_list') }}
         </a>

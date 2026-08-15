@@ -123,6 +123,7 @@
                     <label class="text-sm font-medium text-stone-700 dark:text-stone-200">{{ __('profile.job_interests') }}</label>
                     <p class="text-xs text-stone-500 dark:text-stone-400">{{ __('profile.job_interests_help') }}</p>
                     <div class="grid gap-2 sm:grid-cols-2">
+                        <input type="hidden" name="preferred_categories[]" value="">
                         @foreach(\App\Enums\ItCategory::cases() as $category)
                             <label class="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-stone-200 bg-white/60 px-3 py-2 text-sm text-stone-700 transition hover:border-amber-300 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-200">
                                 <input type="checkbox" name="preferred_categories[]" value="{{ $category->value }}"

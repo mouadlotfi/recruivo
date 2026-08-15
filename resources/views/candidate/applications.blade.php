@@ -7,8 +7,8 @@
             <h1 class="text-2xl font-bold text-stone-900 dark:text-white sm:text-3xl">{{ __('applications.my_applications') }}</h1>
             <p class="mt-2 text-sm text-stone-600 dark:text-stone-400 sm:text-base">{{ __('applications.subtitle') }}</p>
         </div>
-        <a 
-            href="{{ localized_route('jobs.index') }}" 
+        <a
+            href="{{ localized_route('jobs.index') }}"
             class="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:px-6 sm:py-3"
         >
             <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -57,8 +57,8 @@
             </div>
             <h3 class="text-lg font-semibold text-stone-900 dark:text-white mb-2">{{ $status === 'all' ? __('applications.no_applications_yet') : __('applications.no_applications_for_status') }}</h3>
             <p class="text-stone-600 dark:text-stone-400 mb-6">{{ __('applications.start_applying') }}</p>
-            <a 
-                href="{{ localized_route('jobs.index') }}" 
+            <a
+                href="{{ localized_route('jobs.index') }}"
                 class="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
             >
                 {{ __('applications.browse_available_jobs') }}
@@ -69,58 +69,62 @@
         <div class="space-y-4" data-infinite-items>
             @foreach($applications as $application)
                 <div class="rounded-xl border border-stone-200/60 bg-white/80 p-4 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60 transition hover:border-amber-200 dark:hover:border-amber-800 sm:p-6">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-start gap-4 mb-3">
-                                @if($application->job->company && $application->job->company->logo_url)
-                                    <img 
-                                        src="{{ $application->job->company->logo_url }}" 
-                                        alt="{{ $application->job->company->name }}" 
-                                        class="h-12 w-12 rounded-lg object-cover"
-                                    >
-                                @else
-                                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-lg font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
-                                        {{ $application->job->company ? substr($application->job->company->name, 0, 1) : 'J' }}
-                                    </div>
-                                @endif
-                                
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-3 mb-1">
-                                        <a 
-                                            href="{{ localized_route('jobs.show', $application->job) }}" 
-                                            class="text-xl font-semibold text-stone-900 hover:text-amber-600 dark:text-white dark:hover:text-amber-400 transition"
-                                        >
-                                            {{ $application->job->title }}
-                                        </a>
-                                        @php
-                                            $statusBadgeClasses = [
-                                                'pending' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
-                                                'shortlisted' => 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
-                                                'interview' => 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
-                                                'accepted' => 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400',
-                                                'rejected' => 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400',
-                                                'withdrawn' => 'bg-stone-200 text-stone-700 dark:bg-stone-700/40 dark:text-stone-300',
-                                            ];
-                                            $statusLabelKey = $application->status->value === 'pending' ? 'pending_review' : $application->status->value;
-                                        @endphp
-                                        <span class="inline-flex items-center rounded-full {{ $statusBadgeClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }} px-3 py-1 text-xs font-medium">
-                                            <svg class="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 8 8">
-                                                <circle cx="4" cy="4" r="3" />
-                                            </svg>
-                                            {{ __('applications.'.$statusLabelKey) }}
-                                        </span>
-                                    </div>
-                                    
-                                    @if($application->job->company)
-                                        <a 
-                                            href="{{ localized_route('companies.show', $application->job->company->slug) }}" 
-                                            class="text-sm text-stone-600 hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400 transition"
-                                        >
-                                            {{ $application->job->company->name }}
-                                        </a>
-                                    @endif
+                    <details data-application-card-collapsible class="group">
+                        <summary class="flex cursor-pointer list-none flex-wrap items-center gap-4 [&::-webkit-details-marker]:hidden">
+                            @if($application->job->company && $application->job->company->logo_url)
+                                <img
+                                    src="{{ $application->job->company->logo_url }}"
+                                    alt="{{ $application->job->company->name }}"
+                                    class="h-12 w-12 rounded-lg object-cover"
+                                >
+                            @else
+                                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-lg font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                                    {{ $application->job->company ? substr($application->job->company->name, 0, 1) : 'J' }}
+                                </div>
+                            @endif
 
-                                    <div class="flex flex-wrap items-center gap-4 text-sm text-stone-600 dark:text-stone-400 mt-2">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-3">
+                                    <a
+                                        href="{{ localized_route('jobs.show', $application->job) }}"
+                                        class="truncate text-xl font-semibold text-stone-900 hover:text-amber-600 dark:text-white dark:hover:text-amber-400 transition"
+                                    >
+                                        {{ $application->job->title }}
+                                    </a>
+                                </div>
+                                @if($application->job->company)
+                                    <a
+                                        href="{{ localized_route('companies.show', $application->job->company->slug) }}"
+                                        class="text-sm text-stone-600 hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400 transition"
+                                    >
+                                        {{ $application->job->company->name }}
+                                    </a>
+                                @endif
+                            </div>
+
+                            @php
+                                $statusBadgeClasses = [
+                                    'pending' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
+                                    'shortlisted' => 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
+                                    'interview' => 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
+                                    'accepted' => 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400',
+                                    'rejected' => 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400',
+                                    'withdrawn' => 'bg-stone-200 text-stone-700 dark:bg-stone-700/40 dark:text-stone-300',
+                                ];
+                                $statusLabelKey = $application->status->value === 'pending' ? 'pending_review' : $application->status->value;
+                            @endphp
+                            <span class="inline-flex items-center rounded-full {{ $statusBadgeClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }} px-3 py-1 text-xs font-medium">
+                                <svg class="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 8 8">
+                                    <circle cx="4" cy="4" r="3" />
+                                </svg>
+                                {{ __('applications.'.$statusLabelKey) }}
+                            </span>
+                            <svg class="h-4 w-4 text-stone-500 transition group-open:rotate-180 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                        </summary>
+
+                        <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-4 text-sm text-stone-600 dark:text-stone-400">
                                         @if($application->job->location)
                                             <div class="flex items-center gap-1">
                                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -140,8 +144,6 @@
                                                 {{ $application->job->category }}
                                             </span>
                                         @endif
-                                    </div>
-                                </div>
                             </div>
 
                             <div class="text-sm text-stone-500 dark:text-stone-500 mb-3">
@@ -217,9 +219,9 @@
                             @endif
                         </div>
 
-                        <div class="sm:ml-6">
-                            <a 
-                                href="{{ localized_route('jobs.show', $application->job) }}" 
+                        <div class="flex flex-col gap-3 sm:ml-6 sm:items-start">
+                            <a
+                                href="{{ localized_route('jobs.show', $application->job) }}"
                                 class="inline-flex w-full items-center justify-center rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 sm:w-auto"
                             >
                                 <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -229,7 +231,7 @@
                                 {{ __('applications.view_job') }}
                             </a>
                             @if(in_array($application->status->value, ['pending', 'shortlisted', 'interview']))
-                                <form method="POST" action="{{ localized_route('candidate.applications.withdraw', $application) }}" class="mt-3 sm:mt-0" onsubmit="return confirm(@js(__('applications.withdraw_confirm')));">
+                                <form method="POST" action="{{ localized_route('candidate.applications.withdraw', $application) }}" onsubmit="return confirm(@js(__('applications.withdraw_confirm')));">
                                     @csrf
                                     @method('PATCH')
                                     <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10 sm:w-auto min-h-11">
@@ -239,6 +241,7 @@
                             @endif
                         </div>
                     </div>
+                    </details>
                 </div>
             @endforeach
         </div>

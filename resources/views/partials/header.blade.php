@@ -47,9 +47,6 @@
                             <svg class="h-4 w-4 transition-transform" :class="open && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25L12 15.75 4.5 8.25" />
                             </svg>
-                            @if(request()->routeIs('jobs.*', 'companies.*'))
-                                <span class="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-amber-500"></span>
-                            @endif
                         </button>
                         <div x-show="open" x-transition style="display: none;" role="menu" class="absolute top-full left-0 mt-1 w-44 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-xl dark:border-stone-700 dark:bg-stone-900">
                             <a href="{{ localized_route('jobs.index') }}" role="menuitem" class="block px-4 py-2.5 text-sm transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-500/10 dark:hover:text-amber-300 {{ request()->routeIs('jobs.*') ? 'text-amber-600 dark:text-amber-400' : 'text-stone-700 dark:text-stone-200' }}">{{ __('common.jobs') }}</a>
@@ -58,15 +55,9 @@
                     </div>
                     <a href="{{ localized_route('recruiter.dashboard') }}" class="relative flex h-full items-center whitespace-nowrap px-3 text-sm font-medium transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('recruiter.dashboard') ? 'text-amber-600 dark:text-amber-400' : '' }}">
                         {{ __('common.dashboard') }}
-                        @if(request()->routeIs('recruiter.dashboard'))
-                            <span class="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-amber-500"></span>
-                        @endif
                     </a>
                     <a href="{{ localized_route('recruiter.jobs.index') }}" class="relative flex h-full items-center whitespace-nowrap px-3 text-sm font-medium transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('recruiter.jobs.*') && !request()->routeIs('recruiter.jobs.applications') ? 'text-amber-600 dark:text-amber-400' : '' }}">
                         {{ __('recruiter.manage_jobs') }}
-                        @if(request()->routeIs('recruiter.jobs.*') && !request()->routeIs('recruiter.jobs.applications'))
-                            <span class="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-amber-500"></span>
-                        @endif
                     </a>
                 @elseif($isCandidate)
                     <a href="{{ localized_route('candidate.dashboard') }}" class="relative flex h-full items-center whitespace-nowrap px-3 text-sm font-medium transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('candidate.dashboard') ? 'text-amber-600 dark:text-amber-400' : '' }}">

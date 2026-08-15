@@ -209,6 +209,26 @@ class CandidatePreferencesTest extends TestCase
         $this->assertTrue(session()->has('show_preferences_picker'));
     }
 
+    public function test_candidate_can_remove_all_preferences_via_profile_update(): void
+    {
+        $candidate = User::factory()->create();
+        $candidate->assignRole('Candidate');
+        \App\Models\CandidateProfile::factory()->for($candidate)->create([
+            'preferred_categories' => ['Software Development', 'DevOps'],
+        ]);
+
+        // Simulate the profile form with every checkbox unchecked: the hidden
+        // sentinel still submits the (empty) array.
+        $this->actingAs($candidate)
+            ->put('/en/profile', [
+                'name' => $candidate->name,
+                'preferred_categories' => [''],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame([], $candidate->candidateProfile->fresh()->preferred_categories);
+    }
+
     public function test_matching_jobs_appear_first_for_candidate_with_preferences(): void
     {
         $candidate = User::factory()->create();

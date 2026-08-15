@@ -38,6 +38,11 @@ class ApplicationUiPolishTest extends TestCase
         $this->assertStringContainsString('data-cover-letter-collapsible', $html);
         // No `open` attribute => collapsed by default
         $this->assertStringNotContainsString('<details data-cover-letter-collapsible open', $html);
+        // The whole application card is collapsed by default too
+        $this->assertStringContainsString('data-application-card-collapsible', $html);
+        $this->assertStringNotContainsString('<details data-application-card-collapsible open', $html);
+        // Cover letter text has no leading whitespace gap
+        $this->assertStringNotContainsString('> '.$application->cover_letter, $html);
     }
 
     public function test_recruiter_application_card_is_collapsed_by_default(): void

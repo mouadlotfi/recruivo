@@ -12,7 +12,7 @@
             </p>
         </div>
         <div class="flex shrink-0 items-center gap-2 self-start">
-            <a href="{{ localized_route('recruiter.note-templates.index') }}" class="inline-flex items-center justify-center self-start rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700">
+            <a href="{{ localized_route('recruiter.note-templates.index', ['back' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center self-start rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700">
                 {{ __('recruiter.manage_templates') }}
             </a>
             <a href="{{ localized_route('recruiter.jobs.index') }}" class="inline-flex items-center justify-center self-start rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700">

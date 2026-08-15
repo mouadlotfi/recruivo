@@ -82,6 +82,17 @@ class UpdateProfileRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        // A hidden sentinel input keeps the array present even when every
+        // checkbox is unchecked; drop it so an empty selection means [].
+        if ($this->has('preferred_categories')) {
+            $this->merge([
+                'preferred_categories' => array_values(array_filter(
+                    $this->input('preferred_categories', []),
+                    fn ($value) => $value !== '' && $value !== null,
+                )),
+            ]);
+        }
+
         foreach ([
             'languages_json' => 'languages',
             'links_json' => 'links',

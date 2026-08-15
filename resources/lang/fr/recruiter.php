@@ -46,7 +46,7 @@ return [
     'back_to_jobs' => 'Retour aux offres',
     
     // Job Form
-    'job_title' => 'Titre du poste *',
+    'job_title' => 'Titre du poste',
     'job_title_placeholder' => 'ex. Développeur Laravel Senior',
     'location' => 'Localisation',
     'location_placeholder' => 'ex. Télétravail, Paris, France',
@@ -117,7 +117,7 @@ return [
     'filtered_applications_received' => ':count candidature correspondante|:count candidatures correspondantes',
     'no_applications_with_status' => 'Aucune candidature :status',
     'no_applications_with_status_message' => 'Les candidatures avec ce statut apparaîtront ici.',
-    'back_to_jobs_list' => 'Retour aux offres',
+    'back_to_jobs_list' => 'Retour aux candidatures',
     'no_applications_received' => 'Aucune candidature pour le moment',
     'applications_appear_message' => 'Les candidatures apparaîtront ici une fois que les candidats commenceront à postuler à cette offre.',
     'applications_appear_message_all' => 'Les candidatures apparaîtront ici lorsque des candidats postuleront à vos offres.',
@@ -183,7 +183,7 @@ return [
     'update_template' => 'Mettre à jour le modèle',
     'delete_template' => 'Supprimer',
     'delete_template_confirm' => 'Supprimer ce modèle de notes ?',
-    'manage_templates' => 'Gérer les modèles',
+    'manage_templates' => 'Modèles de notes',
     'template_saved' => 'Modèle enregistré.',
     'template_updated' => 'Modèle mis à jour.',
     'template_deleted' => 'Modèle supprimé.',

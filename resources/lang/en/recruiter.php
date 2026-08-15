@@ -46,7 +46,7 @@ return [
     'back_to_jobs' => 'Back to Jobs',
     
     // Job Form
-    'job_title' => 'Job Title *',
+    'job_title' => 'Job Title',
     'job_title_placeholder' => 'e.g. Senior Laravel Developer',
     'location' => 'Location',
     'location_placeholder' => 'e.g. Remote, San Francisco, CA',
@@ -117,7 +117,7 @@ return [
     'filtered_applications_received' => ':count matching application|:count matching applications',
     'no_applications_with_status' => 'No :status applications',
     'no_applications_with_status_message' => 'Applications with this status will appear here.',
-    'back_to_jobs_list' => 'Back to Jobs',
+    'back_to_jobs_list' => 'Back to applications',
     'no_applications_received' => 'No applications yet',
     'applications_appear_message' => 'Applications will appear here once candidates start applying to this job.',
     'applications_appear_message_all' => 'Applications will appear here once candidates start applying to your jobs.',
@@ -183,7 +183,7 @@ return [
     'update_template' => 'Update template',
     'delete_template' => 'Delete',
     'delete_template_confirm' => 'Delete this note template?',
-    'manage_templates' => 'Manage templates',
+    'manage_templates' => 'Notes templates',
     'template_saved' => 'Template saved.',
     'template_updated' => 'Template updated.',
     'template_deleted' => 'Template deleted.',
