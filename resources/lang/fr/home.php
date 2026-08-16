@@ -6,8 +6,8 @@ return [
     'hero_description' => 'Recruivo connecte les candidats avec des équipes modernes qui valorisent la transparence, la croissance et des expériences utilisateur exceptionnelles.',
     
     // Guest Hero
-    'hero_title_guest' => 'Découvrez l\'emploi de vos rêves dans des équipes modernes',
-    'hero_description_guest' => 'Rejoignez des milliers de candidats qui trouvent des opportunités dans des entreprises qui valorisent la transparence, l\'innovation et la croissance.',
+    'hero_title_guest' => 'Trouvez votre prochain rôle IT dans des équipes tech modernes',
+    'hero_description_guest' => 'Parcourez des rôles en ingénierie, cloud, sécurité et données, proposés par des entreprises qui valorisent la transparence, l\'innovation et la croissance.',
     'get_started' => 'Commencer',
     'browse_jobs' => 'Parcourir les emplois',
     

@@ -69,7 +69,7 @@ return [
     'showing_results' => 'Showing :count result(s)',
     'for' => 'for',
     'pagination_showing' => 'Showing :from to :to of :total results',
-    'footer_text' => '© :year Recruivo. Crafted for modern hiring teams.',
+    'footer_text' => '© :year Recruivo. Built for IT hiring — engineering, cloud, security, and data roles.',
     'previous' => 'Previous',
     'next' => 'Next',
     'all' => 'All',

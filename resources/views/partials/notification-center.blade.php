@@ -23,7 +23,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
         </svg>
         @if($navbarUnreadCount > 0)
-            <span class="absolute -right-0.5 -top-0.5 inline-flex min-h-4.5 min-w-4.5 items-center justify-center rounded-full bg-amber-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-stone-950" aria-hidden="true">
+            <span class="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-600 px-1.5 text-[11px] font-bold leading-none text-white ring-2 ring-white dark:ring-stone-950" aria-hidden="true">
                 {{ $navbarUnreadCount > 99 ? '99+' : $navbarUnreadCount }}
             </span>
         @endif

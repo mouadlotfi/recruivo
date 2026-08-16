@@ -96,7 +96,7 @@
                                             {{ __('recruiter.cover_letter') }}
                                             <svg class="h-4 w-4 text-stone-500 transition group-open:rotate-180 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
                                         </summary>
-                                        <div class="mt-2 whitespace-pre-line rounded-xl bg-stone-50 p-4 text-sm leading-6 text-stone-700 dark:bg-stone-800/80 dark:text-stone-300">{{ $application->cover_letter }}</div>
+                                        <div class="mt-2 whitespace-pre-line rounded-xl bg-stone-50 p-4 text-sm leading-6 text-stone-700 dark:bg-stone-800/80 dark:text-stone-300">{{ trim($application->cover_letter) }}</div>
                                     </details>
                                 @endif
                                 @if($application->notes)
@@ -126,13 +126,10 @@
                             </div>
 
                             <aside data-application-review-panel class="self-start rounded-xl border border-stone-200 bg-stone-50/80 p-4 dark:border-stone-700 dark:bg-stone-800/60">
-                                @if(in_array($application->status->value, ['accepted', 'rejected', 'withdrawn']))
-                                    @if($application->status->value === 'withdrawn')
-                                        <p class="text-sm font-semibold text-stone-800 dark:text-stone-200">{{ __('recruiter.withdrawn_by_candidate') }}</p>
-                                    @else
-                                        <p class="text-sm font-semibold text-stone-800 dark:text-stone-200">{{ __('recruiter.decision_made') }}</p>
-                                        <p class="mt-2 text-sm leading-5 text-stone-600 dark:text-stone-400">{{ __('recruiter.decision_final_message', ['status' => __('recruiter.'.$application->status->value)]) }}</p>
-                                    @endif
+                                @if(in_array($application->status->value, ['accepted', 'rejected']))
+                                    {{-- Final decision: status badge in the card summary already reflects it; no panel content needed --}}
+                                @elseif($application->status->value === 'withdrawn')
+                                    <p class="text-sm font-semibold text-stone-800 dark:text-stone-200">{{ __('recruiter.withdrawn_by_candidate') }}</p>
                                 @else
                                     <form action="{{ localized_route('recruiter.applications.update', $application) }}" method="POST" class="space-y-3" x-data="{ status: @js(old('status', '')), interviewMode: @js(old('interview_mode', 'onsite')), notes: @js(old('notes', '')) }">
                                         @csrf @method('PATCH')

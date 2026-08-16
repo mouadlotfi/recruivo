@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'language' => 'Language',
+    'language_help' => 'Choose the language used across the website.',
+    'language_en' => 'English',
+    'language_fr' => 'Français',
     'add_language' => 'Add Language',
     'add_link' => 'Add Link',
     'add_experience' => 'Add Experience',

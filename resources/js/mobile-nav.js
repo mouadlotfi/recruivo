@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         searchModal.addEventListener('click', function(e) {
-            if (e.target === searchModal) {
+            if (!e.target.closest('.max-w-md')) {
                 closeSearch();
             }
         });

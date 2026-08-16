@@ -54,12 +54,19 @@ class RoleNavigationTest extends TestCase
         $this->assertStringContainsString("name('jobs.applications')", $routes);
         $this->assertStringNotContainsString("localized_route('recruiter.applications.index')", $mobileNavigation);
 
-        $explorePosition = strpos($mobileNavigation, 'data-recruiter-mobile-explore-menu');
+        // New order: Dashboard, Manage, Explore, Settings
         $dashboardPosition = strpos($mobileNavigation, "'recruiter.dashboard'");
+        $managePosition = strpos($mobileNavigation, "'recruiter.jobs.index'");
+        $explorePosition = strpos($mobileNavigation, 'data-recruiter-mobile-explore-menu');
+        $settingsPosition = strpos($mobileNavigation, "localized_route('profile.edit')");
 
-        $this->assertNotFalse($explorePosition);
         $this->assertNotFalse($dashboardPosition);
-        $this->assertLessThan($dashboardPosition, $explorePosition);
+        $this->assertNotFalse($managePosition);
+        $this->assertNotFalse($explorePosition);
+        $this->assertNotFalse($settingsPosition);
+        $this->assertLessThan($managePosition, $dashboardPosition);
+        $this->assertLessThan($explorePosition, $managePosition);
+        $this->assertLessThan($settingsPosition, $explorePosition);
     }
 
     public function test_recruiter_dashboard_is_the_recruiter_home_page(): void
@@ -79,6 +86,16 @@ class RoleNavigationTest extends TestCase
             'email' => $recruiter->email,
             'password' => 'password',
         ])->assertRedirect('/en/recruiter/dashboard');
+    }
+
+    public function test_verified_user_cannot_visit_the_verify_email_page(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $user->assignRole('Candidate');
+
+        $this->actingAs($user)
+            ->get('/en/email/verify')
+            ->assertRedirect(localized_route('home'));
     }
 
     public function test_recruiter_dashboard_does_not_render_the_tips_panel(): void

@@ -13,7 +13,7 @@
 
     <title>{{ isset($title) ? $title . ' | Recruivo' : 'Recruivo' }}</title>
     
-    <meta name="description" content="Recruivo connects candidates with modern teams and transparent hiring practices.">
+    <meta name="description" content="Recruivo connects IT professionals with modern teams — engineering, cloud, security, and data roles with transparent hiring.">
     
     {{-- Hreflang tags for SEO --}}
     @php

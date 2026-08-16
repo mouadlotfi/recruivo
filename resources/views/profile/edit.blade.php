@@ -314,6 +314,22 @@
         </form>
     </div>
 
+    <!-- Language -->
+    <div class="mb-6 rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
+        <h2 class="mb-6 text-xl font-semibold text-stone-900 dark:text-white">{{ __('profile.language') }}</h2>
+        <p class="mb-4 text-sm text-stone-600 dark:text-stone-400">{{ __('profile.language_help') }}</p>
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ localized_route('profile.edit', [], 'en') }}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 {{ app()->getLocale() === 'en' ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' : 'border-stone-200 text-stone-700 hover:border-amber-300 dark:border-stone-700 dark:text-stone-200 dark:hover:border-amber-500/40' }}">
+                <span class="text-lg">🇬🇧</span>
+                {{ __('profile.language_en') }}
+            </a>
+            <a href="{{ localized_route('profile.edit', [], 'fr') }}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 {{ app()->getLocale() === 'fr' ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300' : 'border-stone-200 text-stone-700 hover:border-amber-300 dark:border-stone-700 dark:text-stone-200 dark:hover:border-amber-500/40' }}">
+                <span class="text-lg">🇫🇷</span>
+                {{ __('profile.language_fr') }}
+            </a>
+        </div>
+    </div>
+
     <!-- Change Email -->
     <div class="rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60 mb-6">
         <h2 class="text-xl font-semibold text-stone-900 dark:text-white mb-6">{{ __('profile.change_email_address') }}</h2>

@@ -156,8 +156,8 @@
                                         {{ __('applications.your_cover_letter') }}
                                         <svg class="h-4 w-4 text-stone-500 transition group-open:rotate-180 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
                                     </summary>
-                                    <div class="mt-2 whitespace-pre-line rounded-lg bg-stone-50 p-4 text-sm text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-                                        {{ $application->cover_letter }}
+                                    <div class="mt-2 whitespace-pre-line rounded-lg bg-stone-50 p-4 text-sm leading-6 text-stone-700 dark:bg-stone-800 dark:text-stone-300">
+                                        {{ trim($application->cover_letter) }}
                                     </div>
                                 </details>
                             @endif
@@ -222,7 +222,7 @@
                         <div class="flex flex-col gap-3 sm:ml-6 sm:items-start">
                             <a
                                 href="{{ localized_route('jobs.show', $application->job) }}"
-                                class="inline-flex w-full items-center justify-center rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 sm:w-auto"
+                                class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 sm:w-auto"
                             >
                                 <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />

@@ -9,9 +9,10 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Redirect root to default locale
-Route::get('/', function () {
-    return redirect('/en');
+// Redirect root to the browser-preferred locale (or default)
+Route::get('/', function (Request $request) {
+    $preferred = $request->getPreferredLanguage(config('locales.supported', ['en', 'fr']));
+    return redirect('/' . ($preferred ?: config('locales.default', 'en')));
 });
 
 // Catch any route without locale prefix and redirect to /en version
@@ -60,7 +61,11 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(\App\Http\Mi
 
     // Email Verification Routes
     Route::middleware('auth')->group(function () {
-        Route::get('/email/verify', function () {
+        Route::get('/email/verify', function (Request $request) {
+            if ($request->user()->hasVerifiedEmail()) {
+                return redirect(localized_route($request->user()->hasRole('Recruiter') ? 'recruiter.dashboard' : 'home'));
+            }
+
             return view('auth.verify-email');
         })->name('verification.notice');
 

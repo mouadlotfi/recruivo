@@ -9,9 +9,9 @@
 <header class="sticky top-0 z-[9999] border-b border-stone-200/60 bg-white/75 backdrop-blur-xl dark:border-stone-800/70 dark:bg-stone-950/80">
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div class="flex h-full items-center gap-6 lg:gap-8">
-            <a href="{{ localized_route($isRecruiter ? 'recruiter.dashboard' : 'home') }}" class="group flex items-center gap-2.5">
-                <span class="flex h-8 w-8 shrink-0 items-center justify-center transition group-hover:scale-105">
-                    <svg viewBox="0 0 48 48" fill="none" class="h-8 w-8" xmlns="http://www.w3.org/2000/svg">
+            <a href="{{ localized_route($isRecruiter ? 'recruiter.dashboard' : 'home') }}" class="group flex items-center gap-2.5 text-lg font-semibold">
+                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center transition group-hover:scale-105">
+                    <svg viewBox="0 0 48 48" fill="none" class="h-9 w-9" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <linearGradient id="logo-amber" x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" stop-color="#F59E0B"/>
@@ -27,7 +27,7 @@
                         <circle cx="24" cy="24" r="5" fill="url(#logo-amber)"/>
                     </svg>
                 </span>
-                <span class="text-xl font-bold tracking-tight text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
+                <span class="font-semibold tracking-tight text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
                     Recruivo
                 </span>
             </a>
@@ -47,6 +47,9 @@
                             <svg class="h-4 w-4 transition-transform" :class="open && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25L12 15.75 4.5 8.25" />
                             </svg>
+                            @if(request()->routeIs('jobs.*', 'companies.*'))
+                                <span class="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-amber-500"></span>
+                            @endif
                         </button>
                         <div x-show="open" x-transition style="display: none;" role="menu" class="absolute top-full left-0 mt-1 w-44 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-xl dark:border-stone-700 dark:bg-stone-900">
                             <a href="{{ localized_route('jobs.index') }}" role="menuitem" class="block px-4 py-2.5 text-sm transition hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-500/10 dark:hover:text-amber-300 {{ request()->routeIs('jobs.*') ? 'text-amber-600 dark:text-amber-400' : 'text-stone-700 dark:text-stone-200' }}">{{ __('common.jobs') }}</a>
@@ -55,9 +58,15 @@
                     </div>
                     <a href="{{ localized_route('recruiter.dashboard') }}" class="relative flex h-full items-center whitespace-nowrap px-3 text-sm font-medium transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('recruiter.dashboard') ? 'text-amber-600 dark:text-amber-400' : '' }}">
                         {{ __('common.dashboard') }}
+                        @if(request()->routeIs('recruiter.dashboard'))
+                            <span class="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-amber-500"></span>
+                        @endif
                     </a>
                     <a href="{{ localized_route('recruiter.jobs.index') }}" class="relative flex h-full items-center whitespace-nowrap px-3 text-sm font-medium transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('recruiter.jobs.*') && !request()->routeIs('recruiter.jobs.applications') ? 'text-amber-600 dark:text-amber-400' : '' }}">
                         {{ __('recruiter.manage_jobs') }}
+                        @if(request()->routeIs('recruiter.jobs.*') && !request()->routeIs('recruiter.jobs.applications'))
+                            <span class="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-amber-500"></span>
+                        @endif
                     </a>
                 @elseif($isCandidate)
                     <a href="{{ localized_route('candidate.dashboard') }}" class="relative flex h-full items-center whitespace-nowrap px-3 text-sm font-medium transition hover:text-amber-600 dark:hover:text-amber-400 {{ request()->routeIs('candidate.dashboard') ? 'text-amber-600 dark:text-amber-400' : '' }}">
@@ -166,10 +175,9 @@
                             class="absolute right-0 top-full mt-2 w-48 rounded-lg border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-800"
                             style="display: none;"
                         >
-                            <div class="px-4 py-2 text-xs font-medium text-stone-500 dark:text-stone-400">
-                                {{ $user->email }}
+                            <div class="border-b border-stone-200 px-4 py-3 dark:border-stone-700">
+                                <p class="break-all text-sm font-medium text-stone-800 dark:text-stone-200">{{ $user->email }}</p>
                             </div>
-                            <div class="border-t border-stone-200 dark:border-stone-700"></div>
                             <a
                                 href="{{ localized_route('profile.edit') }}"
                                 class="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"
@@ -222,48 +230,6 @@
                     {{ __('common.sign_up') }}
                 </a>
             @endauth
-            
-            @php
-                $switcherRouteParams = collect(Route::current()->parameters())
-                    ->except('locale')
-                    ->map(function ($param) {
-                        if (is_object($param) && method_exists($param, 'getRouteKey')) {
-                            return $param->getRouteKey();
-                        }
-                        return $param;
-                    })
-                    ->toArray();
-            @endphp
-            <div class="relative flex items-center" x-data="{ open: false }">
-                <button
-                    @click="open = !open"
-                    @click.away="open = false"
-                    :aria-expanded="open.toString()"
-                    aria-haspopup="menu"
-                    aria-label="{{ __('common.language') }}"
-                    class="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 sm:px-3 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
-                >
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
-                    </svg>
-                    <span class="hidden sm:inline-block text-sm font-medium">{{ app()->getLocale() === 'fr' ? 'FR' : 'EN' }}</span>
-                </button>
-                <div
-                    x-show="open"
-                    x-transition
-                    class="absolute right-0 top-full mt-2 w-36 rounded-lg border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-800"
-                    style="display: none;"
-                >
-                <a href="{{ localized_route(Route::currentRouteName(), $switcherRouteParams, 'en') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700 {{ app()->getLocale() === 'en' ? 'bg-amber-50 font-semibold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' : '' }}">
-                    <span class="text-lg">🇬🇧</span>
-                    <span>English</span>
-                </a>
-                <a href="{{ localized_route(Route::currentRouteName(), $switcherRouteParams, 'fr') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700 {{ app()->getLocale() === 'fr' ? 'bg-amber-50 font-semibold text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' : '' }}">
-                    <span class="text-lg">🇫🇷</span>
-                    <span>Français</span>
-                </a>
-                </div>
-            </div>
             
             <button
                 id="theme-toggle"
