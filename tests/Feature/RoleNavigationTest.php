@@ -221,9 +221,10 @@ class RoleNavigationTest extends TestCase
             'Recent Applications rows must keep badges clear of the job title.'
         );
         $this->assertMatchesRegularExpression(
-            '/fixed bottom-16 left-4 right-4.*max-w-\[calc\(100vw-1rem\)\]/s',
+            '/absolute bottom-full right-0 mb-2 w-max min-w-36/s',
             $mobileNav,
-            'The mobile Explore menu must be clamped inside the viewport.'
+            'The mobile Explore menu must be a compact popover anchored above the Explore item.'
         );
+        $this->assertStringNotContainsString('fixed bottom-16 left-4 right-4', $mobileNav);
     }
 }

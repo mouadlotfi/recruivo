@@ -172,11 +172,11 @@
                         <div
                             x-show="open"
                             x-transition
-                            class="absolute right-0 top-full mt-2 w-48 rounded-lg border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-800"
+                            class="absolute right-0 top-full mt-2 w-max rounded-lg border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-800"
                             style="display: none;"
                         >
                             <div class="border-b border-stone-200 px-4 py-3 dark:border-stone-700">
-                                <p class="break-all text-sm font-medium text-stone-800 dark:text-stone-200">{{ $user->email }}</p>
+                                <p class="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-200">{{ $user->email }}</p>
                             </div>
                             <a
                                 href="{{ localized_route('profile.edit') }}"

@@ -71,35 +71,29 @@
                 <div class="rounded-xl border border-stone-200/60 bg-white/80 p-4 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60 transition hover:border-amber-200 dark:hover:border-amber-800 sm:p-6">
                     <details data-application-card-collapsible class="group">
                         <summary class="flex cursor-pointer list-none flex-wrap items-center gap-4 [&::-webkit-details-marker]:hidden">
-                            @if($application->job->company && $application->job->company->logo_url)
-                                <img
-                                    src="{{ $application->job->company->logo_url }}"
-                                    alt="{{ $application->job->company->name }}"
-                                    class="h-12 w-12 rounded-lg object-cover"
-                                >
-                            @else
-                                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-lg font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
-                                    {{ $application->job->company ? substr($application->job->company->name, 0, 1) : 'J' }}
-                                </div>
-                            @endif
-
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-3">
-                                    <a
-                                        href="{{ localized_route('jobs.show', $application->job) }}"
-                                        class="truncate text-xl font-semibold text-stone-900 hover:text-amber-600 dark:text-white dark:hover:text-amber-400 transition"
+                            <div class="flex min-w-0 flex-1 basis-full items-center gap-4 sm:basis-auto">
+                                @if($application->job->company && $application->job->company->logo_url)
+                                    <img
+                                        src="{{ $application->job->company->logo_url }}"
+                                        alt="{{ $application->job->company->name }}"
+                                        class="h-12 w-12 shrink-0 rounded-lg object-cover"
                                     >
-                                        {{ $application->job->title }}
-                                    </a>
-                                </div>
-                                @if($application->job->company)
-                                    <a
-                                        href="{{ localized_route('companies.show', $application->job->company->slug) }}"
-                                        class="text-sm text-stone-600 hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400 transition"
-                                    >
-                                        {{ $application->job->company->name }}
-                                    </a>
+                                @else
+                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-lg font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                                        {{ $application->job->company ? substr($application->job->company->name, 0, 1) : 'J' }}
+                                    </div>
                                 @endif
+
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="text-xl font-semibold leading-snug text-stone-900 dark:text-white">
+                                        {{ $application->job->title }}
+                                    </h3>
+                                    @if($application->job->company)
+                                        <p class="mt-0.5 text-sm text-stone-600 dark:text-stone-400">
+                                            {{ $application->job->company->name }}
+                                        </p>
+                                    @endif
+                                </div>
                             </div>
 
                             @php
@@ -113,18 +107,18 @@
                                 ];
                                 $statusLabelKey = $application->status->value === 'pending' ? 'pending_review' : $application->status->value;
                             @endphp
-                            <span class="inline-flex items-center rounded-full {{ $statusBadgeClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }} px-3 py-1 text-xs font-medium">
+                            <span class="inline-flex shrink-0 items-center rounded-full {{ $statusBadgeClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }} px-3 py-1 text-xs font-medium">
                                 <svg class="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 8 8">
                                     <circle cx="4" cy="4" r="3" />
                                 </svg>
                                 {{ __('applications.'.$statusLabelKey) }}
                             </span>
-                            <svg class="h-4 w-4 text-stone-500 transition group-open:rotate-180 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                            <svg class="h-4 w-4 shrink-0 text-stone-500 transition group-open:rotate-180 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
                         </summary>
 
                         <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div class="flex-1">
-                            <div class="flex flex-wrap items-center gap-4 text-sm text-stone-600 dark:text-stone-400">
+                            <div class="mb-3 flex flex-wrap items-center gap-4 text-sm text-stone-600 dark:text-stone-400">
                                         @if($application->job->location)
                                             <div class="flex items-center gap-1">
                                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -156,9 +150,7 @@
                                         {{ __('applications.your_cover_letter') }}
                                         <svg class="h-4 w-4 text-stone-500 transition group-open:rotate-180 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
                                     </summary>
-                                    <div class="mt-2 whitespace-pre-line rounded-lg bg-stone-50 p-4 text-sm leading-6 text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-                                        {{ trim($application->cover_letter) }}
-                                    </div>
+                                    <div class="mt-2 whitespace-pre-line rounded-lg bg-stone-50 p-4 text-sm leading-6 text-stone-700 dark:bg-stone-800 dark:text-stone-300">{{ trim($application->cover_letter) }}</div>
                                 </details>
                             @endif
 

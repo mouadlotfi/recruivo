@@ -41,9 +41,9 @@
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.25-2.25 3.375-5.25 3.375-9S14.25 5.25 12 3m0 18c-2.25-2.25-3.375-5.25-3.375-9S9.75 5.25 12 3M3.375 12h17.25" /></svg>
                     <span class="mt-1 text-[11px] font-medium">{{ __('common.explore') }}</span>
                 </button>
-                <div x-show="open" x-transition style="display: none;" role="menu" class="fixed bottom-16 left-4 right-4 mb-3 w-auto max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-stone-200 bg-white py-1 text-left shadow-xl dark:border-stone-700 dark:bg-stone-900">
-                    <a href="{{ localized_route('jobs.index') }}" role="menuitem" class="block px-4 py-3 text-sm font-medium text-stone-700 hover:bg-amber-50 hover:text-amber-700 dark:text-stone-200 dark:hover:bg-amber-500/10 dark:hover:text-amber-300">{{ __('common.jobs') }}</a>
-                    <a href="{{ localized_route('companies.index') }}" role="menuitem" class="block px-4 py-3 text-sm font-medium text-stone-700 hover:bg-amber-50 hover:text-amber-700 dark:text-stone-200 dark:hover:bg-amber-500/10 dark:hover:text-amber-300">{{ __('common.companies') }}</a>
+                <div x-show="open" x-transition style="display: none;" role="menu" class="absolute bottom-full right-0 mb-2 w-max min-w-36 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 text-left shadow-xl dark:border-stone-700 dark:bg-stone-900">
+                    <a href="{{ localized_route('jobs.index') }}" role="menuitem" class="block whitespace-nowrap px-4 py-3 text-sm font-medium text-stone-700 hover:bg-amber-50 hover:text-amber-700 dark:text-stone-200 dark:hover:bg-amber-500/10 dark:hover:text-amber-300">{{ __('common.jobs') }}</a>
+                    <a href="{{ localized_route('companies.index') }}" role="menuitem" class="block whitespace-nowrap px-4 py-3 text-sm font-medium text-stone-700 hover:bg-amber-50 hover:text-amber-700 dark:text-stone-200 dark:hover:bg-amber-500/10 dark:hover:text-amber-300">{{ __('common.companies') }}</a>
                 </div>
             </div>
             {{-- Settings --}}
@@ -59,9 +59,9 @@
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.25-2.25 3.375-5.25 3.375-9S14.25 5.25 12 3m0 18c-2.25-2.25-3.375-5.25-3.375-9S9.75 5.25 12 3M3.375 12h17.25" /></svg>
                     <span class="mt-1 text-[11px] font-medium">{{ __('common.explore') }}</span>
                 </button>
-                <div x-show="open" x-transition style="display: none;" role="menu" class="fixed bottom-16 left-4 right-4 mb-3 w-auto max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-stone-200 bg-white py-1 text-left shadow-xl dark:border-stone-700 dark:bg-stone-900">
-                    <a href="{{ localized_route('jobs.index') }}" role="menuitem" class="block px-4 py-3 text-sm font-medium text-stone-700 hover:bg-amber-50 hover:text-amber-700 dark:text-stone-200 dark:hover:bg-amber-500/10 dark:hover:text-amber-300">{{ __('common.jobs') }}</a>
-                    <a href="{{ localized_route('companies.index') }}" role="menuitem" class="block px-4 py-3 text-sm font-medium text-stone-700 hover:bg-amber-50 hover:text-amber-700 dark:text-stone-200 dark:hover:bg-amber-500/10 dark:hover:text-amber-300">{{ __('common.companies') }}</a>
+                <div x-show="open" x-transition style="display: none;" role="menu" class="absolute bottom-full right-0 mb-2 w-max min-w-36 overflow-hidden rounded-xl border border-stone-200 bg-white py-1 text-left shadow-xl dark:border-stone-700 dark:bg-stone-900">
+                    <a href="{{ localized_route('jobs.index') }}" role="menuitem" class="block whitespace-nowrap px-4 py-3 text-sm font-medium text-stone-700 hover:bg-amber-50 hover:text-amber-700 dark:text-stone-200 dark:hover:bg-amber-500/10 dark:hover:text-amber-300">{{ __('common.jobs') }}</a>
+                    <a href="{{ localized_route('companies.index') }}" role="menuitem" class="block whitespace-nowrap px-4 py-3 text-sm font-medium text-stone-700 hover:bg-amber-50 hover:text-amber-700 dark:text-stone-200 dark:hover:bg-amber-500/10 dark:hover:text-amber-300">{{ __('common.companies') }}</a>
                 </div>
             </div>
             {{-- Saved Jobs --}}

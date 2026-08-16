@@ -11,11 +11,11 @@
                     : trans_choice('recruiter.filtered_applications_received', $applications->total(), ['count' => $applications->total()]) }}
             </p>
         </div>
-        <div class="flex shrink-0 items-center gap-2 self-start">
-            <a href="{{ localized_route('recruiter.note-templates.index', ['back' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center self-start rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700">
+        <div class="flex shrink-0 flex-col items-stretch gap-2 self-start sm:flex-row sm:items-center">
+            <a href="{{ localized_route('recruiter.note-templates.index', ['back' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center self-start whitespace-nowrap rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700">
                 {{ __('recruiter.manage_templates') }}
             </a>
-            <a href="{{ localized_route('recruiter.jobs.index') }}" class="inline-flex items-center justify-center self-start rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700">
+            <a href="{{ localized_route('recruiter.jobs.index') }}" class="inline-flex items-center justify-center self-start whitespace-nowrap rounded-xl bg-stone-100 px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700">
                 <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
                 {{ __('recruiter.back_to_jobs_list') }}
             </a>
@@ -69,22 +69,25 @@
             <div class="space-y-4" data-infinite-items>
                 @foreach($applications as $application)
                     <article class="rounded-2xl border border-stone-200/70 bg-white/85 p-5 shadow-sm backdrop-blur transition hover:border-amber-300/70 sm:p-6 dark:border-stone-800 dark:bg-stone-900/70 dark:hover:border-amber-700/70">
+                        @php($showReviewPanel = !in_array($application->status->value, ['accepted', 'rejected']))
                         <details data-application-card-collapsible class="group" @if($errors->any()) open @endif>
                             <summary class="flex cursor-pointer list-none flex-wrap items-center gap-3 [&::-webkit-details-marker]:hidden">
-                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">{{ substr($application->candidate->name, 0, 1) }}</div>
-                                <div class="min-w-0 flex-1">
-                                    <h2 class="truncate text-lg font-semibold text-stone-900 dark:text-white">{{ $application->candidate->name }}</h2>
-                                    <p class="truncate text-sm text-stone-600 dark:text-stone-400">{{ $application->candidate->email }}</p>
+                                <div class="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-auto">
+                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">{{ substr($application->candidate->name, 0, 1) }}</div>
+                                    <div class="min-w-0 flex-1">
+                                        <h2 class="text-lg font-semibold leading-snug text-stone-900 dark:text-white">{{ $application->candidate->name }}</h2>
+                                        <p class="mt-0.5 break-words text-sm text-stone-600 dark:text-stone-400">{{ $application->candidate->email }}</p>
+                                    </div>
                                 </div>
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $statusBadgeClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }}">{{ __('recruiter.'.$application->status->value) }}</span>
-                                <svg class="h-4 w-4 text-stone-500 transition group-open:rotate-180 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                                <span class="inline-flex shrink-0 rounded-full px-3 py-1 text-xs font-semibold {{ $statusBadgeClasses[$application->status->value] ?? 'bg-stone-100 text-stone-700' }}">{{ __('recruiter.'.$application->status->value) }}</span>
+                                <svg class="h-4 w-4 shrink-0 text-stone-500 transition group-open:rotate-180 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
                             </summary>
 
-                            <div class="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+                            <div class="mt-5 grid gap-6 {{ $showReviewPanel ? 'lg:grid-cols-[minmax(0,1fr)_18rem]' : '' }}">
                             <div class="min-w-0 space-y-5">
-                                <div class="flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-600 dark:text-stone-400">
-                                    <span>{{ __('recruiter.applied_time', ['time' => $application->created_at->diffForHumans()]) }}</span>
-                                    <span><strong>{{ __('recruiter.phone') }}</strong> {{ $application->candidate->phone ?? __('recruiter.not_provided') }}</span>
+                                <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-stone-600 dark:text-stone-400">
+                                    <span class="break-words">{{ __('recruiter.applied_time', ['time' => $application->created_at->diffForHumans()]) }}</span>
+                                    <span class="break-words"><strong>{{ __('recruiter.phone') }}</strong> {{ $application->candidate->phone ?? __('recruiter.not_provided') }}</span>
                                     @if($application->resume_path || $application->candidate->candidateProfile?->resume_path)
                                         <a href="{{ localized_route('recruiter.applications.resume', $application) }}" target="_blank" rel="noopener" class="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400">{{ __('recruiter.view_resume') }}</a>
                                     @endif
@@ -125,10 +128,9 @@
                                 @endif
                             </div>
 
+                            @if($showReviewPanel)
                             <aside data-application-review-panel class="self-start rounded-xl border border-stone-200 bg-stone-50/80 p-4 dark:border-stone-700 dark:bg-stone-800/60">
-                                @if(in_array($application->status->value, ['accepted', 'rejected']))
-                                    {{-- Final decision: status badge in the card summary already reflects it; no panel content needed --}}
-                                @elseif($application->status->value === 'withdrawn')
+                                @if($application->status->value === 'withdrawn')
                                     <p class="text-sm font-semibold text-stone-800 dark:text-stone-200">{{ __('recruiter.withdrawn_by_candidate') }}</p>
                                 @else
                                     <form action="{{ localized_route('recruiter.applications.update', $application) }}" method="POST" class="space-y-3" x-data="{ status: @js(old('status', '')), interviewMode: @js(old('interview_mode', 'onsite')), notes: @js(old('notes', '')) }">
@@ -202,6 +204,7 @@
                                     </form>
                                 @endif
                             </aside>
+                            @endif
                             </div>
                         </details>
                     </article>
