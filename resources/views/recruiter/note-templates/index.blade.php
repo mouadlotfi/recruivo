@@ -27,7 +27,14 @@
                 @error('name') <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="template-body" class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ __('recruiter.template_body') }}</label>
+                <div class="flex items-center justify-between gap-3">
+                    <label for="template-body" class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ __('recruiter.template_body') }}</label>
+                    <x-expanded-textarea
+                        title="{{ __('recruiter.expand_template_body') }}"
+                        field-id="template-body"
+                        maxlength="2000"
+                    />
+                </div>
                 <textarea id="template-body" name="body" rows="4" maxlength="2000"
                     class="mt-1 w-full resize-y rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500">{{ old('body') }}</textarea>
                 @error('body') <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
@@ -52,7 +59,14 @@
                                 @error('name') <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                             </div>
                             <div class="sm:col-span-2">
-                                <label for="body-{{ $template->id }}" class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ __('recruiter.template_body') }}</label>
+                                <div class="flex items-center justify-between gap-3">
+                                    <label for="body-{{ $template->id }}" class="block text-sm font-medium text-stone-700 dark:text-stone-300">{{ __('recruiter.template_body') }}</label>
+                                    <x-expanded-textarea
+                                        title="{{ __('recruiter.expand_template_body') }}"
+                                        field-id="body-{{ $template->id }}"
+                                        maxlength="2000"
+                                    />
+                                </div>
                                 <textarea id="body-{{ $template->id }}" name="body" rows="3" maxlength="2000"
                                     class="mt-1 w-full resize-y rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500">{{ $template->body }}</textarea>
                                 @error('body') <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p> @enderror

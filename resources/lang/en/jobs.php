@@ -49,6 +49,7 @@ return [
     'back_to_jobs' => 'Back to jobs',
     'you_have_applied' => 'Application submitted',
     'cover_letter' => 'Cover Letter',
+    'write_cover_letter' => 'Write Cover Letter',
     'resume_source' => 'Choose a resume',
     'use_profile_resume' => 'Use my profile resume',
     'upload_application_resume' => 'Upload a new resume for this application',

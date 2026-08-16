@@ -6,6 +6,8 @@ return [
     'toggle_password_visibility' => 'Toggle password visibility',
     'language' => 'Language',
     'close' => 'Close',
+    'expand' => 'Expand',
+    'done' => 'Done',
     'demo_account' => 'Demo account',
     'demo_account_cannot_be_deleted' => 'Demo accounts are protected and cannot be deleted.',
     'demo_account_protected_description' => 'This shared demo account is protected so it remains available for visitors.',

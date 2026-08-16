@@ -10,6 +10,53 @@ import { profileCollection } from './profile-builder';
 
 Alpine.plugin(focus);
 Alpine.data('profileCollection', profileCollection);
+Alpine.data('expandedTextarea', (fieldId, model) => ({
+    isOpen: false,
+    draft: '',
+    fieldId,
+    model,
+
+    // Resolve the value source: an Alpine model on the nearest enclosing
+    // x-data scope (skip this component's own root), or a DOM textarea by id.
+    source() {
+        if (this.model) {
+            return this.$el.parentElement?.closest('[x-data]');
+        }
+        return document.getElementById(this.fieldId);
+    },
+
+    read() {
+        if (this.model) {
+            const scope = this.source();
+            return scope ? (Alpine.$data(scope)[this.model] ?? '') : '';
+        }
+        return this.source()?.value ?? '';
+    },
+
+    write(value) {
+        if (this.model) {
+            const scope = this.source();
+            if (scope) Alpine.$data(scope)[this.model] = value;
+            return;
+        }
+        const el = this.source();
+        if (el) el.value = value;
+    },
+
+    open() {
+        this.draft = this.read();
+        this.isOpen = true;
+    },
+
+    commit() {
+        this.write(this.draft);
+        this.isOpen = false;
+    },
+
+    close() {
+        this.isOpen = false;
+    },
+}));
 window.Alpine = Alpine;
 
 document.addEventListener('alpine:init', () => {

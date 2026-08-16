@@ -6,6 +6,8 @@ return [
     'toggle_password_visibility' => 'Afficher ou masquer le mot de passe',
     'language' => 'Langue',
     'close' => 'Fermer',
+    'expand' => 'Développer',
+    'done' => 'Terminé',
     'demo_account' => 'Compte de démonstration',
     'demo_account_cannot_be_deleted' => 'Les comptes de démonstration sont protégés et ne peuvent pas être supprimés.',
     'demo_account_protected_description' => 'Ce compte de démonstration partagé est protégé afin de rester disponible pour les visiteurs.',

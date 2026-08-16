@@ -117,9 +117,16 @@
                                 @csrf
                                 <input type="hidden" name="submission_token" value="{{ $applicationSubmissionToken }}">
                                 <div>
-                                    <label for="cover_letter" class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                        {{ __('jobs.cover_letter') }}
-                                    </label>
+                                    <div class="mb-2 flex items-center justify-between gap-3">
+                                        <label for="cover_letter" class="block text-sm font-medium text-stone-700 dark:text-stone-300">
+                                            {{ __('jobs.cover_letter') }}
+                                        </label>
+                                        <x-expanded-textarea
+                                            title="{{ __('jobs.write_cover_letter') }}"
+                                            field-id="cover_letter"
+                                            placeholder="{{ __('jobs.cover_letter_placeholder') }}"
+                                        />
+                                    </div>
                                     <textarea
                                         id="cover_letter"
                                         name="cover_letter"

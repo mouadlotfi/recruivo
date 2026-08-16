@@ -49,6 +49,7 @@ return [
     'back_to_jobs' => 'Retour aux offres',
     'you_have_applied' => 'Candidature soumise',
     'cover_letter' => 'Lettre de motivation',
+    'write_cover_letter' => 'Rédiger la lettre de motivation',
     'resume_source' => 'Choisissez un CV',
     'use_profile_resume' => 'Utiliser le CV de mon profil',
     'upload_application_resume' => 'Importer un nouveau CV pour cette candidature',
