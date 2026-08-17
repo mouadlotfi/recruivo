@@ -39,6 +39,7 @@ return [
     'search_placeholder' => 'Search roles, skills, companies, or locations',
     'search_hint' => 'Try searching for job titles, companies, or locations',
     'clear_search' => 'Clear search',
+    'close_search' => 'Close search',
     'search_all_results' => 'See all results for',
     'no_search_suggestions' => 'No direct matches yet',
     'search_error' => 'Search is temporarily unavailable. Check your connection and try again.',

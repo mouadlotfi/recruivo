@@ -8,13 +8,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewApplicationNotification extends Notification
+class NewApplicationNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(protected Application $application)
-    {
-    }
+    public function __construct(protected Application $application) {}
 
     public function via($notifiable): array
     {
@@ -25,7 +23,7 @@ class NewApplicationNotification extends Notification
     {
         $job = $this->application->job;
         $applicationsUrl = localized_route('recruiter.jobs.applications', ['job' => $job->id], config('app.locale', 'en'));
-        
+
         return (new MailMessage)
             ->subject('New application for '.$job->title)
             ->greeting('Hello '.$notifiable->name)

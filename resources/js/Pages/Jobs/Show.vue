@@ -115,10 +115,11 @@ const toggleSaved = () => {
             </Link>
 
             <div class="grid gap-8 lg:grid-cols-3">
-                <div class="space-y-6 lg:col-span-2">
+                <div class="lg:col-span-2">
                     <h2 class="sr-only">{{ labels.job_details }}</h2>
 
-                    <div class="rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
+                    <div class="space-y-6">
+                        <div class="rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
                         <div class="flex items-start gap-4 border-b border-stone-200 pb-6 dark:border-stone-700">
                             <img
                                 v-if="job.company?.logo_url"
@@ -163,7 +164,8 @@ const toggleSaved = () => {
                                     v-if="job.remote_type"
                                     :href="searchUrl"
                                     :data="{ search: '', remote_type: job.remote_type.toLowerCase() }"
-                                    class="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700 transition hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                                    class="rounded-full px-3 py-1 text-sm font-medium transition"
+                                    :class="remoteTypeClass"
                                 >
                                     {{ remoteTypeLabel }}
                                 </Link>
@@ -190,6 +192,7 @@ const toggleSaved = () => {
                             <div class="prose prose-stone max-w-none dark:prose-invert mt-6 job-description" v-html="job.description_html"></div>
                         </div>
                     </div>
+                </div>
                 </div>
 
                 <div class="space-y-6">

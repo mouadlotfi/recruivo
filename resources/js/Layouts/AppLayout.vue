@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../types'
 import { useTranslation } from '../composables/useTranslation'
 import Navigation from '../Components/Layout/Navigation.vue'
+import SearchModal from '../Components/Layout/SearchModal.vue'
 import MobileNav from '../Components/Layout/MobileNav.vue'
 import UserDropdown from '../Components/Layout/UserDropdown.vue'
 import NotificationCenter from '../Components/Layout/NotificationCenter.vue'
@@ -22,6 +23,8 @@ const localeUrl = (path: string) => `/${page.props.locale}${path}`
 const logoHref = computed(() => localeUrl(isRecruiter.value ? '/recruiter/dashboard' : '/'))
 
 const logoutUrl = localeUrl('/logout')
+const searchOpen = ref(false)
+const searchTrigger = ref<HTMLButtonElement | null>(null)
 
 </script>
 
@@ -55,17 +58,21 @@ const logoutUrl = localeUrl('/logout')
                     <Navigation />
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
-                    <Link
+                    <button
+                        ref="searchTrigger"
                         id="mobile-search-toggle"
-                        :href="localeUrl('/search')"
+                        type="button"
+                        aria-haspopup="dialog"
+                        :aria-expanded="searchOpen"
                         :aria-label="t('search')"
-                        class="inline-flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                        class="inline-flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 dark:focus-visible:ring-offset-stone-950"
+                        @click="searchOpen = true"
                     >
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
                         <span class="sr-only">{{ t('search') }}</span>
-                    </Link>
+                    </button>
 
                     <template v-if="user">
                         <Link
@@ -112,8 +119,9 @@ const logoutUrl = localeUrl('/logout')
             </div>
         </header>
 
+        <FlashMessages />
+
         <main class="mx-auto w-full max-w-6xl flex-1 px-4 pb-20 pt-10 sm:px-6 sm:pb-16">
-            <FlashMessages />
             <slot />
         </main>
 
@@ -146,5 +154,6 @@ const logoutUrl = localeUrl('/logout')
 
         <MobileNav />
         <ScrollToTop />
+        <SearchModal v-model:open="searchOpen" :trigger="searchTrigger" />
     </div>
 </template>

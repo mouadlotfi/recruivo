@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, useId, watch } from 'vue'
+import { nextTick, onUnmounted, ref, useId } from 'vue'
 
 // Port of resources/views/components/expanded-textarea.blade.php to Vue.
 // Controlled component: the trigger button + modal live here, the real
@@ -28,22 +28,37 @@ const open = ref(false)
 const draft = ref(props.modelValue)
 const trigger = ref<HTMLButtonElement | null>(null)
 const modalTextarea = ref<HTMLTextAreaElement | null>(null)
+let previousBodyOverflow: string | null = null
+
+const saveBodyScroll = () => {
+    if (previousBodyOverflow === null) {
+        previousBodyOverflow = document.body.style.overflow
+    }
+
+    document.body.style.overflow = 'hidden'
+}
+
+const restoreBodyScroll = () => {
+    if (previousBodyOverflow === null) return
+
+    document.body.style.overflow = previousBodyOverflow
+    previousBodyOverflow = null
+}
 
 const openModal = () => {
     draft.value = props.modelValue
+    saveBodyScroll()
     open.value = true
     nextTick(() => modalTextarea.value?.focus())
 }
 
 const closeModal = () => {
     open.value = false
+    restoreBodyScroll()
     nextTick(() => trigger.value?.focus())
 }
 
-// Lock background scroll while the modal is open (port of Blade x-trap.noscroll).
-watch(open, (isOpen) => {
-    document.body.style.overflow = isOpen ? 'hidden' : ''
-})
+onUnmounted(restoreBodyScroll)
 
 // Minimal Tab focus trap: cycle focus within the modal (port of Blade x-trap).
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -76,7 +91,7 @@ const commit = () => {
             type="button"
             :aria-expanded="open"
             aria-haspopup="dialog"
-            class="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-stone-500 transition hover:bg-stone-100 hover:text-amber-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-amber-400"
+            class="inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-xs font-medium text-stone-500 transition hover:bg-stone-100 hover:text-amber-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-amber-400"
             @click="openModal"
         >
             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
@@ -98,7 +113,7 @@ const commit = () => {
                 <div class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm" @click="closeModal"></div>
 
                 <div class="fixed inset-0 flex items-center justify-center p-0 sm:p-6">
-                    <div class="flex h-full w-full flex-col bg-white shadow-2xl dark:bg-stone-900 sm:h-auto sm:max-h-[85vh] sm:max-w-3xl sm:rounded-2xl sm:border sm:border-stone-200 dark:sm:border-stone-700">
+                    <div class="flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl dark:bg-stone-900 sm:h-[70vh] sm:max-h-[80vh] sm:max-w-3xl sm:rounded-2xl sm:border sm:border-stone-200 dark:sm:border-stone-700">
                         <div class="flex items-center justify-between gap-3 border-b border-stone-200 px-5 py-4 dark:border-stone-700">
                             <h2 :id="titleId" class="text-base font-semibold text-stone-900 dark:text-white">
                                 {{ title }}

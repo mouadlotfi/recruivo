@@ -1,0 +1,66 @@
+services:
+  nginx:
+    volumes:
+      - ./public:/var/www/html/public:ro
+      - ./storage:/var/www/html/storage:ro
+
+  app:
+    image: ${APP_IMAGE:-recruivo:development}
+    build:
+      target: development
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - ./storage:/var/www/html/storage
+
+  queue:
+    image: ${APP_IMAGE:-recruivo:development}
+    build:
+      target: development
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - ./storage:/var/www/html/storage
+
+  scheduler:
+    image: ${APP_IMAGE:-recruivo:development}
+    build:
+      target: development
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - ./storage:/var/www/html/storage
+
+  mysql:
+    ports:
+      - "${DB_FORWARD_PORT:-3306}:3306"
+
+  redis:
+    ports:
+      - "${REDIS_FORWARD_PORT:-6379}:6379"
+
+  vite:
+    image: node:20-bookworm-slim
+    init: true
+    restart: unless-stopped
+    working_dir: /var/www/html
+    env_file:
+      - ${APP_ENV_FILE:-.env.docker}
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      VITE_HMR_HOST: ${VITE_HMR_HOST:-localhost}
+    command: ["sh", "-c", "if [ ! -x node_modules/.bin/vite ]; then npm ci --prefer-offline --no-audit; fi; exec npm run dev -- --host 0.0.0.0"]
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+    networks:
+      - public
+
+volumes:
+  vendor_data:
+  node_modules:

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../types'
 import { useTranslation } from '../composables/useTranslation'
 import Navigation from '../Components/Layout/Navigation.vue'
+import SearchModal from '../Components/Layout/SearchModal.vue'
 import NotificationCenter from '../Components/Layout/NotificationCenter.vue'
 import UserDropdown from '../Components/Layout/UserDropdown.vue'
 import ThemeToggle from '../Components/Layout/ThemeToggle.vue'
@@ -17,6 +18,8 @@ const isRecruiter = computed(() => user.value?.roles.includes('Recruiter') ?? fa
 const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
 const logoHref = computed(() => localeUrl(isRecruiter.value ? '/recruiter/dashboard' : '/'))
+const searchOpen = ref(false)
+const searchTrigger = ref<HTMLButtonElement | null>(null)
 </script>
 
 <template>
@@ -43,9 +46,9 @@ const logoHref = computed(() => localeUrl(isRecruiter.value ? '/recruiter/dashbo
                         <Navigation />
                     </div>
                     <div class="flex items-center gap-1.5 sm:gap-2">
-                        <Link id="mobile-search-toggle" :href="localeUrl('/search')" :aria-label="t('search')" class="inline-flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100">
+                        <button ref="searchTrigger" id="mobile-search-toggle" type="button" aria-haspopup="dialog" :aria-expanded="searchOpen" :aria-label="t('search')" class="inline-flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 dark:focus-visible:ring-offset-stone-950" @click="searchOpen = true">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg><span class="sr-only">{{ t('search') }}</span>
-                        </Link>
+                        </button>
                         <template v-if="user">
                             <Link v-if="isRecruiter" :href="localeUrl('/recruiter/jobs/create')" class="hidden h-9 items-center justify-center whitespace-nowrap rounded-full bg-amber-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 xl:inline-flex dark:hover:bg-amber-500/90 dark:focus-visible:ring-offset-stone-950">{{ t('post_job') }}</Link>
                             <template v-if="!isAdmin"><NotificationCenter /><UserDropdown /></template>
@@ -61,11 +64,12 @@ const logoHref = computed(() => localeUrl(isRecruiter.value ? '/recruiter/dashbo
             </header>
 
             <main id="main-content" tabindex="-1" class="mx-auto max-w-6xl px-4 pb-20 pt-10 sm:px-6 sm:pb-16">
-                <FlashMessages />
                 <slot />
             </main>
         </div>
+        <FlashMessages />
         <footer class="border-t border-stone-200 bg-white/70 py-6 text-sm text-stone-500 backdrop-blur dark:border-stone-800 dark:bg-stone-950/80 dark:text-stone-400"><div class="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 px-4 text-center sm:flex-row sm:justify-between sm:gap-2 sm:px-6 sm:text-left"><p class="max-w-md">{{ t('footer_text', { year: new Date().getFullYear() }) }}</p><div class="flex items-center gap-4 whitespace-nowrap"><a href="https://mouadlotfi.com" class="transition hover:text-amber-600 dark:hover:text-amber-400" target="_blank" rel="noopener noreferrer">Portfolio</a><a href="https://www.linkedin.com/in/mouad-lotfi/" class="transition hover:text-amber-600 dark:hover:text-amber-400" target="_blank" rel="noopener noreferrer">LinkedIn</a><a href="mailto:mouad.lotfi.work@gmail.com" class="transition hover:text-amber-600 dark:hover:text-amber-400">{{ t('contact') }}</a></div></div></footer>
         <ScrollToTop />
+        <SearchModal v-model:open="searchOpen" :trigger="searchTrigger" />
     </div>
 </template>

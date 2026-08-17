@@ -1,135 +1,87 @@
-# =============================================================================
-# Stage 1: Build frontend assets
-# =============================================================================
-FROM node:20-alpine AS node-builder
+ARG PHP_VERSION=8.4
+ARG NODE_VERSION=20
 
-WORKDIR /app
+FROM node:${NODE_VERSION}-bookworm-slim AS node-builder
 
-# Copy package files first for better caching
-COPY package.json package-lock.json ./
+WORKDIR /var/www/html
 
-# Install dependencies
+COPY package.json package-lock.json vite.config.js postcss.config.js tailwind.config.js tsconfig.json ./
 RUN npm ci --prefer-offline --no-audit
 
-# Copy frontend source files
-COPY resources/ ./resources/
-COPY vite.config.js postcss.config.js tailwind.config.js ./
-
-# Build production assets
+COPY resources ./resources
 RUN npm run build
 
-# =============================================================================
-# Stage 2: Install PHP dependencies
-# =============================================================================
-FROM php:8.4-cli AS composer-builder
+FROM php:${PHP_VERSION}-cli AS composer-prod
 
-# Copy composer binary from official image
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
-# Install required PHP extensions for composer
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    unzip \
-    libzip-dev \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git unzip libzip-dev \
     && docker-php-ext-install zip \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /var/www/html
 
-# Copy composer files first for better caching
 COPY composer.json composer.lock ./
-
-# Install dependencies without dev packages for production
 RUN composer install \
     --no-dev \
     --no-scripts \
     --no-autoloader \
     --prefer-dist \
-    --no-interaction
+    --no-interaction \
+    --no-progress
 
-# Copy application code
 COPY . .
+RUN composer dump-autoload --classmap-authoritative --no-dev --no-scripts
 
-# Generate optimized autoloader
-RUN composer dump-autoload --optimize --no-dev
+FROM composer-prod AS composer-dev
 
-# =============================================================================
-# Stage 3: Final production image
-# =============================================================================
-FROM php:8.4-apache AS production
+RUN composer install \
+    --prefer-dist \
+    --no-interaction \
+    --no-progress \
+    --no-scripts \
+    && composer dump-autoload --classmap-authoritative --no-scripts
 
-# Build arguments for flexibility
-ARG APP_ENV=production
-ARG APP_DEBUG=false
+FROM php:${PHP_VERSION}-fpm-bookworm AS php-runtime-base
 
-# Environment variables
-ENV APP_ENV=${APP_ENV} \
-    APP_DEBUG=${APP_DEBUG} \
-    APACHE_DOCUMENT_ROOT=/var/www/html/public
-
-# Install system dependencies (minimal set for production)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    jpegoptim optipng pngquant gifsicle \
-    curl \
-    netcat-openbsd \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        libcurl4-openssl-dev \
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
+        libonig-dev \
+        libpng-dev \
+        libxml2-dev \
+        libzip-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
+        curl \
+        exif \
+        gd \
+        mbstring \
+        opcache \
+        pcntl \
+        pdo_mysql \
+        zip \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_mysql \
-        mbstring \
-        exif \
-        pcntl \
-        bcmath \
-        zip \
-        gd \
-        opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis
-
-# Configure OPcache for production
-RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.revalidate_freq=0" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/opcache.ini
-
-# Configure PHP for production
-RUN echo "expose_php=Off" >> /usr/local/etc/php/conf.d/security.ini \
-    && echo "display_errors=Off" >> /usr/local/etc/php/conf.d/security.ini \
-    && echo "log_errors=On" >> /usr/local/etc/php/conf.d/security.ini \
-    && echo "error_log=/var/log/php_errors.log" >> /usr/local/etc/php/conf.d/security.ini \
-    && echo "upload_max_filesize=10M" >> /usr/local/etc/php/conf.d/uploads.ini \
-    && echo "post_max_size=12M" >> /usr/local/etc/php/conf.d/uploads.ini
-
-# Enable Apache modules
-RUN a2enmod rewrite headers expires
-
-# Configure Apache document root
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
-    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
-# Copy Apache configuration
-COPY docker/apache-config.conf /etc/apache2/sites-available/000-default.conf
-
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy application from composer builder
-COPY --from=composer-builder /app .
+FROM php-runtime-base AS production
 
-# Copy built assets from node builder
-COPY --from=node-builder /app/public/build ./public/build
+ENV APP_ENV=production \
+    APP_DEBUG=0
 
-# Create Laravel directories with correct permissions
+COPY --from=composer-prod /var/www/html /var/www/html
+COPY --from=node-builder /var/www/html/public/build /var/www/html/public/build
+COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-app.ini
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/zz-opcache.ini
+
 RUN mkdir -p \
         storage/app/public \
         storage/app/private \
@@ -139,44 +91,41 @@ RUN mkdir -p \
         storage/framework/testing \
         storage/logs \
         bootstrap/cache \
+    && rm -rf public/storage \
+    && ln -s /var/www/html/storage/app/public public/storage \
     && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+    && chmod -R ug+rwX storage bootstrap/cache
 
-# Copy and set up entrypoint script
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost/api/health || exit 1
+HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=3 \
+    CMD php-fpm -t >/dev/null 2>&1 || exit 1
 
-# Expose port
-EXPOSE 80
+EXPOSE 9000
 
-# Run as non-root user for security (optional, uncomment if needed)
-# USER www-data
-
-# Entrypoint
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["apache2-foreground"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["php-fpm", "-F"]
 
 FROM production AS development
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+ENV APP_ENV=local \
+    APP_DEBUG=1
 
-RUN composer install \
-        --prefer-dist \
-        --no-interaction \
-        --no-progress \
-        --no-scripts \
-    && composer dump-autoload --optimize
+COPY --from=composer-dev /var/www/html/vendor /var/www/html/vendor
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+COPY docker/php/php.dev.ini /usr/local/etc/php/conf.d/zz-dev.ini
 
-RUN pecl install xdebug \
-    && docker-php-ext-enable xdebug \
-    && printf '%s\n' \
-        'xdebug.mode=develop,debug' \
-        'xdebug.client_host=host.docker.internal' \
-        'xdebug.start_with_request=trigger' \
-        > /usr/local/etc/php/conf.d/xdebug.ini
+RUN rm -f bootstrap/cache/*.php
 
-FROM production AS final
+FROM nginx:1.27-alpine AS nginx
+
+COPY --from=production /var/www/html/public /var/www/html/public
+RUN rm -rf /var/www/html/public/storage \
+    && mkdir -p /var/www/html/storage/app/public \
+    && ln -s /var/www/html/storage/app/public /var/www/html/public/storage
+
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD wget -q -O - http://127.0.0.1/api/health >/dev/null || exit 1

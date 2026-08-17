@@ -8,13 +8,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class EmailChangeVerificationNotification extends Notification
+class EmailChangeVerificationNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(protected User $user)
-    {
-    }
+    public function __construct(protected User $user) {}
 
     public function via($notifiable): array
     {
@@ -24,13 +22,13 @@ class EmailChangeVerificationNotification extends Notification
     public function toMail($notifiable): MailMessage
     {
         $accountType = $this->user->hasRole('Recruiter') ? 'recruiter' : 'candidate';
-        
+
         // Use the custom email change verification URL
         $verificationUrl = $this->user->getEmailChangeVerificationUrl();
 
         $mailMessage = (new MailMessage)
             ->subject('Verify Your New Email Address')
-            ->greeting('Hello ' . $this->user->name . '!')
+            ->greeting('Hello '.$this->user->name.'!')
             ->line('You have changed your email address. Please verify your new email address to continue using your account.')
             ->action('Verify Email Address', $verificationUrl)
             ->line('After verifying you can:');

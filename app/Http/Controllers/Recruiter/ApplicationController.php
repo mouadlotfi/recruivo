@@ -28,7 +28,7 @@ class ApplicationController extends Controller
         'interview_at', 'interview_location', 'interview_url', 'interview_instructions',
         'interview_details_hint', 'your_notes', 'cover_letter', 'status_timeline',
         'withdrawn_by_candidate', 'view_resume', 'phone', 'not_provided', 'applied_time',
-        'application_updated', 'resume_not_found', 'manage_templates', 'back_to_jobs_list',
+        'application_updated', 'resume_not_found', 'manage_templates', 'back_to_jobs',
         'no_applications_received', 'no_applications_with_status_message',
         'applications_appear_message', 'expand_notes', 'expand_interview_instructions',
     ];

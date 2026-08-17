@@ -121,7 +121,7 @@ const remoteTypeLabel = computed(() => {
                 {{ labels.expired_job_notice }}
             </div>
 
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]">
+            <div class="grid gap-6 lg:items-start lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]">
                 <section class="min-w-0 rounded-2xl border border-stone-200/70 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-stone-700/70 dark:bg-stone-900/70 sm:p-8">
                     <h2 class="text-lg font-semibold text-stone-900 dark:text-white">{{ labels.job_description_label }}</h2>
                     <!-- description_html is the trusted output of

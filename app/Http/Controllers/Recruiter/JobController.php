@@ -240,6 +240,9 @@ class JobController extends Controller
         return [
             'id' => $job->id,
             'title' => $job->title,
+            'location' => $job->location,
+            'remote_type' => $job->remote_type,
+            'category' => $job->category,
             'status' => $job->status->value,
             'applications_count' => $applicationsCount,
             'published_at' => $job->published_at?->toIso8601String(),
@@ -280,6 +283,7 @@ class JobController extends Controller
             'remote_type' => $job->remote_type,
             'salary_min' => $job->salary_min,
             'salary_max' => $job->salary_max,
+            'closes_at' => $job->closes_at?->toDateString(),
             'closes_label' => $job->closes_at
                 ? $job->closes_at->translatedFormat('M j, Y')
                 : null,

@@ -39,13 +39,18 @@ function proficiencyLabel(level: string): string {
         <Head :title="labels.recruiter_preview" />
 
         <div class="space-y-8">
-            <div>
-                <Link :href="localeUrl('/profile')" class="text-sm font-medium text-amber-600 hover:text-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:text-amber-400">← {{ labels.back_to_profile_settings }}</Link>
-                <p class="mt-5 text-sm font-medium text-stone-500 dark:text-stone-400">{{ labels.recruiter_preview }}</p>
-                <div class="mt-3 flex items-center gap-4">
-                    <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-amber-100 text-2xl font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">{{ applicantInitial(applicant.name) }}</div>
-                    <div><h1 class="text-3xl font-bold text-stone-900 dark:text-white">{{ applicant.name }}</h1><p v-if="profile?.headline" class="mt-1 text-stone-600 dark:text-stone-400">{{ profile.headline }}</p></div>
+            <div class="flex flex-col gap-4 md:flex-row md:items-start">
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-stone-500 dark:text-stone-400">{{ labels.recruiter_preview }}</p>
+                    <div class="mt-3 flex items-center gap-4">
+                        <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-amber-100 text-2xl font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">{{ applicantInitial(applicant.name) }}</div>
+                        <div class="min-w-0 break-words"><h1 class="break-words text-3xl font-bold text-stone-900 dark:text-white">{{ applicant.name }}</h1><p v-if="profile?.headline" class="mt-1 break-words text-stone-600 dark:text-stone-400">{{ profile.headline }}</p></div>
+                    </div>
                 </div>
+                <Link
+                    :href="localeUrl('/profile')"
+                    class="inline-flex min-h-11 shrink-0 items-center text-sm font-medium text-amber-600 hover:text-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 dark:text-amber-400 dark:focus-visible:ring-offset-stone-950 md:ml-auto"
+                >← {{ labels.back_to_profile_settings }}</Link>
             </div>
 
             <div class="grid gap-6 lg:grid-cols-3">

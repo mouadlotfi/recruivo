@@ -26,6 +26,75 @@ class ApplicationUiPolishTest extends TestCase
         Role::firstOrCreate(['name' => 'Recruiter', 'guard_name' => 'web']);
     }
 
+    public function test_flash_messages_are_fixed_toast_mounts_outside_layout_flow(): void
+    {
+        $flash = File::get(resource_path('js/Components/Layout/FlashMessages.vue'));
+        $appLayout = File::get(resource_path('js/Layouts/AppLayout.vue'));
+        $guestLayout = File::get(resource_path('js/Layouts/GuestLayout.vue'));
+
+        foreach (['fixed', 'left-1/2', '-translate-x-1/2', 'w-[calc(100%-2rem)]', 'max-w-lg', 'bottom-20', 'sm:bottom-6', 'z-50', 'pointer-events-none', 'aria-atomic="true"', '<TransitionGroup'] as $contract) {
+            $this->assertStringContainsString($contract, $flash);
+        }
+        $this->assertStringContainsString(':key="`${alert.kind}:${alert.message}`"', $flash);
+        $this->assertStringContainsString('pointer-events-auto', $flash);
+        $this->assertMatchesRegularExpression('/<FlashMessages \/>\s*<main[^>]*>/', $appLayout);
+        $this->assertMatchesRegularExpression('/<\/main>\s*<footer/', $appLayout);
+        $this->assertMatchesRegularExpression('/<\/div>\s*<FlashMessages \/>\s*<footer/', $guestLayout);
+    }
+
+    public function test_dashboard_recent_application_rows_wrap_without_truncating_primary_content(): void
+    {
+        $recruiterDashboard = File::get(resource_path('js/Pages/Recruiter/Dashboard.vue'));
+        $candidateDashboard = File::get(resource_path('js/Pages/Candidate/Dashboard.vue'));
+
+        foreach ([$recruiterDashboard, $candidateDashboard] as $dashboard) {
+            $this->assertStringContainsString('data-recent-application', $dashboard);
+            $this->assertStringContainsString('break-words', $dashboard);
+            $this->assertStringContainsString('min-h-11', $dashboard);
+            $this->assertStringContainsString('flex-wrap', $dashboard);
+            $this->assertStringNotContainsString('truncate', $dashboard);
+        }
+        $this->assertStringContainsString('data-recent-applications-header', $recruiterDashboard);
+        $this->assertStringContainsString('flex flex-wrap', $recruiterDashboard);
+    }
+
+    public function test_candidate_salary_label_and_value_have_readable_spacing(): void
+    {
+        $card = File::get(resource_path('js/Components/Applications/CandidateApplicationCard.vue'));
+
+        $this->assertStringContainsString('class="mb-3 flex flex-wrap items-baseline gap-1 text-sm"', $card);
+        $this->assertStringContainsString('{{ props.labels.salary }}', $card);
+        $this->assertStringContainsString('{{ salaryRange }}', $card);
+    }
+
+    public function test_recruiter_application_page_uses_back_to_jobs_label_in_both_locales(): void
+    {
+        $company = Company::factory()->create();
+        $recruiter = User::factory()->for($company)->create(['email_verified_at' => now()]);
+        $recruiter->assignRole('Recruiter');
+        $job = Job::factory()->for($company)->for($recruiter, 'recruiter')->create([
+            'status' => JobStatus::Published->value,
+        ]);
+        Application::factory()->for($job)->create();
+
+        foreach (['en', 'fr'] as $locale) {
+            $this->actingAs($recruiter)
+                ->get("/{$locale}/recruiter/jobs/{$job->id}/applications")
+                ->assertOk()
+                ->assertInertia(fn (AssertableInertia $page) => $page
+                    ->component('Recruiter/Applications/Index', false)
+                    ->where('labels.back_to_jobs', $locale === 'fr' ? 'Retour aux offres' : 'Back to Jobs')
+                );
+        }
+
+        $index = File::get(resource_path('js/Pages/Recruiter/Applications/Index.vue'));
+        $controller = File::get(base_path('app/Http/Controllers/Recruiter/ApplicationController.php'));
+        $this->assertStringContainsString('labels.back_to_jobs', $index);
+        $this->assertStringNotContainsString('labels.back_to_jobs_list', $index);
+        $this->assertStringContainsString("'back_to_jobs'", $controller);
+        $this->assertStringNotContainsString("'back_to_jobs_list'", $controller);
+    }
+
     public function test_candidate_cover_letter_is_collapsed_by_default(): void
     {
         $candidate = User::factory()->create();
@@ -151,6 +220,26 @@ class ApplicationUiPolishTest extends TestCase
         $this->assertStringContainsString('name="notes"', $review);
         $this->assertStringContainsString('const autosizeNotes', $review);
         $this->assertStringContainsString('@input="autosizeNotes"', $review);
+    }
+
+    public function test_expanded_textarea_editor_keeps_alignment_size_and_body_scroll_contracts(): void
+    {
+        $editor = File::get(resource_path('js/Components/Applications/ExpandedTextarea.vue'));
+
+        $this->assertStringContainsString('<button', $editor);
+        $this->assertStringContainsString('type="button"', $editor);
+        $this->assertStringContainsString('aria-expanded', $editor);
+        $this->assertStringContainsString('aria-haspopup="dialog"', $editor);
+        $this->assertStringContainsString('class="inline-flex min-h-10 items-center gap-2', $editor);
+        $this->assertStringContainsString('sm:h-[70vh]', $editor);
+        $this->assertStringContainsString('sm:max-h-[80vh]', $editor);
+        $this->assertStringContainsString('flex h-full w-full flex-col', $editor);
+        $this->assertStringContainsString('class="min-h-0 flex-1', $editor);
+        $this->assertStringContainsString('class="h-full min-h-0', $editor);
+        $this->assertStringContainsString('let previousBodyOverflow: string | null = null', $editor);
+        $this->assertStringContainsString('previousBodyOverflow = document.body.style.overflow', $editor);
+        $this->assertStringContainsString('document.body.style.overflow = previousBodyOverflow', $editor);
+        $this->assertStringContainsString('onUnmounted(restoreBodyScroll)', $editor);
     }
 
     public function test_company_location_links_to_location_search(): void

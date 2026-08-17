@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps, Pagination, RecruiterJobSummary } from '../../../types'
 import AppLayout from '../../../Layouts/AppLayout.vue'
@@ -15,14 +15,31 @@ const locale = computed(() => page.props.locale)
 const localeUrl = (path: string) => `/${locale.value}${path}`
 
 // "Show more" visits next_page_url with preserveState: Inertia swaps `jobs`
-// for the fresh page's items, so keep a local list and append unknown ids.
-const items = ref<RecruiterJobSummary[]>([...props.jobs])
+// for the fresh page's items. Keep one bucket per loaded server page so a
+// page-1 refresh replaces changed/deleted jobs without discarding later pages.
+const pageItems = ref(new Map<number, RecruiterJobSummary[]>([
+    [props.pagination.current_page, [...props.jobs]],
+]))
+const items = ref<RecruiterJobSummary[]>([])
+
+const reconcileItems = () => {
+    const seen = new Set<number>()
+    items.value = [...pageItems.value.entries()]
+        .sort(([leftPage], [rightPage]) => leftPage - rightPage)
+        .flatMap(([, jobs]) => jobs.filter((job) => {
+            if (seen.has(job.id)) return false
+            seen.add(job.id)
+            return true
+        }))
+}
+
+reconcileItems()
+
 watch(
-    () => props.jobs,
-    (incoming) => {
-        const known = new Set(items.value.map((job) => job.id))
-        const fresh = incoming.filter((job) => !known.has(job.id))
-        if (fresh.length) items.value = [...items.value, ...fresh]
+    [() => props.jobs, () => props.pagination.current_page],
+    ([incoming, currentPage]) => {
+        pageItems.value.set(currentPage, [...incoming])
+        reconcileItems()
     },
 )
 
@@ -53,6 +70,54 @@ const jobEditUrl = (job: RecruiterJobSummary) => localeUrl(`/recruiter/jobs/${jo
 
 // Native confirm() mirrors the Blade delete-modal's confirm step without a modal.
 const selectedJob = ref<RecruiterJobSummary | null>(null)
+const deleteDialog = ref<HTMLElement | null>(null)
+const deleteCancelButton = ref<HTMLButtonElement | null>(null)
+const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+const closeDeleteDialog = () => {
+    selectedJob.value = null
+}
+
+const focusDeleteDialog = () => {
+    nextTick(() => deleteCancelButton.value?.focus())
+}
+
+watch(selectedJob, (job) => {
+    if (job) focusDeleteDialog()
+})
+
+const handleDialogKeydown = (event: KeyboardEvent) => {
+    if (event.key !== 'Tab') return
+
+    const focusable = deleteDialog.value
+        ? Array.from(deleteDialog.value.querySelectorAll<HTMLElement>(focusableSelector))
+        : []
+    if (focusable.length === 0) {
+        event.preventDefault()
+        return
+    }
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+    }
+}
+
+const handleWindowKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && selectedJob.value) {
+        event.preventDefault()
+        closeDeleteDialog()
+    }
+}
+
+onMounted(() => window.addEventListener('keydown', handleWindowKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleWindowKeydown))
+
 const deleteJob = () => {
     if (!selectedJob.value) return
     router.delete(jobShowUrl(selectedJob.value), {
@@ -83,7 +148,7 @@ const badge = (job: RecruiterJobSummary) => {
 }
 
 const iconButtonClass =
-    'inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-40'
+    'inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-40'
 </script>
 
 <template>
@@ -136,9 +201,9 @@ const iconButtonClass =
                         class="group relative rounded-xl border border-stone-200/60 bg-white/80 p-4 backdrop-blur transition hover:border-amber-300 hover:shadow-md dark:border-stone-700/60 dark:bg-stone-900/60 dark:hover:border-amber-700 sm:p-6"
                     >
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                            <div class="flex-1">
-                                <div class="mb-2 flex items-center gap-3">
-                                    <h3 class="text-xl font-semibold text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
+                            <div class="min-w-0 flex-1">
+                                <div class="mb-3 flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center">
+                                    <h3 class="min-w-0 break-words text-xl font-semibold text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
                                         <Link
                                             :href="jobShowUrl(job)"
                                             class="before:absolute before:inset-0 focus:outline-none focus-visible:before:rounded-xl focus-visible:before:ring-2 focus-visible:before:ring-amber-500 focus-visible:before:ring-offset-2 dark:focus-visible:before:ring-offset-stone-950"
@@ -147,7 +212,7 @@ const iconButtonClass =
                                         </Link>
                                     </h3>
                                     <span
-                                        class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
+                                        class="inline-flex shrink-0 whitespace-normal rounded-full px-3 py-1 text-xs font-medium"
                                         :class="badge(job).cls"
                                     >
                                         <svg v-if="job.status === 'published' || job.status === 'draft'" class="mr-1 h-3 w-3" fill="currentColor" viewBox="0 0 8 8" aria-hidden="true">
@@ -157,25 +222,25 @@ const iconButtonClass =
                                     </span>
                                 </div>
 
-                                <div class="mb-3 flex flex-wrap items-center gap-4 text-sm text-stone-600 dark:text-stone-400">
-                                    <div v-if="job.location" class="flex items-center gap-1">
-                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
-                                        {{ job.location }}
+                                <div class="mb-3 flex min-w-0 flex-wrap items-center gap-4 text-sm text-stone-600 dark:text-stone-400">
+                                    <div v-if="job.location" class="flex min-w-0 items-start gap-1 break-words">
+                                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                                        <span class="break-words">{{ job.location }}</span>
                                     </div>
-                                    <span v-if="job.remote_type" class="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">{{ labels[job.remote_type.replace('-', '').toLowerCase()] || job.remote_type }}</span>
-                                    <span v-if="job.category" class="rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-500/10 dark:text-teal-300">{{ job.category }}</span>
+                                    <span v-if="job.remote_type" class="break-words rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">{{ labels[job.remote_type.replace('-', '').toLowerCase()] || job.remote_type }}</span>
+                                    <span v-if="job.category" class="break-words rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-medium text-teal-700 dark:bg-teal-500/10 dark:text-teal-300">{{ job.category }}</span>
                                 </div>
 
-                                <div class="flex items-center gap-6 text-sm">
-                                    <div class="flex items-center gap-2">
-                                        <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                <div data-job-metadata class="grid min-w-0 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center">
+                                    <div class="flex min-w-0 items-center gap-2 break-words">
+                                        <svg class="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                                         </svg>
-                                        <span class="text-stone-600 dark:text-stone-400">{{ job.applications_label }}</span>
+                                        <span class="break-words text-stone-600 dark:text-stone-400">{{ job.applications_label }}</span>
                                     </div>
-                                    <div class="text-stone-500 dark:text-stone-500">{{ job.posted_label }}</div>
-                                    <div v-if="job.published_label" class="text-stone-500 dark:text-stone-500">{{ job.published_label }}</div>
-                                    <div v-if="job.closes_label" class="text-stone-500 dark:text-stone-500">{{ job.closes_label }}</div>
+                                    <div class="min-w-0 break-words text-stone-500 dark:text-stone-500">{{ job.posted_label }}</div>
+                                    <div v-if="job.published_label" class="min-w-0 break-words text-stone-500 dark:text-stone-500">{{ job.published_label }}</div>
+                                    <div v-if="job.closes_label" class="min-w-0 break-words text-stone-500 dark:text-stone-500">{{ job.closes_label }}</div>
                                 </div>
                             </div>
 
@@ -254,13 +319,13 @@ const iconButtonClass =
             </template>
         </div>
 
-        <div v-if="selectedJob" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" :aria-labelledby="`delete-job-title-${selectedJob.id}`" @keydown.escape="selectedJob = null">
+        <div v-if="selectedJob" ref="deleteDialog" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" :aria-labelledby="`delete-job-title-${selectedJob.id}`" :aria-describedby="`delete-job-description-${selectedJob.id}`" @keydown="handleDialogKeydown">
             <div class="flex min-h-screen items-center justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm" @click="selectedJob = null"></div>
+                <div class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm" @click="closeDeleteDialog"></div>
                 <span class="hidden sm:inline-block sm:h-screen sm:align-middle">&#8203;</span>
                 <div class="inline-block transform overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 text-left align-bottom shadow-2xl backdrop-blur transition-all dark:border-stone-700/60 dark:bg-stone-900/95 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-                    <div class="p-6 sm:p-8"><div class="flex items-start"><div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20"><svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg></div></div><div class="mt-4 text-center"><h3 :id="`delete-job-title-${selectedJob.id}`" class="text-xl font-semibold text-stone-900 dark:text-white">{{ labels.delete_job_title }}</h3><div class="mt-3"><p class="text-sm text-stone-600 dark:text-stone-400">{{ labels.delete_job_confirm }}</p></div></div></div>
-                    <div class="bg-stone-50/80 px-6 py-4 dark:bg-stone-800/40 sm:flex sm:flex-row-reverse sm:px-8"><button type="button" class="inline-flex w-full justify-center rounded-2xl bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900 sm:w-auto" @click="deleteJob">{{ labels.delete_job }}</button><button type="button" class="mt-3 inline-flex w-full justify-center rounded-2xl border border-stone-200/80 bg-white px-6 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:border-stone-700 dark:bg-stone-800/80 dark:text-stone-200 dark:hover:bg-stone-700 dark:focus:ring-offset-stone-900 sm:mr-3 sm:mt-0 sm:w-auto" @click="selectedJob = null">{{ labels.cancel }}</button></div>
+                    <div class="p-6 sm:p-8"><div class="flex items-start"><div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20"><svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg></div></div><div class="mt-4 text-center"><h3 :id="`delete-job-title-${selectedJob.id}`" class="text-xl font-semibold text-stone-900 dark:text-white">{{ labels.delete_job_title }}</h3><div class="mt-3"><p :id="`delete-job-description-${selectedJob.id}`" class="text-sm text-stone-600 dark:text-stone-400">{{ labels.delete_job_confirm }}</p></div></div></div>
+                    <div class="bg-stone-50/80 px-6 py-4 dark:bg-stone-800/40 sm:flex sm:flex-row-reverse sm:px-8"><button type="button" class="inline-flex w-full justify-center rounded-2xl bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900 sm:w-auto" @click="deleteJob">{{ labels.delete_job }}</button><button ref="deleteCancelButton" type="button" class="mt-3 inline-flex w-full justify-center rounded-2xl border border-stone-200/80 bg-white px-6 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:border-stone-700 dark:bg-stone-800/80 dark:text-stone-200 dark:hover:bg-stone-700 dark:focus:ring-offset-stone-900 sm:mr-3 sm:mt-0 sm:w-auto" @click="closeDeleteDialog">{{ labels.cancel }}</button></div>
                 </div>
             </div>
         </div>

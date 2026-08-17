@@ -153,7 +153,7 @@ function withdraw(): void {
                         <p v-if="application.interview.instructions" class="mt-2 whitespace-pre-line">{{ application.interview.instructions }}</p>
                     </div>
 
-                    <div v-if="salaryRange" class="text-sm">
+                    <div v-if="salaryRange" class="mb-3 flex flex-wrap items-baseline gap-1 text-sm">
                         <span class="font-medium text-stone-700 dark:text-stone-300">{{ props.labels.salary }}</span>
                         <span class="text-stone-600 dark:text-stone-400">{{ salaryRange }}</span>
                     </div>

@@ -39,6 +39,7 @@ return [
     'search_placeholder' => 'Rechercher des postes, compétences, entreprises ou lieux',
     'search_hint' => 'Essayez de rechercher des titres d\'emploi, des entreprises ou des lieux',
     'clear_search' => 'Effacer la recherche',
+    'close_search' => 'Fermer la recherche',
     'search_all_results' => 'Voir tous les résultats pour',
     'no_search_suggestions' => 'Aucune correspondance directe pour le moment',
     'search_error' => 'La recherche est temporairement indisponible. Vérifiez votre connexion et réessayez.',

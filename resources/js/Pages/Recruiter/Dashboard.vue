@@ -112,11 +112,11 @@ const applicationsUrl = (application: RecruiterDashboardApplication) =>
             </div>
 
             <div class="rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
-                <div class="mb-6 flex items-center justify-between">
-                    <h2 class="text-xl font-semibold text-stone-900 dark:text-white">{{ labels.recent_applications }}</h2>
+                <div data-recent-applications-header class="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                    <h2 class="min-w-0 break-words text-xl font-semibold text-stone-900 dark:text-white">{{ labels.recent_applications }}</h2>
                     <Link
                         :href="localeUrl('/recruiter/jobs')"
-                        class="text-sm font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
+                        class="shrink-0 text-sm font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
                     >
                         {{ labels.view_all_jobs }}
                     </Link>
@@ -136,22 +136,23 @@ const applicationsUrl = (application: RecruiterDashboardApplication) =>
                     <div
                         v-for="application in recentApplications"
                         :key="application.id"
+                        data-recent-application
                         class="flex flex-col gap-3 rounded-lg border border-stone-200 p-4 dark:border-stone-700 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <Link
                             :href="applicationsUrl(application)"
                             data-recent-applicant-link
-                            class="group flex min-w-0 items-center gap-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900"
+                            class="group flex min-w-0 flex-1 basis-full items-start gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-stone-900 sm:basis-auto sm:items-center sm:gap-4"
                         >
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700 transition group-hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:group-hover:bg-amber-500/20">
                                 {{ application.candidate.initial }}
                             </span>
-                            <span class="min-w-0">
-                                <span class="block truncate font-medium text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">{{ application.candidate.name }}</span>
-                                <p class="truncate text-sm text-stone-600 dark:text-stone-400">{{ application.job.title }}</p>
+                            <span class="min-w-0 flex-1">
+                                <span class="block break-words font-medium text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">{{ application.candidate.name }}</span>
+                                <span class="block break-words text-sm text-stone-600 dark:text-stone-400">{{ application.job.title }}</span>
                             </span>
                         </Link>
-                        <div class="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1">
+                        <div class="flex w-full flex-wrap items-center gap-x-3 gap-y-2 pl-14 sm:w-auto sm:shrink-0 sm:pl-0">
                             <span
                                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                                 :class="statusClass(application.status)"
@@ -163,7 +164,7 @@ const applicationsUrl = (application: RecruiterDashboardApplication) =>
                             </span>
                             <Link
                                 :href="applicationsUrl(application)"
-                                class="inline-flex items-center justify-center rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
+                                class="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
                             >
                                 {{ labels.view }}
                             </Link>

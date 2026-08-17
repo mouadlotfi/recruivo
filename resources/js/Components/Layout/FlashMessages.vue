@@ -48,13 +48,19 @@ onBeforeUnmount(() => window.clearTimeout(timer))
 </script>
 
 <template>
-    <div class="space-y-3">
+    <TransitionGroup
+        name="toast"
+        tag="div"
+        aria-live="polite"
+        class="pointer-events-none fixed bottom-20 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 flex-col gap-3 sm:bottom-6"
+    >
         <div
             v-for="alert in alerts"
-            :key="alert.message"
+            :key="`${alert.kind}:${alert.message}`"
             data-alert
+            aria-atomic="true"
             :role="alert.kind === 'error' ? 'alert' : 'status'"
-            :class="['rounded-xl border px-4 py-2.5', styles[alert.kind].box]"
+            :class="['pointer-events-auto rounded-xl border px-4 py-2.5 shadow-lg shadow-stone-900/10', styles[alert.kind].box]"
         >
             <div class="flex items-center gap-3">
                 <div class="min-w-0 flex-1 text-sm leading-5 sm:text-base sm:leading-6">{{ alert.message }}</div>
@@ -71,5 +77,18 @@ onBeforeUnmount(() => window.clearTimeout(timer))
                 </button>
             </div>
         </div>
-    </div>
+    </TransitionGroup>
 </template>
+
+<style scoped>
+.toast-enter-active,
+.toast-leave-active {
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+    opacity: 0;
+    transform: translateY(0.5rem);
+}
+</style>

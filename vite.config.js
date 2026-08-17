@@ -19,7 +19,7 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         hmr: {
-            host: '192.168.1.160',
+            host: process.env.VITE_HMR_HOST || 'localhost',
             port: 5173,
         },
         watch: {

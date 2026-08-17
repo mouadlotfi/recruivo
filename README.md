@@ -73,44 +73,26 @@ Open: `http://localhost:8000/`
 
 ## Docker Setup
 
-Docker Compose is the only Docker wrapper. Persistent data stays in relative host directories:
+The Docker architecture and data-preservation procedures are documented in [docs/docker.md](docs/docker.md).
 
-- ./storage — Laravel uploads, logs, cache, and sessions
-- ./data/mysql — MySQL data
-- ./data/redis — Redis data
+Create `.env.docker` only if it does not already exist, then set `APP_KEY`:
 
-Create the environment file before the first run:
+    test -f .env.docker || cp .env.docker.example .env.docker
 
-    cp .env.docker.example .env.docker
-    mkdir -p data/mysql data/redis
+Development:
 
-Set APP_KEY in .env.docker before starting the application.
-Docker commands use .env.docker; keep .env for non-Docker Laravel deployments.
+    docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up -d
 
-### Production or staging
+Production build and start:
 
-    docker compose --env-file .env.docker up -d --build
-    docker compose --env-file .env.docker run --rm laravel php artisan migrate --force
+    docker compose --env-file .env.production -f compose.yml -f compose.prod.yml build
+    docker compose --env-file .env.production --profile production -f compose.yml -f compose.prod.yml up -d
 
-Queued notifications can be enabled with:
+Production migrations are a separate, deliberate step. Run a database backup first, then:
 
-    docker compose --env-file .env.docker --profile queue up -d
+    docker compose --env-file .env.production -f compose.yml -f compose.prod.yml run --rm --no-deps app php artisan migrate --force
 
-### Development
-
-The development image includes Composer development dependencies and Xdebug. Code and asset changes require an image rebuild:
-
-    docker compose --env-file .env.docker -f compose.yaml -f compose.dev.yaml up -d --build
-    docker compose --env-file .env.docker -f compose.yaml -f compose.dev.yaml run --rm laravel php artisan migrate --seed
-
-### Common commands
-
-    docker compose --env-file .env.docker logs -f
-    docker compose --env-file .env.docker exec laravel bash
-    docker compose --env-file .env.docker run --rm laravel php artisan test
-    docker compose --env-file .env.docker down
-
-docker compose down stops containers but leaves ./storage and ./data/ intact. Do not remove those directories unless you intentionally want to delete application data.
+Persistent data is not stored in the application image. The existing MySQL volume `recruivo_mysql_august_verified`, `./storage`, and `./data/redis` must not be deleted or pruned during normal Docker cleanup.
 
 ## Demo Accounts (Seeded)
 

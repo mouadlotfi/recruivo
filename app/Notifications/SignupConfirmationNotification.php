@@ -8,13 +8,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class SignupConfirmationNotification extends Notification
+class SignupConfirmationNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(protected User $user)
-    {
-    }
+    public function __construct(protected User $user) {}
 
     public function via($notifiable): array
     {
@@ -24,14 +22,14 @@ class SignupConfirmationNotification extends Notification
     public function toMail($notifiable): MailMessage
     {
         $accountType = $this->user->hasRole('Recruiter') ? 'recruiter' : 'candidate';
-        
+
         // Use Laravel's built-in verification URL generation
         $verificationUrl = $notifiable->getEmailVerificationUrl();
 
         $mailMessage = (new MailMessage)
             ->subject('Welcome to Recruivo!')
-            ->greeting('Welcome to Recruivo, ' . $this->user->name . '!')
-            ->line('Thank you for signing up as a ' . $accountType . '.')
+            ->greeting('Welcome to Recruivo, '.$this->user->name.'!')
+            ->line('Thank you for signing up as a '.$accountType.'.')
             ->line('Please verify your email address to activate your account and unlock every feature.')
             ->action('Verify your email', $verificationUrl)
             ->line('After verifying you can:');

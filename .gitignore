@@ -67,3 +67,4 @@ auth.json
 # Docker bind-mounted data
 /data/*
 !/data/.gitignore
+dogfood-output/

@@ -149,7 +149,7 @@ const statusClass = (status: string) => statusClasses[status] ?? 'bg-stone-100 t
 
             <!-- Recent Applications -->
             <div class="rounded-xl border border-stone-200/60 bg-white/80 p-4 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60 sm:p-8">
-                <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div data-recent-applications-header class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <h2 class="text-lg font-semibold text-stone-900 dark:text-white sm:text-xl">{{ labels.recent_applications }}</h2>
                     <Link
                         :href="localeUrl('/candidate/applications')"
@@ -170,17 +170,18 @@ const statusClass = (status: string) => statusClasses[status] ?? 'bg-stone-100 t
                 </div>
 
                 <div v-else class="space-y-4">
-                    <div v-for="application in recentApplications" :key="application.id" class="flex flex-col gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-700 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-                        <div class="flex items-center gap-3 sm:gap-4">
-                            <div v-if="application.job.company" class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                    <div v-for="application in recentApplications" :key="application.id" data-recent-application class="flex flex-col gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-700 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                        <div class="flex min-w-0 flex-1 items-start gap-3 sm:items-center sm:gap-4">
+                            <div v-if="application.job.company" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
                                 {{ application.job.company.name.charAt(0) }}
                             </div>
+                            <div v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">J</div>
                             <div class="min-w-0 flex-1">
-                                <h3 class="truncate font-medium text-stone-900 dark:text-white">{{ application.job.title }}</h3>
-                                <p v-if="application.job.company" class="truncate text-sm text-stone-600 dark:text-stone-400">{{ application.job.company.name }}</p>
+                                <h3 class="break-words font-medium text-stone-900 dark:text-white">{{ application.job.title }}</h3>
+                                <p v-if="application.job.company" class="break-words text-sm text-stone-600 dark:text-stone-400">{{ application.job.company.name }}</p>
                             </div>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div class="flex w-full flex-wrap items-center gap-x-3 gap-y-2 pl-14 sm:w-auto sm:shrink-0 sm:pl-0">
                             <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', statusClass(application.status)]">
                                 {{ application.status_label }}
                             </span>
@@ -189,7 +190,7 @@ const statusClass = (status: string) => statusClasses[status] ?? 'bg-stone-100 t
                             </span>
                             <Link
                                 :href="localeUrl(`/jobs/${application.job.id}`)"
-                                class="inline-flex items-center justify-center rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
+                                class="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
                             >
                                 {{ labels.view }}
                             </Link>

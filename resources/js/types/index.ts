@@ -255,6 +255,9 @@ export interface RecruiterDashboardApplication {
 export interface RecruiterJobSummary {
     id: number
     title: string
+    location: string | null
+    remote_type: string | null
+    category: string | null
     status: 'published' | 'draft'
     applications_count: number
     published_at: string | null
