@@ -62,6 +62,10 @@ class UserController extends Controller
             ],
             'labels' => [
                 'title' => __('admin.user_management_title'),
+                'sidebar_overview' => __('admin.sidebar_overview'),
+                'sidebar_management' => __('admin.sidebar_management'),
+                'sidebar_users' => __('admin.sidebar_users'),
+                'admin_area' => __('admin.admin_area'),
                 'registered_users_count' => __('admin.registered_users_count', ['count' => $users->total()]),
                 'search' => __('admin.search'),
                 'search_button' => __('admin.search_button'),
@@ -108,4 +112,3 @@ class UserController extends Controller
         return back()->with('success', __('admin.user_deleted'));
     }
 }
-

@@ -1,49 +1,369 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3'
+import { computed, ref, watch } from 'vue'
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
-import AppLayout from '../../Layouts/AppLayout.vue'
+import AdminLayout from '../../Components/Admin/AdminLayout.vue'
+import DashboardChart from '../../Components/Admin/DashboardChart.vue'
+
+type MetricKey = 'users' | 'jobs' | 'applications' | 'recruiters'
+type Comparison = { percentage: number; direction: 'up' | 'down' | 'flat' } | null
+
+type Metric = {
+    value: number
+    period_count: number
+    comparison: Comparison
+}
+
+type DashboardData = {
+    range: number
+    period: { start: string; end: string; label: string }
+    metrics: Record<MetricKey | 'live_jobs', Metric>
+    attention: { key: string; count: number; action_url: string | null }[]
+    growth: {
+        labels: string[]
+        series: Record<MetricKey, number[]>
+    }
+    activity: {
+        labels: string[]
+        series: Record<'applications' | 'jobs' | 'users', number[]>
+    }
+    marketplace: {
+        average_applications_per_live_job: number | null
+        jobs_without_applications: number
+        candidate_activation: number | null
+        recruiter_activation: number | null
+    }
+    recentActivity: {
+        kind: string
+        event_label: string
+        actor: string
+        detail: string
+        occurred_at: string | null
+        time_label: string
+        url: string | null
+    }[]
+    systemHealth: {
+        key: string
+        status: string
+        status_label: string
+        label: string
+        value: number | null
+    }[]
+}
 
 const props = defineProps<{
-    stats: { users: number; jobs: number; applications: number; companies: number }
+    dashboard: DashboardData
     labels: Record<string, string>
 }>()
 
 const page = usePage<PageProps>()
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const locale = computed(() => page.props.locale)
+const localeUrl = (path: string) => `/${locale.value}${path}`
+const selectedRange = ref(String(props.dashboard.range))
+const activeMetric = ref<MetricKey>('applications')
+const isRefreshing = ref(false)
+
+watch(() => props.dashboard.range, (range) => {
+    selectedRange.value = String(range)
+})
+
+const rangeOptions = computed(() => [
+    { value: '7', label: props.labels.last_7_days },
+    { value: '30', label: props.labels.last_30_days },
+    { value: '90', label: props.labels.last_90_days },
+    { value: '365', label: props.labels.last_year },
+])
+
+const metricCards = computed(() => [
+    { key: 'users' as const, label: props.labels.users, periodLabel: props.labels.users_period },
+    { key: 'live_jobs' as const, label: props.labels.live_jobs, periodLabel: props.labels.jobs_period },
+    { key: 'applications' as const, label: props.labels.applications, periodLabel: props.labels.applications_period },
+    { key: 'recruiters' as const, label: props.labels.recruiters, periodLabel: props.labels.recruiters_period },
+])
+
+const metricOptions = computed(() => [
+    { key: 'users' as const, label: props.labels.metric_users },
+    { key: 'jobs' as const, label: props.labels.metric_jobs },
+    { key: 'applications' as const, label: props.labels.metric_applications },
+    { key: 'recruiters' as const, label: props.labels.metric_recruiters },
+])
+
+const growthDataset = computed(() => [{
+    label: props.labels[`metric_${activeMetric.value}`],
+    data: props.dashboard.growth.series[activeMetric.value],
+    color: '#d97706',
+}])
+const growthAriaLabel = computed(() => `${props.labels.platform_growth}: ${props.labels[`metric_${activeMetric.value}`]}`)
+
+const activityDatasets = computed(() => [
+    { label: props.labels.activity_applications, data: props.dashboard.activity.series.applications, color: '#d97706' },
+    { label: props.labels.activity_jobs, data: props.dashboard.activity.series.jobs, color: '#0f766e' },
+    { label: props.labels.activity_users, data: props.dashboard.activity.series.users, color: '#78716c' },
+])
+
+const marketplaceRows = computed(() => [
+    {
+        key: 'average_applications_per_live_job',
+        label: props.labels.average_applications_per_live_job,
+        value: props.dashboard.marketplace.average_applications_per_live_job,
+        format: 'decimal',
+    },
+    {
+        key: 'jobs_without_applications',
+        label: props.labels.jobs_without_applications.replace(':count', ''),
+        value: props.dashboard.marketplace.jobs_without_applications,
+        format: 'integer',
+    },
+    {
+        key: 'candidate_activation',
+        label: props.labels.candidate_activation,
+        value: props.dashboard.marketplace.candidate_activation,
+        format: 'percent',
+    },
+    {
+        key: 'recruiter_activation',
+        label: props.labels.recruiter_activation,
+        value: props.dashboard.marketplace.recruiter_activation,
+        format: 'percent',
+    },
+])
+
+const formatNumber = (value: number) => new Intl.NumberFormat(locale.value).format(value)
+const formatDecimal = (value: number) => new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(value)
+const formatMarketplaceValue = (value: number | null, format: string) => {
+    if (value === null) return props.labels.no_data
+    if (format === 'percent') return `${formatDecimal(value)}%`
+    if (format === 'decimal') return formatDecimal(value)
+
+    return formatNumber(value)
+}
+
+const comparisonText = (comparison: Comparison) => {
+    if (!comparison) return props.labels.no_comparison
+    if (comparison.direction === 'flat') return `0% ${props.labels.compared_to_previous}`
+
+    const arrow = comparison.direction === 'up' ? '↑' : '↓'
+    const percentage = formatDecimal(Math.abs(comparison.percentage))
+
+    return `${arrow} ${percentage}% ${props.labels.compared_to_previous}`
+}
+
+const comparisonClass = (comparison: Comparison) => {
+    if (!comparison || comparison.direction === 'flat') return 'text-stone-500 dark:text-stone-400'
+
+    return comparison.direction === 'up'
+        ? 'text-emerald-700 dark:text-emerald-400'
+        : 'text-red-700 dark:text-red-400'
+}
+
+const attentionTitle = (item: DashboardData['attention'][number]) =>
+    props.labels[item.key].replace(':count', formatNumber(item.count))
+
+const healthClass = (status: string) => {
+    if (status === 'error' || status === 'unavailable') return 'text-red-700 dark:text-red-400'
+    if (status === 'healthy' || status === 'clear') return 'text-emerald-700 dark:text-emerald-400'
+
+    return 'text-amber-700 dark:text-amber-400'
+}
+
+const changeRange = () => {
+    isRefreshing.value = true
+    router.get(localeUrl('/admin/dashboard'), { range: selectedRange.value }, {
+        only: ['dashboard'],
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        showProgress: false,
+        onFinish: () => {
+            isRefreshing.value = false
+        },
+    })
+}
 </script>
 
 <template>
     <Head :title="labels.title" />
 
-    <AppLayout>
-        <div class="space-y-8">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <AdminLayout :labels="labels">
+        <div class="space-y-6 sm:space-y-8">
+            <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div class="min-w-0">
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-400">{{ labels.admin_area }}</p>
+                    <h1 class="break-words text-2xl font-semibold text-stone-900 dark:text-white sm:text-3xl">{{ labels.title }}</h1>
+                    <p class="mt-2 max-w-2xl text-sm text-stone-600 dark:text-stone-400">{{ labels.subtitle }}</p>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                    <label for="admin-date-range" class="sr-only">{{ labels.range }}</label>
+                    <select
+                        id="admin-date-range"
+                        v-model="selectedRange"
+                        :disabled="isRefreshing"
+                        :aria-busy="isRefreshing"
+                        class="min-h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm font-medium text-stone-700 shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 disabled:cursor-wait disabled:opacity-70 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:focus:border-amber-400 dark:focus:ring-amber-500/20 sm:w-auto"
+                        @change="changeRange"
+                    >
+                        <option v-for="option in rangeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                    </select>
+                    <span v-if="isRefreshing" class="sr-only" role="status">{{ labels.loading }}</span>
+                </div>
+            </header>
+
+            <section aria-labelledby="admin-kpi-heading">
+                <h2 id="admin-kpi-heading" class="sr-only">{{ labels.title }}</h2>
+                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <article v-for="card in metricCards" :key="card.key" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.13em] text-stone-500 dark:text-stone-400">{{ card.label }}</p>
+                        <p class="mt-3 text-3xl font-semibold tracking-tight text-stone-950 dark:text-white">{{ formatNumber(dashboard.metrics[card.key].value) }}</p>
+                        <p class="mt-2 text-xs text-stone-500 dark:text-stone-400">
+                            +{{ formatNumber(dashboard.metrics[card.key].period_count) }} {{ card.periodLabel }}
+                        </p>
+                        <p :class="['mt-1 text-xs font-medium', comparisonClass(dashboard.metrics[card.key].comparison)]">
+                            {{ comparisonText(dashboard.metrics[card.key].comparison) }}
+                        </p>
+                    </article>
+                </div>
+            </section>
+
+            <section aria-labelledby="attention-heading" class="rounded-xl border border-stone-200/70 bg-white/80 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70">
+                <div class="flex items-center justify-between border-b border-stone-200/70 px-4 py-4 dark:border-stone-800 sm:px-5">
+                    <h2 id="attention-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.needs_attention }}</h2>
+                </div>
+                <div v-if="dashboard.attention.length === 0" class="flex items-center gap-3 px-4 py-5 text-sm text-stone-600 dark:text-stone-400 sm:px-5">
+                    <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" aria-hidden="true">✓</span>
+                    <span>{{ labels.nothing_needs_attention }}</span>
+                </div>
+                <ul v-else class="divide-y divide-stone-200/70 dark:divide-stone-800">
+                    <li v-for="item in dashboard.attention" :key="item.key" class="flex flex-col gap-3 border-l-2 border-amber-400 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <span class="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-50 text-sm font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" aria-hidden="true">!</span>
+                            <div class="min-w-0">
+                                <p class="font-medium text-stone-900 dark:text-white">{{ attentionTitle(item) }}</p>
+                                <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ labels[`${item.key}_description`] }}</p>
+                            </div>
+                        </div>
+                        <Link v-if="item.action_url" :href="item.action_url" class="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-amber-700 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-amber-400 dark:hover:text-amber-300">
+                            {{ labels.view_jobs }}
+                            <span class="ml-1" aria-hidden="true">→</span>
+                        </Link>
+                    </li>
+                </ul>
+            </section>
+
+            <div class="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)]">
+                <section aria-labelledby="growth-heading" class="min-w-0 rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h2 id="growth-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.platform_growth }}</h2>
+                            <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ labels.growth_help }}</p>
+                        </div>
+                        <div class="flex max-w-full overflow-x-auto rounded-lg border border-stone-200/80 bg-stone-50/80 p-1 dark:border-stone-700 dark:bg-stone-950/50" role="tablist" :aria-label="labels.platform_growth">
+                            <button
+                                v-for="option in metricOptions"
+                                :key="option.key"
+                                type="button"
+                                role="tab"
+                                :aria-selected="activeMetric === option.key"
+                                :class="activeMetric === option.key ? 'bg-white text-amber-700 shadow-sm dark:bg-stone-800 dark:text-amber-300' : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100'"
+                                class="min-h-9 whitespace-nowrap rounded-md px-2.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 sm:px-3"
+                                @click="activeMetric = option.key"
+                            >
+                                {{ option.label }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-5">
+                        <DashboardChart
+                            type="line"
+                            :labels="dashboard.growth.labels"
+                            :datasets="growthDataset"
+                            :aria-label="growthAriaLabel"
+                            :empty-text="labels.no_chart_data"
+                        />
+                    </div>
+                </section>
+
+                <section aria-labelledby="health-heading" class="min-w-0 rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+                    <div>
+                        <h2 id="health-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.marketplace_health }}</h2>
+                        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ labels.growth_help }}</p>
+                    </div>
+                    <dl class="mt-5 divide-y divide-stone-200/70 dark:divide-stone-800">
+                        <div v-for="row in marketplaceRows" :key="row.key" class="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                            <dt class="max-w-[13rem] text-sm text-stone-600 dark:text-stone-400">{{ row.label }}</dt>
+                            <dd class="shrink-0 text-right text-sm font-semibold text-stone-900 dark:text-white">{{ formatMarketplaceValue(row.value, row.format) }}</dd>
+                        </div>
+                    </dl>
+                </section>
+            </div>
+
+            <section aria-labelledby="activity-chart-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
                 <div>
-                    <h1 class="text-2xl font-bold text-stone-900 dark:text-white sm:text-3xl">{{ labels.title }}</h1>
-                    <p class="mt-2 text-sm text-stone-600 dark:text-stone-400 sm:text-base">{{ labels.subtitle }}</p>
+                    <h2 id="activity-chart-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.platform_activity }}</h2>
+                    <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ labels.activity_help }}</p>
                 </div>
-                <div class="flex gap-3">
-                    <Link :href="localeUrl('/admin/users')" class="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 sm:px-6 sm:py-3">
-                        <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
-                        <span class="hidden sm:inline">{{ labels.manage_users }}</span>
-                        <span class="sm:hidden">{{ labels.manage_users }}</span>
-                    </Link>
+                <div class="mt-5">
+                    <DashboardChart
+                        type="bar"
+                        :labels="dashboard.activity.labels"
+                        :datasets="activityDatasets"
+                        :aria-label="labels.platform_activity"
+                        :empty-text="labels.no_chart_data"
+                    />
                 </div>
-            </div>
+            </section>
 
-            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <div class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60"><div class="flex items-center"><div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/10"><svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg></div><div class="ml-4"><p class="text-sm font-medium text-stone-600 dark:text-stone-400">{{ labels.total_users }}</p><p class="text-2xl font-semibold text-stone-900 dark:text-white">{{ stats.users }}</p></div></div></div>
-                <div class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60"><div class="flex items-center"><div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/10"><svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" /></svg></div><div class="ml-4"><p class="text-sm font-medium text-stone-600 dark:text-stone-400">{{ labels.total_jobs }}</p><p class="text-2xl font-semibold text-stone-900 dark:text-white">{{ stats.jobs }}</p></div></div></div>
-                <div class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60"><div class="flex items-center"><div class="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-500/10"><svg class="h-6 w-6 text-teal-600 dark:text-teal-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></div><div class="ml-4"><p class="text-sm font-medium text-stone-600 dark:text-stone-400">{{ labels.total_applications }}</p><p class="text-2xl font-semibold text-stone-900 dark:text-white">{{ stats.applications }}</p></div></div></div>
-                <div class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60"><div class="flex items-center"><div class="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-500/10"><svg class="h-6 w-6 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M3.75 4.5h16.5m-1.5 0l-1.5 1.5m0 0l-1.5-1.5m1.5 1.5V3.75M6.75 3.75h10.5m-10.5 0v1.5m10.5-1.5v1.5" /></svg></div><div class="ml-4"><p class="text-sm font-medium text-stone-600 dark:text-stone-400">{{ labels.total_companies }}</p><p class="text-2xl font-semibold text-stone-900 dark:text-white">{{ stats.companies }}</p></div></div></div>
-            </div>
+            <section aria-labelledby="recent-activity-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+                <div class="flex items-center justify-between gap-4">
+                    <h2 id="recent-activity-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.recent_activity }}</h2>
+                </div>
+                <div v-if="dashboard.recentActivity.length === 0" class="py-10 text-center text-sm text-stone-500 dark:text-stone-400">
+                    {{ labels.no_recent_activity }}
+                </div>
+                <div v-else class="mt-4 overflow-x-auto">
+                    <table class="min-w-[38rem] w-full text-left text-sm">
+                        <caption class="sr-only">{{ labels.recent_activity }}</caption>
+                        <thead class="border-b border-stone-200/80 text-xs uppercase tracking-[0.1em] text-stone-500 dark:border-stone-800 dark:text-stone-400">
+                            <tr>
+                                <th scope="col" class="px-3 py-3 font-semibold">{{ labels.event }}</th>
+                                <th scope="col" class="px-3 py-3 font-semibold">{{ labels.user }}</th>
+                                <th scope="col" class="px-3 py-3 font-semibold">{{ labels.details }}</th>
+                                <th scope="col" class="px-3 py-3 text-right font-semibold">{{ labels.time }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-stone-200/70 dark:divide-stone-800">
+                            <tr v-for="activity in dashboard.recentActivity" :key="`${activity.kind}-${activity.occurred_at}-${activity.actor}`" class="text-stone-700 dark:text-stone-300">
+                                <td class="px-3 py-3 font-medium text-stone-900 dark:text-white">{{ activity.event_label }}</td>
+                                <td class="px-3 py-3">{{ activity.actor }}</td>
+                                <td class="max-w-[18rem] px-3 py-3">
+                                    <Link v-if="activity.url" :href="activity.url" class="font-medium text-amber-700 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-amber-400 dark:hover:text-amber-300">
+                                        {{ activity.detail }}
+                                    </Link>
+                                    <span v-else>{{ activity.detail }}</span>
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-3 text-right text-xs text-stone-500 dark:text-stone-400">
+                                    <time :datetime="activity.occurred_at ?? undefined">{{ activity.time_label }}</time>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-            <div class="grid gap-6 md:grid-cols-2">
-                <div class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60"><h3 class="mb-4 text-lg font-semibold text-stone-900 dark:text-white">{{ labels.user_management }}</h3><div class="space-y-3"><Link :href="localeUrl('/admin/users')" class="flex items-center gap-3 rounded-lg bg-amber-50 p-3 text-sm font-medium text-amber-700 transition hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>{{ labels.view_all_users }}</Link></div></div>
-                <div class="rounded-xl border border-stone-200/60 bg-white/80 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60"><h3 class="mb-4 text-lg font-semibold text-stone-900 dark:text-white">{{ labels.system_overview }}</h3><div class="space-y-3 text-sm text-stone-600 dark:text-stone-400"><div class="flex items-center justify-between"><span>{{ labels.active_users }}</span><span class="font-medium text-stone-900 dark:text-white">{{ stats.users }}</span></div><div class="flex items-center justify-between"><span>{{ labels.published_jobs }}</span><span class="font-medium text-stone-900 dark:text-white">{{ stats.jobs }}</span></div><div class="flex items-center justify-between"><span>{{ labels.total_applications }}</span><span class="font-medium text-stone-900 dark:text-white">{{ stats.applications }}</span></div><div class="flex items-center justify-between"><span>{{ labels.registered_companies }}</span><span class="font-medium text-stone-900 dark:text-white">{{ stats.companies }}</span></div></div></div>
-            </div>
-
-            <div class="rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60"><h2 class="mb-6 text-xl font-semibold text-stone-900 dark:text-white">{{ labels.system_status }}</h2><div class="grid gap-6 md:grid-cols-3"><div class="text-center"><div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/10"><svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><h3 class="font-semibold text-stone-900 dark:text-white">{{ labels.system_online }}</h3><p class="text-sm text-stone-600 dark:text-stone-400">{{ labels.all_services_running }}</p></div><div class="text-center"><div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/10"><svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg></div><h3 class="font-semibold text-stone-900 dark:text-white">{{ labels.performance }}</h3><p class="text-sm text-stone-600 dark:text-stone-400">{{ labels.optimal_response_times }}</p></div><div class="text-center"><div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-500/10"><svg class="h-6 w-6 text-teal-600 dark:text-teal-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg></div><h3 class="font-semibold text-stone-900 dark:text-white">{{ labels.security }}</h3><p class="text-sm text-stone-600 dark:text-stone-400">{{ labels.all_systems_secure }}</p></div></div></div>
+            <section id="system-health" aria-labelledby="system-health-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                    <h2 id="system-health-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.system_health }}</h2>
+                    <p class="text-xs text-stone-500 dark:text-stone-400">{{ dashboard.period.label }}</p>
+                </div>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div v-for="health in dashboard.systemHealth" :key="health.key" class="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-stone-200/70 px-3 py-3 dark:border-stone-800">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-medium text-stone-800 dark:text-stone-200">{{ health.label }}</p>
+                            <p v-if="health.key === 'failed_jobs' && health.value !== null" class="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{{ formatNumber(health.value) }}</p>
+                        </div>
+                        <span :class="['shrink-0 text-xs font-semibold', healthClass(health.status)]">{{ health.status_label }}</span>
+                    </div>
+                </div>
+            </section>
         </div>
-    </AppLayout>
+    </AdminLayout>
 </template>
