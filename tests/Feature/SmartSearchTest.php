@@ -217,6 +217,16 @@ class SmartSearchTest extends TestCase
         $this->assertStringContainsString('remove_filter', $searchPage);
     }
 
+    public function test_search_dual_lists_use_scoped_partial_reloads(): void
+    {
+        $searchPage = File::get(resource_path('js/Pages/Search/Index.vue'));
+
+        $this->assertStringContainsString("only: ['jobs', 'jobsPagination']", $searchPage);
+        $this->assertStringContainsString("only: ['companies', 'companiesPagination']", $searchPage);
+        $this->assertStringNotContainsString('hasCompaniesPageParam', $searchPage);
+        $this->assertStringNotContainsString('hasJobsPageParam', $searchPage);
+    }
+
     public function test_search_page_empty_state_offers_popular_suggestions(): void
     {
         Job::factory()->for(Company::factory())->create([

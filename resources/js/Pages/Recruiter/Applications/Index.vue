@@ -35,7 +35,7 @@ const tabs = computed(() =>
 )
 
 const manageTemplatesUrl = computed(() =>
-    localeUrl(`/recruiter/note-templates?back=${encodeURIComponent(window.location.href)}`),
+    localeUrl(`/recruiter/note-templates?back=${encodeURIComponent(page.url)}`),
 )
 
 // "Show more" visits next_page_url with preserveState: Inertia swaps

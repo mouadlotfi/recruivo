@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { usePage } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
 import { useDismiss } from '../../composables/useDismiss'
@@ -19,8 +19,16 @@ useDismiss(open, root)
 const unreadCount = computed(() => Number(page.props.notificationCount ?? 0))
 const badge = computed(() => (unreadCount.value > 99 ? '99+' : String(unreadCount.value)))
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
 const markAllReadUrl = `/${page.props.locale}/notifications/read-all`
+
+function markAllRead(): void {
+    router.post(markAllReadUrl, {}, {
+        only: ['notificationCount'],
+        preserveState: true,
+        preserveScroll: true,
+        showProgress: false,
+    })
+}
 </script>
 
 <template>
@@ -28,7 +36,7 @@ const markAllReadUrl = `/${page.props.locale}/notifications/read-all`
         <button
             type="button"
             :aria-label="unreadCount > 0 ? t('unread_notifications', { count: unreadCount }) : t('notifications')"
-            aria-haspopup="menu"
+            aria-haspopup="dialog"
             :aria-expanded="open"
             class="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 dark:focus-visible:ring-offset-stone-950"
             @click="open = !open"
@@ -47,7 +55,7 @@ const markAllReadUrl = `/${page.props.locale}/notifications/read-all`
 
         <div
             v-if="open"
-            role="menu"
+            role="dialog"
             :aria-label="t('notifications')"
             class="fixed inset-x-3 top-16 z-[10020] max-h-[min(32rem,calc(100vh-6rem))] overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[24rem] dark:border-stone-700 dark:bg-stone-900"
         >
@@ -58,15 +66,15 @@ const markAllReadUrl = `/${page.props.locale}/notifications/read-all`
                         {{ t('unread_notifications', { count: unreadCount }) }}
                     </p>
                 </div>
-                <form v-if="unreadCount > 0" method="POST" :action="markAllReadUrl">
-                    <input type="hidden" name="_token" :value="csrfToken" />
+                <div v-if="unreadCount > 0">
                     <button
-                        type="submit"
+                        type="button"
                         class="min-h-11 whitespace-nowrap rounded-lg px-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-amber-300 dark:hover:bg-amber-500/10"
+                        @click="markAllRead"
                     >
                         {{ t('mark_all_as_read') }}
                     </button>
-                </form>
+                </div>
             </div>
             <div class="max-h-[min(26rem,calc(100vh-11rem))] overflow-y-auto">
                 <div v-if="unreadCount === 0" class="px-6 py-10 text-center">

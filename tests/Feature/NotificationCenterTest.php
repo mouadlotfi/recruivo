@@ -74,6 +74,8 @@ class NotificationCenterTest extends TestCase
         $notification = File::get(resource_path('js/Components/Layout/NotificationCenter.vue'));
         $this->assertStringContainsString('data-notification-center', $notification);
         $this->assertStringContainsString('unreadCount', $notification);
+        $this->assertStringContainsString('aria-haspopup="dialog"', $notification);
+        $this->assertStringContainsString('role="dialog"', $notification);
     }
 
     public function test_candidate_sees_accepted_or_rejected_application_updates_in_the_navbar(): void

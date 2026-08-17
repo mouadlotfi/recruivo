@@ -236,10 +236,14 @@ class CandidateApplicationWithdrawalTest extends TestCase
         );
 
         $card = File::get(resource_path('js/Components/Applications/CandidateApplicationCard.vue'));
+        $applicationsPage = File::get(resource_path('js/Pages/Candidate/Applications.vue'));
         $this->assertStringContainsString("['pending', 'shortlisted', 'interview'].includes", $card);
-        $this->assertStringContainsString(':action="withdrawUrl"', $card);
+        $this->assertStringContainsString('router.patch(withdrawUrl, {}, {', $card);
+        $this->assertStringContainsString("only: ['applications', 'statusCounts', 'pagination', 'flash']", $card);
         $this->assertStringContainsString('min-h-11', $card);
         $this->assertStringContainsString('window.confirm', $card);
+        $this->assertStringContainsString('const pageStart = Math.max', $applicationsPage);
+        $this->assertStringContainsString('const incomingIds = new Set', $applicationsPage);
     }
 
     public function test_withdrawn_badge_renders_with_neutral_gray_classes_on_candidate_page(): void

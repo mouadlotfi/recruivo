@@ -171,6 +171,19 @@ class ProductionReadinessTest extends TestCase
         $this->assertStringContainsString('demo_read_only', $profile);
     }
 
+    public function test_spa_preview_and_root_background_contracts_are_preserved(): void
+    {
+        $profile = File::get(resource_path('js/Pages/Profile/Edit.vue'));
+        $styles = File::get(resource_path('css/app.css'));
+        $root = File::get(resource_path('views/inertia.blade.php'));
+
+        $this->assertStringContainsString(":href=\"localeUrl('/candidate/profile-preview')\"", $profile);
+        $this->assertStringNotContainsString(":href=\"localeUrl('/candidate/profile-preview')\"\n                    target=\"_blank\"", $profile);
+        $this->assertStringContainsString('html.dark', $styles);
+        $this->assertStringContainsString("background-color: theme('colors.stone.950')", $styles);
+        $this->assertStringContainsString('<body class="min-h-screen', $root);
+    }
+
     public function test_demo_account_profile_is_read_only_through_the_api(): void
     {
         $company = Company::factory()->create(['name' => 'Protected API Company']);

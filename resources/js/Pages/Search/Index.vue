@@ -109,24 +109,15 @@ const noResultsTitle = computed(() => {
     return props.labels.no_results_title
 })
 
-// --- Dual pagination. Two independent lists, each deduping by id on props
-// change (load-more visits swap the `jobs`/`companies` prop for the next
-// page's items). A page-1 visit resets the list UNLESS it was only the OTHER
-// section loading more — page.url carries the pageName param of whichever
-// list advanced (jobs_page / companies_page), so a pure companies load-more
-// visit leaves the accumulated jobs list untouched and vice versa.
-const pageUrl = computed(() => page.url)
-const hasJobsPageParam = computed(() => /[?&]jobs_page=/.test(pageUrl.value))
-const hasCompaniesPageParam = computed(() => /[?&]companies_page=/.test(pageUrl.value))
-
+// --- Dual pagination. Each list requests only its own props while loading
+// more, so a bookmark partial reload can always replace the jobs page even
+// when the companies list has already loaded additional pages.
 const jobItems = ref<JobSummary[]>([...props.jobs])
 watch(
     () => props.jobs,
     (incoming) => {
         if (props.jobsPagination.current_page === 1) {
-            if (hasJobsPageParam.value || !hasCompaniesPageParam.value) {
-                jobItems.value = [...incoming]
-            }
+            jobItems.value = [...incoming]
             return
         }
         const byId = new Map(jobItems.value.map((job) => [job.id, job]))
@@ -140,9 +131,7 @@ watch(
     () => props.companies,
     (incoming) => {
         if (props.companiesPagination.current_page === 1) {
-            if (hasCompaniesPageParam.value || !hasJobsPageParam.value) {
-                companyItems.value = [...incoming]
-            }
+            companyItems.value = [...incoming]
             return
         }
         const byId = new Map(companyItems.value.map((company) => [company.id, company]))
@@ -160,6 +149,7 @@ const loadMoreJobs = () => {
     jobsLoadingMore.value = true
     jobsLoadMoreFailed.value = false
     router.get(url, {}, {
+        only: ['jobs', 'jobsPagination'],
         preserveState: true,
         preserveScroll: true,
         onError: () => {
@@ -180,6 +170,7 @@ const loadMoreCompanies = () => {
     companiesLoadingMore.value = true
     companiesLoadMoreFailed.value = false
     router.get(url, {}, {
+        only: ['companies', 'companiesPagination'],
         preserveState: true,
         preserveScroll: true,
         onError: () => {

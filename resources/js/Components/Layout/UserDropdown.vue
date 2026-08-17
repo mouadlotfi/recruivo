@@ -17,7 +17,6 @@ const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 useDismiss(open, root)
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
 const profileUrl = `/${page.props.locale}/profile`
 const logoutUrl = `/${page.props.locale}/logout`
 </script>
@@ -62,19 +61,18 @@ const logoutUrl = `/${page.props.locale}/logout`
                 </svg>
                 {{ isRecruiter ? t('company_profile') : t('profile_settings') }}
             </Link>
-            <form method="POST" :action="logoutUrl">
-                <input type="hidden" name="_token" :value="csrfToken" />
-                <button
-                    type="submit"
-                    role="menuitem"
-                    class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"
-                >
+            <Link
+                :href="logoutUrl"
+                method="post"
+                as="button"
+                role="menuitem"
+                class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"
+            >
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                     </svg>
                     {{ t('sign_out') }}
-                </button>
-            </form>
+            </Link>
         </div>
     </div>
 </template>

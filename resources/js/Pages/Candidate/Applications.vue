@@ -27,16 +27,26 @@ const tabs = computed(() =>
     })),
 )
 
-// "Show more" visits next_page_url with preserveState: Inertia swaps
-// `applications` for the fresh page's items, so keep a local list and append
-// whatever ids we don't already have.
+// "Show more" visits next_page_url with preserveState. Keep loaded pages in
+// local state, but replace the page returned by Inertia so status mutations
+// cannot leave stale cards behind.
 const items = ref<CandidateApplication[]>([...props.applications])
 watch(
-    () => props.applications,
-    (incoming) => {
-        const known = new Set(items.value.map((a) => a.id))
-        const fresh = incoming.filter((a) => !known.has(a.id))
-        if (fresh.length) items.value = [...items.value, ...fresh]
+    () => [props.status, props.pagination.current_page, props.applications] as const,
+    ([status, currentPage, incoming], [previousStatus]) => {
+        if (status !== previousStatus) {
+            items.value = [...incoming]
+            return
+        }
+
+        const pageStart = Math.max(0, (currentPage - 1) * props.pagination.per_page)
+        const beforePage = items.value.slice(0, pageStart)
+        const incomingIds = new Set(incoming.map((application) => application.id))
+        const afterPage = items.value
+            .slice(pageStart + props.pagination.per_page)
+            .filter((application) => !incomingIds.has(application.id))
+
+        items.value = [...beforePage, ...incoming, ...afterPage]
     },
 )
 

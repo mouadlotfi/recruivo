@@ -21,7 +21,6 @@ const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
 const logoHref = computed(() => localeUrl(isRecruiter.value ? '/recruiter/dashboard' : '/'))
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
 const logoutUrl = localeUrl('/logout')
 
 </script>
@@ -80,18 +79,18 @@ const logoutUrl = localeUrl('/logout')
                             <NotificationCenter />
                             <UserDropdown />
                         </template>
-                        <form v-else method="POST" :action="logoutUrl">
-                            <input type="hidden" name="_token" :value="csrfToken" />
-                            <button
-                                type="submit"
-                                class="inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-200 dark:hover:bg-stone-800"
-                            >
+                        <Link
+                            v-else
+                            :href="logoutUrl"
+                            method="post"
+                            as="button"
+                            class="inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-200 dark:hover:bg-stone-800"
+                        >
                                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                                 </svg>
                                 <span class="hidden sm:inline">{{ t('sign_out') }}</span>
-                            </button>
-                        </form>
+                        </Link>
                     </template>
                     <template v-else>
                         <Link

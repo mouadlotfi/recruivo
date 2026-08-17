@@ -15,6 +15,10 @@ const page = usePage<PageProps>()
 const locale = computed(() => page.props.locale)
 const localeUrl = (path: string) => `/${locale.value}${path}`
 
+function removeSavedJob(jobId: number): void {
+    items.value = items.value.filter((job) => job.id !== jobId)
+}
+
 const items = ref<JobSummary[]>([...props.jobs])
 watch(
     () => [props.jobs, props.pagination.current_page] as const,
@@ -76,7 +80,7 @@ function loadMore(): void {
 
             <template v-else>
                 <div class="space-y-4" data-infinite-items>
-                    <JobCard v-for="job in items" :key="job.id" :job="job" :labels="labels" />
+                    <JobCard v-for="job in items" :key="job.id" :job="job" :labels="labels" @bookmark-removed="removeSavedJob" />
                 </div>
                 <div v-if="hasMore" class="mt-8 flex min-h-12 items-center justify-center">
                     <p v-if="loadMoreFailed" class="mb-2 text-sm text-red-600 dark:text-red-400">{{ labels.load_more_failed }}</p>

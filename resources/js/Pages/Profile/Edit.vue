@@ -428,9 +428,7 @@ function deleteAccount(): void {
                 <Link
                     v-if="isCandidate"
                     :href="localeUrl('/candidate/profile-preview')"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:border-amber-500/40 dark:text-amber-300 dark:hover:bg-amber-500/10"
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 focus:outline-none focus-visible:ring-2 focus:ring-amber-400 dark:border-amber-500/40 dark:text-amber-300 dark:hover:bg-amber-500/10"
                 >
                     {{ labels.preview_as_recruiter }}
                 </Link>

@@ -262,7 +262,7 @@ class SavedJobsTest extends TestCase
         $this->assertStringContainsString('toggleSaved', $jobCard);
     }
 
-    public function test_saved_job_cards_render_a_remove_form(): void
+    public function test_saved_job_cards_render_a_bookmark_control(): void
     {
         $candidate = $this->candidate();
         $job = $this->publishedJob();
@@ -350,5 +350,17 @@ class SavedJobsTest extends TestCase
         $this->assertStringContainsString('relative z-10', $contents);
         $this->assertStringContainsString('aria-label=', $contents);
         $this->assertStringContainsString('aria-hidden="true"', $contents);
+    }
+
+    public function test_saved_jobs_removal_updates_the_infinite_list_without_a_full_form_navigation(): void
+    {
+        $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
+        $savedJobs = File::get(resource_path('js/Pages/Candidate/SavedJobs.vue'));
+
+        $this->assertStringContainsString("emit('bookmarkRemoved', props.job.id)", $jobCard);
+        $this->assertStringContainsString('@bookmark-removed="removeSavedJob"', $savedJobs);
+        $this->assertStringContainsString('router.delete(url, options)', $jobCard);
+        $this->assertStringContainsString("return ['jobs', 'pagination', 'flash']", $jobCard);
+        $this->assertStringNotContainsString('<form method="POST"', $jobCard);
     }
 }

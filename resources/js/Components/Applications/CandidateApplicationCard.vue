@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Link, usePage } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps, CandidateApplication } from '../../types'
 import ApplicationStatusBadge from './ApplicationStatusBadge.vue'
 import StatusTimeline from './StatusTimeline.vue'
@@ -13,9 +13,9 @@ const props = defineProps<{
 
 const page = usePage<PageProps>()
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
 const withdrawUrl = `/${page.props.locale}/candidate/applications/${props.application.id}/withdraw`
 const jobUrl = `/${page.props.locale}/jobs/${props.application.job.id}`
+const withdrawing = ref(false)
 
 const canWithdraw = computed(() => ['pending', 'shortlisted', 'interview'].includes(props.application.status))
 
@@ -38,10 +38,19 @@ const interviewModeLabel = computed(() =>
     props.application.interview?.mode === 'online' ? props.labels.interview_online : props.labels.interview_onsite,
 )
 
-const confirmWithdraw = (event: Event) => {
-    if (!window.confirm(props.labels.withdraw_confirm)) {
-        event.preventDefault()
-    }
+function withdraw(): void {
+    if (withdrawing.value || !window.confirm(props.labels.withdraw_confirm)) return
+
+    withdrawing.value = true
+    router.patch(withdrawUrl, {}, {
+        only: ['applications', 'statusCounts', 'pagination', 'flash'],
+        preserveState: true,
+        preserveScroll: true,
+        showProgress: false,
+        onFinish: () => {
+            withdrawing.value = false
+        },
+    })
 }
 </script>
 
@@ -161,13 +170,15 @@ const confirmWithdraw = (event: Event) => {
                         </svg>
                         {{ props.labels.view_job }}
                     </Link>
-                    <form v-if="canWithdraw" method="POST" :action="withdrawUrl" @submit="confirmWithdraw">
-                        <input type="hidden" name="_token" :value="csrfToken" />
-                        <input type="hidden" name="_method" value="PATCH" />
-                        <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10 sm:w-auto">
+                    <button
+                        v-if="canWithdraw"
+                        type="button"
+                        :disabled="withdrawing"
+                        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10 sm:w-auto"
+                        @click="withdraw"
+                    >
                             {{ props.labels.withdraw_application }}
-                        </button>
-                    </form>
+                    </button>
                 </div>
             </div>
         </details>
