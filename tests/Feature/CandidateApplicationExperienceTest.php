@@ -11,8 +11,10 @@ use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -60,7 +62,12 @@ class CandidateApplicationExperienceTest extends TestCase
         $this->actingAs($candidate)
             ->get('/en/candidate/applications')
             ->assertOk()
-            ->assertSee($existingJob->title);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Candidate/Applications', false)
+                ->has('applications', 1)
+                ->where('applications.0.job.id', $existingJob->id)
+                ->where('applications.0.job.title', $existingJob->title)
+            );
     }
 
     public function test_demo_candidate_cannot_apply_through_the_api(): void
@@ -99,24 +106,27 @@ class CandidateApplicationExperienceTest extends TestCase
         $response = $this->actingAs($candidate)->get('/en/candidate/applications?status=accepted');
 
         $response->assertOk()
-            ->assertSee('data-candidate-application-status-tabs', false)
-            ->assertSee('aria-current="page"', false)
-            ->assertSee('All (5)')
-            ->assertSee('Accepted (1)')
-            ->assertSee('Shortlisted (1)')
-            ->assertSee('Interview (1)')
-            ->assertSee('Accepted Position')
-            ->assertDontSee('Pending Position')
-            ->assertDontSee('Rejected Position')
-            ->assertDontSee('Shortlisted Position')
-            ->assertDontSee('Interview Position');
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Candidate/Applications', false)
+                ->where('status', 'accepted')
+                ->has('applications', 1)
+                ->where('applications.0.job.title', 'Accepted Position')
+                ->where('statusCounts.0.count', 5)
+                ->where('statusCounts.4.count', 1)
+            );
+
+        $applicationsPage = File::get(resource_path('js/Pages/Candidate/Applications.vue'));
+        $this->assertStringContainsString('data-candidate-application-status-tabs', $applicationsPage);
+        $this->assertStringContainsString(":aria-current=\"props.status === tab.key ? 'page' : undefined\"", $applicationsPage);
 
         $this->actingAs($candidate)
             ->get('/en/candidate/applications?status=interview')
             ->assertOk()
-            ->assertSee('Interview Position')
-            ->assertDontSee('Pending Position')
-            ->assertDontSee('Accepted Position');
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Candidate/Applications', false)
+                ->where('status', 'interview')
+                ->where('applications.0.job.title', 'Interview Position')
+            );
 
         $this->actingAs($candidate)
             ->get('/en/candidate/applications?status=invalid')
@@ -126,11 +136,13 @@ class CandidateApplicationExperienceTest extends TestCase
         $this->actingAs($candidate)
             ->get('/en/candidate/dashboard')
             ->assertOk()
-            ->assertSee('In progress')
-            ->assertSee('3')
-            // Badge labels resolve to translations, not raw keys
-            ->assertSee('Shortlisted')
-            ->assertSee('Interview');
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Candidate/Dashboard', false)
+                ->where('inProgressApplications', 3)
+                ->where('labels.in_progress', __('candidate.in_progress'))
+                ->where('labels.shortlisted', __('candidate.shortlisted'))
+                ->where('labels.interview', __('candidate.interview'))
+            );
     }
 
     public function test_repeated_submission_from_the_same_apply_form_remains_a_success(): void
@@ -202,13 +214,21 @@ class CandidateApplicationExperienceTest extends TestCase
 
         $this->actingAs($candidate)->get("/en/jobs/{$job->id}")
             ->assertOk()
-            ->assertSee('enctype="multipart/form-data"', false)
-            ->assertSee('name="resume"', false)
-            ->assertSee('name="resume_source"', false)
-            ->assertSee('value="profile"', false)
-            ->assertSee('value="upload"', false)
-            ->assertSee('name="cover_letter"', false)
-            ->assertSee(__('jobs.cover_letter'));
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Jobs/Show', false)
+                ->where('job.id', $job->id)
+                ->where('canApply', true)
+                ->where('hasProfileResume', true)
+            );
+
+        $show = File::get(resource_path('js/Pages/Jobs/Show.vue'));
+        $this->assertStringContainsString('forceFormData: true', $show);
+        $this->assertStringContainsString('name="cover_letter"', $show);
+        $this->assertStringContainsString('name="resume_source"', $show);
+        $this->assertStringContainsString('value="profile"', $show);
+        $this->assertStringContainsString('value="upload"', $show);
+        $this->assertStringContainsString('type="file"', $show);
+        $this->assertStringContainsString('{{ labels.cover_letter }}', $show);
 
         $this->actingAs($candidate)
             ->post("/en/jobs/{$job->id}/apply", [])

@@ -26,11 +26,11 @@ return [
     'check_back_later' => 'Revenez plus tard pour de nouvelles opportunités chez :company.',
     'application' => 'candidature',
     'applications' => 'candidatures',
-    
+
     // Companies Index
     'browse_companies_title' => 'Parcourir les entreprises',
     'browse_companies_subtitle' => 'Découvrez d\'incroyables entreprises qui recrutent des professionnels talentueux',
     'no_companies_found_index' => 'Aucune entreprise trouvée',
     'check_back_for_companies' => 'Revenez plus tard pour de nouvelles entreprises.',
+    'latest_jobs' => 'Dernières offres',
 ];
-

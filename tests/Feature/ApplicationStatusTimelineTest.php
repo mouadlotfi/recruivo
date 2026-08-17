@@ -4,11 +4,14 @@ namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\JobStatus;
+use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
 use App\Models\Company;
 use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -155,7 +158,7 @@ class ApplicationStatusTimelineTest extends TestCase
         $application->applyStatusUpdate(['status' => ApplicationStatus::Shortlisted->value]);
         $application->load('statusEvents');
 
-        $resource = (new \App\Http\Resources\ApplicationResource($application))->resolve(request());
+        $resource = (new ApplicationResource($application))->resolve(request());
 
         $this->assertArrayHasKey('status_history', $resource);
         $this->assertCount(2, $resource['status_history']);
@@ -173,10 +176,21 @@ class ApplicationStatusTimelineTest extends TestCase
         $application->applyStatusUpdate(['status' => ApplicationStatus::Shortlisted->value]);
         $application->applyStatusUpdate(['status' => ApplicationStatus::Interview->value]);
 
-        $this->actingAs($candidate)
+        $response = $this->actingAs($candidate)
             ->get('/en/candidate/applications')
-            ->assertOk()
-            ->assertSee('data-application-status-timeline', false);
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/Applications', false)
+            ->has('applications', 1)
+            ->has('applications.0.timeline', 3)
+            ->where('applications.0.timeline.0.to_status', 'pending')
+            ->where('applications.0.timeline.1.to_status', 'shortlisted')
+            ->where('applications.0.timeline.2.to_status', 'interview')
+        );
+
+        $timeline = File::get(resource_path('js/Components/Applications/StatusTimeline.vue'));
+        $this->assertStringContainsString('data-application-status-timeline', $timeline);
     }
 
     public function test_recruiter_application_page_renders_status_timeline(): void
@@ -188,10 +202,20 @@ class ApplicationStatusTimelineTest extends TestCase
         $application = Application::factory()->for($job)->create();
         $application->applyStatusUpdate(['status' => ApplicationStatus::Shortlisted->value]);
 
-        $this->actingAs($recruiter)
+        $response = $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs/'.$job->id.'/applications')
-            ->assertOk()
-            ->assertSee('data-application-status-timeline', false);
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Applications/Index', false)
+            ->has('applications', 1)
+            ->has('applications.0.timeline', 2)
+            ->where('applications.0.timeline.0.to_status', 'pending')
+            ->where('applications.0.timeline.1.to_status', 'shortlisted')
+        );
+
+        $timeline = File::get(resource_path('js/Components/Applications/StatusTimeline.vue'));
+        $this->assertStringContainsString('data-application-status-timeline', $timeline);
     }
 
     public function test_timeline_renders_translation_backed_labels_not_raw_statuses(): void
@@ -201,12 +225,18 @@ class ApplicationStatusTimelineTest extends TestCase
         $application = Application::factory()->for($candidate, 'candidate')->create();
         $application->applyStatusUpdate(['status' => ApplicationStatus::Shortlisted->value]);
 
-        $html = (string) $this->actingAs($candidate)
+        $response = $this->actingAs($candidate)
             ->get('/en/candidate/applications')
-            ->getContent();
+            ->assertOk();
 
-        $this->assertStringContainsString(__('applications.status_pending'), $html);
-        $this->assertStringContainsString(__('applications.status_shortlisted'), $html);
-        $this->assertStringNotContainsString('data-status="shortlisted"', $html); // no raw leak through data attributes if we avoid them
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/Applications', false)
+            ->where('applications.0.timeline.0.label', __('applications.status_pending'))
+            ->where('applications.0.timeline.1.label', __('applications.status_shortlisted'))
+        );
+
+        $timeline = File::get(resource_path('js/Components/Applications/StatusTimeline.vue'));
+        $this->assertStringContainsString('{{ event.label }}', $timeline);
+        $this->assertStringNotContainsString('data-status=', $timeline);
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -188,7 +189,9 @@ class SavedJobsTest extends TestCase
 
         $this->actingAs($candidate)->get('/en')
             ->assertOk()
-            ->assertSee('href="'.localized_route('candidate.saved-jobs.index').'"', false);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Home/Index', false)
+            );
 
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create(['email_verified_at' => now()]);
@@ -196,19 +199,32 @@ class SavedJobsTest extends TestCase
 
         $this->actingAs($recruiter)->get('/en/recruiter/dashboard')
             ->assertOk()
-            ->assertDontSee('href="'.localized_route('candidate.saved-jobs.index').'"', false);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Dashboard', false)
+            );
+
+        $navigation = File::get(resource_path('js/Components/Layout/Navigation.vue'));
+        $this->assertStringContainsString("localeUrl('/candidate/saved-jobs')", $navigation);
+        $this->assertStringContainsString('v-else-if="isCandidate"', $navigation);
     }
 
     public function test_saved_jobs_page_has_an_accessible_heading_and_empty_state(): void
     {
         $candidate = $this->candidate();
 
-        $this->actingAs($candidate)->get('/en/candidate/saved-jobs')
-            ->assertOk()
-            ->assertSee('<h1', false)
-            ->assertSee(__('jobs.saved_jobs'))
-            ->assertSee(__('jobs.no_saved_jobs_yet'))
-            ->assertSee('href="'.localized_route('jobs.index').'"', false);
+        $response = $this->actingAs($candidate)->get('/en/candidate/saved-jobs')
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/SavedJobs', false)
+            ->has('jobs', 0)
+        );
+
+        $savedJobs = File::get(resource_path('js/Pages/Candidate/SavedJobs.vue'));
+        $this->assertStringContainsString('<h1', $savedJobs);
+        $this->assertStringContainsString('labels.saved_jobs', $savedJobs);
+        $this->assertStringContainsString('labels.no_saved_jobs_yet', $savedJobs);
+        $this->assertStringContainsString("localeUrl('/jobs')", $savedJobs);
     }
 
     public function test_saved_jobs_page_renders_saved_job_cards(): void
@@ -217,10 +233,15 @@ class SavedJobsTest extends TestCase
         $job = $this->publishedJob(['title' => 'Bookmarked Role']);
         $candidate->savedJobs()->attach($job);
 
-        $this->actingAs($candidate)->get('/en/candidate/saved-jobs')
-            ->assertOk()
-            ->assertSee('Bookmarked Role')
-            ->assertSee('data-infinite-scroll', false);
+        $response = $this->actingAs($candidate)->get('/en/candidate/saved-jobs')->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/SavedJobs', false)
+            ->has('jobs', 1)
+            ->where('jobs.0.title', 'Bookmarked Role')
+        );
+
+        $savedJobs = File::get(resource_path('js/Pages/Candidate/SavedJobs.vue'));
+        $this->assertStringContainsString('data-infinite-items', $savedJobs);
     }
 
     public function test_candidate_job_cards_render_a_bookmark_control_with_an_accessible_44px_target(): void
@@ -228,11 +249,17 @@ class SavedJobsTest extends TestCase
         $candidate = $this->candidate();
         $job = $this->publishedJob();
 
-        $content = $this->actingAs($candidate)->get('/en/jobs')->getContent();
+        $response = $this->actingAs($candidate)->get('/en/jobs')->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Jobs/Index', false)
+            ->where('jobs.0.id', $job->id)
+            ->where('jobs.0.is_saved', false)
+        );
 
-        $this->assertStringContainsString('aria-label="'.__('jobs.save_job').'"', $content);
-        $this->assertStringContainsString('relative z-10 inline-flex h-11 w-11', $content);
-        $this->assertStringContainsString('action="'.localized_route('candidate.saved-jobs.store', $job).'"', $content);
+        $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
+        $this->assertStringContainsString('job.is_saved ? labels.remove_saved_job : labels.save_job', $jobCard);
+        $this->assertStringContainsString('relative z-10 inline-flex h-11 w-11', $jobCard);
+        $this->assertStringContainsString('toggleSaved', $jobCard);
     }
 
     public function test_saved_job_cards_render_a_remove_form(): void
@@ -241,11 +268,16 @@ class SavedJobsTest extends TestCase
         $job = $this->publishedJob();
         $candidate->savedJobs()->attach($job);
 
-        $content = $this->actingAs($candidate)->get('/en/jobs')->getContent();
+        $response = $this->actingAs($candidate)->get('/en/jobs')->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Jobs/Index', false)
+            ->where('jobs.0.id', $job->id)
+            ->where('jobs.0.is_saved', true)
+        );
 
-        $this->assertStringContainsString('action="'.localized_route('candidate.saved-jobs.destroy', $job).'"', $content);
-        $this->assertStringContainsString('name="_method" value="DELETE"', $content);
-        $this->assertStringContainsString('aria-label="'.__('jobs.remove_saved_job').'"', $content);
+        $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
+        $this->assertStringContainsString('candidate/saved-jobs/${props.job.id}', $jobCard);
+        $this->assertStringContainsString('job.is_saved ? labels.remove_saved_job : labels.save_job', $jobCard);
     }
 
     public function test_guests_do_not_see_a_bookmark_form_on_job_cards(): void
@@ -262,10 +294,17 @@ class SavedJobsTest extends TestCase
         $candidate = $this->candidate();
         $job = $this->publishedJob();
 
-        $content = $this->actingAs($candidate)->get("/en/jobs/{$job->id}")->getContent();
+        $response = $this->actingAs($candidate)->get("/en/jobs/{$job->id}")->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Jobs/Show', false)
+            ->where('job.id', $job->id)
+            ->where('job.is_saved', false)
+        );
 
-        $this->assertStringContainsString('action="'.localized_route('candidate.saved-jobs.store', $job).'"', $content);
-        $this->assertStringContainsString(__('jobs.save_job'), $content);
+        $show = File::get(resource_path('js/Pages/Jobs/Show.vue'));
+        $this->assertStringContainsString('const saveUrl', $show);
+        $this->assertStringContainsString('toggleSaved', $show);
+        $this->assertStringContainsString('labels.save_job', $show);
     }
 
     public function test_demo_candidate_sees_a_disabled_bookmark_control_without_a_mutating_form(): void
@@ -273,11 +312,17 @@ class SavedJobsTest extends TestCase
         $candidate = $this->candidate(['is_demo' => true]);
         $job = $this->publishedJob();
 
-        $content = $this->actingAs($candidate)->get('/en/jobs')->getContent();
+        $response = $this->actingAs($candidate)->get('/en/jobs')->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Jobs/Index', false)
+            ->where('auth.user.is_demo', true)
+            ->where('jobs.0.is_saved', false)
+        );
 
-        $this->assertStringContainsString(__('jobs.demo_cannot_save_jobs'), $content);
-        $this->assertStringContainsString('disabled', $content);
-        $this->assertStringNotContainsString('action="'.localized_route('candidate.saved-jobs.store', $job).'"', $content);
+        $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
+        $this->assertStringContainsString('isDemoCandidate', $jobCard);
+        $this->assertStringContainsString('disabled', $jobCard);
+        $this->assertStringContainsString('demo_cannot_save_jobs', $jobCard);
     }
 
     public function test_job_cards_mark_saved_state_from_the_query_without_per_card_queries(): void
@@ -287,10 +332,14 @@ class SavedJobsTest extends TestCase
         $unsaved = $this->publishedJob(['title' => 'Unsaved One']);
         $candidate->savedJobs()->attach($saved);
 
-        $content = $this->actingAs($candidate)->get('/en/jobs')->getContent();
+        $response = $this->actingAs($candidate)->get('/en/jobs')->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Jobs/Index', false)
+            ->has('jobs', 2)
+        );
 
-        $this->assertStringContainsString('aria-label="'.__('jobs.remove_saved_job').'"', $content);
-        $this->assertStringContainsString('aria-label="'.__('jobs.save_job').'"', $content);
+        $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
+        $this->assertStringContainsString('job.is_saved ? labels.remove_saved_job : labels.save_job', $jobCard);
     }
 
     public function test_job_card_bookmark_control_uses_a_44px_target_and_accessible_label(): void

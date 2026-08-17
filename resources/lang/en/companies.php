@@ -26,11 +26,11 @@ return [
     'check_back_later' => 'Check back later for new opportunities at :company.',
     'application' => 'application',
     'applications' => 'applications',
-    
+
     // Companies Index
     'browse_companies_title' => 'Browse Companies',
     'browse_companies_subtitle' => 'Discover amazing companies hiring talented professionals',
     'no_companies_found_index' => 'No companies found',
     'check_back_for_companies' => 'Check back later for new companies.',
+    'latest_jobs' => 'Latest jobs',
 ];
-

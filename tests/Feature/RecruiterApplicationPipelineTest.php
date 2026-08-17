@@ -8,6 +8,8 @@ use App\Models\Company;
 use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -28,13 +30,20 @@ class RecruiterApplicationPipelineTest extends TestCase
     {
         [$recruiter, $shortlistedCandidate, $pendingCandidate, $job] = $this->makePipeline();
 
-        $this->actingAs($recruiter)
+        $response = $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs/'.$job->id.'/applications?status=shortlisted')
-            ->assertOk()
-            ->assertSee('data-application-status-tabs', false)
-            ->assertSee('aria-current="page"', false)
-            ->assertSee($shortlistedCandidate->name)
-            ->assertDontSee($pendingCandidate->name);
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Applications/Index', false)
+            ->where('status', 'shortlisted')
+            ->has('applications', 1)
+            ->where('applications.0.candidate.name', $shortlistedCandidate->name)
+        );
+
+        $applicationsPage = File::get(resource_path('js/Pages/Recruiter/Applications/Index.vue'));
+        $this->assertStringContainsString('data-application-status-tabs', $applicationsPage);
+        $this->assertStringContainsString(":aria-current=\"props.status === tab.key ? 'page' : undefined\"", $applicationsPage);
     }
 
     public function test_application_status_select_has_all_five_statuses(): void
@@ -44,15 +53,12 @@ class RecruiterApplicationPipelineTest extends TestCase
         $response = $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs/'.$job->id.'/applications');
 
-        $html = (string) $response->getContent();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Applications/Index', false)
+        );
 
-        foreach (['pending', 'shortlisted', 'interview', 'accepted', 'rejected'] as $status) {
-            $this->assertStringContainsString(
-                'value="'.$status.'"',
-                $html,
-                "Select should have option for {$status}"
-            );
-        }
+        $review = File::get(resource_path('js/Components/Applications/ApplicationReviewPanel.vue'));
+        $this->assertStringContainsString("const STATUS_OPTIONS = ['pending', 'shortlisted', 'interview', 'accepted', 'rejected']", $review);
     }
 
     public function test_tabs_include_all_five_statuses(): void
@@ -84,8 +90,13 @@ class RecruiterApplicationPipelineTest extends TestCase
             ->get('/en/recruiter/dashboard');
 
         $response->assertOk()
-            ->assertSee('Interview')
-            ->assertSee('bg-violet-100', false);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Dashboard', false)
+                ->where('recentApplications.0.status', 'interview')
+            );
+
+        $dashboard = File::get(resource_path('js/Pages/Recruiter/Dashboard.vue'));
+        $this->assertStringContainsString("interview: 'bg-violet-100", $dashboard);
     }
 
     private function makePipeline(): array

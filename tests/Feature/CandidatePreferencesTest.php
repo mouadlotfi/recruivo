@@ -2,10 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ItCategory;
+use App\Enums\JobStatus;
 use App\Models\CandidateProfile;
+use App\Models\Company;
+use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -36,7 +42,7 @@ class CandidatePreferencesTest extends TestCase
 
     public function test_interest_list_contains_only_it_categories(): void
     {
-        $categories = \App\Enums\ItCategory::values();
+        $categories = ItCategory::values();
 
         $this->assertNotEmpty($categories);
         $this->assertContains('Software Development', $categories);
@@ -47,23 +53,29 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create([
+        CandidateProfile::factory()->for($candidate)->create([
             'preferred_categories' => ['DevOps'],
         ]);
 
-        $html = (string) $this->actingAs($candidate)
+        $response = $this->actingAs($candidate)
             ->get('/en/profile')
-            ->getContent();
+            ->assertOk();
 
-        $this->assertStringContainsString('name="preferred_categories[]"', $html);
-        $this->assertStringContainsString('value="DevOps"', $html);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Profile/Edit', false)
+            ->where('candidateProfile.preferred_categories', ['DevOps'])
+        );
+
+        $profile = File::get(resource_path('js/Pages/Profile/Edit.vue'));
+        $this->assertStringContainsString('preferred_categories', $profile);
+        $this->assertStringContainsString('type="checkbox"', $profile);
     }
 
     public function test_candidate_can_save_preferences_via_profile_update(): void
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+        CandidateProfile::factory()->for($candidate)->create();
 
         $this->actingAs($candidate)
             ->put('/en/profile', [
@@ -82,7 +94,7 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+        CandidateProfile::factory()->for($candidate)->create();
 
         session(['show_preferences_picker' => true]);
 
@@ -97,22 +109,28 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+        CandidateProfile::factory()->for($candidate)->create();
 
         session(['show_preferences_picker' => true]);
 
-        $html = (string) $this->actingAs($candidate)
+        $response = $this->actingAs($candidate)
             ->get('/en/')
-            ->getContent();
+            ->assertOk();
 
-        $this->assertStringContainsString('data-preferences-modal', $html);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Home/Index', false)
+            ->where('preferenceModal.show', true)
+        );
+
+        $home = File::get(resource_path('js/Pages/Home/Index.vue'));
+        $this->assertStringContainsString('data-preferences-modal', $home);
     }
 
     public function test_home_hides_preference_modal_for_unverified_candidate(): void
     {
         $candidate = User::factory()->create(['email_verified_at' => null]);
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+        CandidateProfile::factory()->for($candidate)->create();
 
         session(['show_preferences_picker' => true]);
 
@@ -125,7 +143,7 @@ class CandidatePreferencesTest extends TestCase
 
     public function test_recruiter_never_sees_preference_modal(): void
     {
-        $company = \App\Models\Company::factory()->create();
+        $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
 
@@ -142,7 +160,7 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+        CandidateProfile::factory()->for($candidate)->create();
 
         session(['show_preferences_picker' => true]);
 
@@ -163,7 +181,7 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create(['preferred_categories' => null]);
+        CandidateProfile::factory()->for($candidate)->create(['preferred_categories' => null]);
 
         session(['show_preferences_picker' => true]);
 
@@ -179,7 +197,7 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create(['email_verified_at' => null]);
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+        CandidateProfile::factory()->for($candidate)->create();
 
         session(['show_preferences_picker' => true]);
 
@@ -198,7 +216,7 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create(['email_verified_at' => null]);
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create();
+        CandidateProfile::factory()->for($candidate)->create();
 
         session(['show_preferences_picker' => true]);
 
@@ -213,7 +231,7 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create([
+        CandidateProfile::factory()->for($candidate)->create([
             'preferred_categories' => ['Software Development', 'DevOps'],
         ]);
 
@@ -233,20 +251,20 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create([
+        CandidateProfile::factory()->for($candidate)->create([
             'preferred_categories' => ['Software Development'],
         ]);
 
-        $other = \App\Models\Job::factory()->create([
+        $other = Job::factory()->create([
             'title' => 'Zulu Nonmatch Role',
             'category' => 'Networking',
-            'status' => \App\Enums\JobStatus::Published->value,
+            'status' => JobStatus::Published->value,
             'published_at' => now(),
         ]);
-        $match = \App\Models\Job::factory()->create([
+        $match = Job::factory()->create([
             'title' => 'Alpha Match Role',
             'category' => 'Software Development',
-            'status' => \App\Enums\JobStatus::Published->value,
+            'status' => JobStatus::Published->value,
             'published_at' => now(),
         ]);
 
@@ -263,13 +281,13 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create(['preferred_categories' => null]);
+        CandidateProfile::factory()->for($candidate)->create(['preferred_categories' => null]);
 
-        $a = \App\Models\Job::factory()->create([
-            'title' => 'First Published', 'status' => \App\Enums\JobStatus::Published->value, 'published_at' => now(),
+        $a = Job::factory()->create([
+            'title' => 'First Published', 'status' => JobStatus::Published->value, 'published_at' => now(),
         ]);
-        $b = \App\Models\Job::factory()->create([
-            'title' => 'Second Published', 'status' => \App\Enums\JobStatus::Published->value, 'published_at' => now()->addMinute(),
+        $b = Job::factory()->create([
+            'title' => 'Second Published', 'status' => JobStatus::Published->value, 'published_at' => now()->addMinute(),
         ]);
 
         $html = (string) $this->actingAs($candidate)->get('/en/jobs')->getContent();
@@ -283,12 +301,12 @@ class CandidatePreferencesTest extends TestCase
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create([
+        CandidateProfile::factory()->for($candidate)->create([
             'preferred_categories' => ['DevOps'],
         ]);
-        \App\Models\Job::factory()->create([
+        Job::factory()->create([
             'title' => 'DevOps Role', 'category' => 'DevOps',
-            'status' => \App\Enums\JobStatus::Published->value, 'published_at' => now(),
+            'status' => JobStatus::Published->value, 'published_at' => now(),
         ]);
 
         $html = (string) $this->actingAs($candidate)->get('/en/')->getContent();
@@ -297,11 +315,11 @@ class CandidatePreferencesTest extends TestCase
 
     public function test_recruiter_gets_default_order(): void
     {
-        $company = \App\Models\Company::factory()->create();
+        $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
-        \App\Models\Job::factory()->create([
-            'title' => 'Recruiter View Role', 'status' => \App\Enums\JobStatus::Published->value, 'published_at' => now(),
+        Job::factory()->create([
+            'title' => 'Recruiter View Role', 'status' => JobStatus::Published->value, 'published_at' => now(),
         ]);
 
         $html = (string) $this->actingAs($recruiter)->get('/en/jobs')->getContent();

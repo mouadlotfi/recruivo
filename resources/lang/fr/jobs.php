@@ -5,10 +5,14 @@ return [
     'new_job' => 'Nouvelle offre',
     'edit_job' => 'Modifier l\'offre',
     'job_details' => 'Détails de l\'offre',
+    'full_description' => 'Description complète',
+    'meta_description_with_company' => ':title chez :company',
     'job_title' => 'Titre du poste',
     'description' => 'Description',
     'location' => 'Localisation',
     'all_locations' => 'Toutes les localisations',
+    'min_salary' => 'Salaire min.',
+    'max_salary' => 'Salaire max.',
     'search_jobs' => 'Rechercher des emplois',
     'filter_jobs' => 'Filtrer les emplois',
     'clear_filters' => 'Effacer les filtres',
@@ -44,7 +48,7 @@ return [
     'back_to_home' => 'Retour à l\'accueil',
     'loading_more' => 'Chargement de plus d\'offres…',
     'try_again' => 'Impossible de charger plus d\'offres. Réessayer',
-    
+
     // Job Details
     'back_to_jobs' => 'Retour aux offres',
     'you_have_applied' => 'Candidature soumise',
@@ -66,7 +70,7 @@ return [
     'closes_on' => 'Clôture le :date',
     'about_company' => 'À propos de :company',
     'view_company_profile' => 'Voir le profil de l\'entreprise →',
-    
+
     // Application Messages
     'application_submitted' => 'Candidature soumise avec succès !',
     'already_applied_error' => 'Vous avez déjà postulé à cette offre.',
@@ -86,4 +90,3 @@ return [
     'demo_cannot_save_jobs' => 'Ce compte de démonstration est en lecture seule et ne peut pas enregistrer d\'offres.',
     'recommended_for_you' => 'Recommandé pour vous',
 ];
-

@@ -4,13 +4,13 @@ return [
     'dashboard' => 'Recruiter Dashboard',
     'dashboard_subtitle' => 'Manage your job postings and track applications',
     'post_new_job' => 'Post New Job',
-    
+
     // Stats
     'total_jobs' => 'Total Jobs',
     'active_jobs' => 'Active Jobs',
     'total_applications' => 'Total Applications',
     'pending_applications' => 'Pending Applications',
-    
+
     // Recent Applications
     'recent_applications' => 'Recent Applications',
     'all_applications' => 'Applications',
@@ -26,17 +26,17 @@ return [
     'rejected' => 'Rejected',
     'withdrawn' => 'Withdrawn',
     'view' => 'View',
-    
+
     // Quick Actions
     'quick_actions' => 'Quick Actions',
     'manage_jobs' => 'Manage Jobs',
-    
+
     // Tips
     'tips_for_success' => 'Tips for Success',
     'tip_1' => 'Write clear, detailed job descriptions to attract quality candidates',
     'tip_2' => 'Respond to applications promptly to maintain candidate interest',
     'tip_3' => 'Use specific keywords in your job titles for better visibility',
-    
+
     // Job Create/Edit
     'create_job_title' => 'Post New Job',
     'create_job_subtitle' => 'Create a new job posting to attract candidates',
@@ -44,7 +44,7 @@ return [
     'edit_job_title' => 'Edit Job',
     'edit_job_subtitle' => 'Update your job posting',
     'back_to_jobs' => 'Back to Jobs',
-    
+
     // Job Form
     'job_title' => 'Job Title',
     'job_title_placeholder' => 'e.g. Senior Laravel Developer',
@@ -63,6 +63,7 @@ return [
     'salary_placeholder_min' => 'e.g. 80000',
     'salary_placeholder_max' => 'e.g. 120000',
     'closing_date' => 'Closing date (optional)',
+    'closing_date_short' => 'Closing date',
     'closing_date_help' => 'Leave blank to keep this job open until you manually unpublish it.',
     'expired' => 'Expired',
     'expired_job_notice' => 'This job has passed its closing date. Extend the date to make it visible again.',
@@ -70,7 +71,7 @@ return [
     'cancel' => 'Cancel',
     'create_job' => 'Create Job',
     'update_job' => 'Update Job',
-    
+
     // Categories
     'engineering' => 'Engineering',
     'design' => 'Design',
@@ -78,16 +79,16 @@ return [
     'marketing' => 'Marketing',
     'sales' => 'Sales',
     'operations' => 'Operations',
-    
+
     // Remote Types
     'remote' => 'Remote',
     'hybrid' => 'Hybrid',
     'onsite' => 'On-site',
-    
+
     // Status
     'draft' => 'Draft',
     'published' => 'Published',
-    
+
     // Job Index
     'my_job_listings' => 'My Job Listings',
     'my_job_listings_subtitle' => 'Manage your job postings and view applications',
@@ -96,6 +97,8 @@ return [
     'post_first_job' => 'Post Your First Job',
     'applications_count' => ':count application|:count applications',
     'posted_time' => 'Posted :time',
+    'published_on' => 'Published :date',
+    'closes_on' => 'Closes :date',
     'view_applications_title' => 'View Applications',
     'edit_job_title_attr' => 'Edit Job',
     'delete_job_title' => 'Delete Job',
@@ -103,17 +106,18 @@ return [
     'delete_job_confirm' => 'Are you sure you want to delete this job? This action cannot be undone.',
     'unpublish' => 'Unpublish',
     'publish' => 'Publish',
-    
+
     // Edit Job
     'edit_job_title' => 'Edit Job',
     'edit_job_subtitle' => 'Update your job posting details',
     'update_job' => 'Update Job',
     'back_to_jobs' => 'Back to Jobs',
-    
+
     // Applications Page
     'applications_for' => 'Applications for :job',
     'applications_received' => ':count application received|:count applications received',
     'all_statuses' => 'All',
+    'filter_applications' => 'Filter applications',
     'filtered_applications_received' => ':count matching application|:count matching applications',
     'no_applications_with_status' => 'No :status applications',
     'no_applications_with_status_message' => 'Applications with this status will appear here.',
@@ -144,7 +148,7 @@ return [
     'interview_mode' => 'Interview mode',
     'interview_onsite' => 'On-site',
     'interview_online' => 'Online',
-    
+
     // Flash Messages
     'job_created' => 'Job created successfully!',
     'job_updated' => 'Job updated successfully!',

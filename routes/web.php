@@ -8,6 +8,7 @@ use App\Http\Controllers\JobController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // Redirect root to the browser-preferred locale (or default)
 Route::get('/', function (Request $request) {
@@ -66,7 +67,17 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(\App\Http\Mi
                 return redirect(localized_route($request->user()->hasRole('Recruiter') ? 'recruiter.dashboard' : 'home'));
             }
 
-            return view('auth.verify-email');
+            return Inertia::render('Auth/VerifyEmail', [
+                'email' => $request->user()->email,
+                'labels' => [
+                    'title' => __('auth.verify_email_short'),
+                    'description' => __('auth.verify_email_desc_short'),
+                    'resend' => __('auth.resend_verification'),
+                    'logout' => __('auth.log_out'),
+                    'message' => session('message'),
+                ],
+                'message' => session('message'),
+            ]);
         })->name('verification.notice');
 
         Route::post('/email/verification-notification', function (Request $request) {

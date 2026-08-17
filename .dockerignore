@@ -26,6 +26,7 @@ bootstrap/cache/*.php
 # User uploaded files (handled via volumes)
 storage/app/public/*
 storage/app/private/
+storage/inertia-devtools/
 
 # Testing
 tests/

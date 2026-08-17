@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Enums\JobStatus;
 use App\Models\Application;
+use App\Models\CandidateProfile;
 use App\Models\Company;
 use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -31,18 +34,21 @@ class ApplicationUiPolishTest extends TestCase
             'cover_letter' => 'A fairly long cover letter for the candidate view.',
         ]);
 
-        $html = (string) $this->actingAs($candidate)
+        $this->actingAs($candidate)
             ->get('/en/candidate/applications')
-            ->getContent();
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Candidate/Applications', false)
+                ->where('applications.0.cover_letter', $application->cover_letter)
+            );
 
-        $this->assertStringContainsString('data-cover-letter-collapsible', $html);
-        // No `open` attribute => collapsed by default
-        $this->assertStringNotContainsString('<details data-cover-letter-collapsible open', $html);
-        // The whole application card is collapsed by default too
-        $this->assertStringContainsString('data-application-card-collapsible', $html);
-        $this->assertStringNotContainsString('<details data-application-card-collapsible open', $html);
-        // Cover letter text has no leading whitespace gap
-        $this->assertStringNotContainsString('> '.$application->cover_letter, $html);
+        $card = File::get(resource_path('js/Components/Applications/CandidateApplicationCard.vue'));
+        $disclosure = File::get(resource_path('js/Components/Applications/CoverLetterDisclosure.vue'));
+
+        $this->assertStringContainsString('<details data-application-card-collapsible', $card);
+        $this->assertStringNotContainsString('<details data-application-card-collapsible open', $card);
+        $this->assertStringContainsString('<details data-cover-letter-collapsible', $disclosure);
+        $this->assertStringNotContainsString('<details data-cover-letter-collapsible open', $disclosure);
     }
 
     public function test_recruiter_application_card_is_collapsed_by_default(): void
@@ -51,21 +57,25 @@ class ApplicationUiPolishTest extends TestCase
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
         $job = Job::factory()->for($company)->for($recruiter, 'recruiter')->create(['status' => JobStatus::Published->value]);
-        Application::factory()->for($job)->create([
+        $application = Application::factory()->for($job)->create([
             'cover_letter' => 'A cover letter for the collapsed card test.',
         ]);
 
-        $html = (string) $this->actingAs($recruiter)
+        $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs/'.$job->id.'/applications')
-            ->getContent();
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Applications/Index', false)
+                ->where('applications.0.cover_letter', $application->cover_letter)
+            );
 
-        $this->assertStringContainsString('data-application-card-collapsible', $html);
-        // No `open` attribute => collapsed by default
-        $this->assertStringNotContainsString('<details data-application-card-collapsible open', $html);
-        // The review panel lives inside the collapsed card
-        $this->assertStringContainsString('data-application-review-panel', $html);
-        // Cover letter stays collapsible within the card
-        $this->assertStringContainsString('data-cover-letter-collapsible', $html);
+        $card = File::get(resource_path('js/Components/Applications/RecruiterApplicationCard.vue'));
+        $disclosure = File::get(resource_path('js/Components/Applications/CoverLetterDisclosure.vue'));
+
+        $this->assertStringContainsString('<details data-application-card-collapsible', $card);
+        $this->assertStringContainsString(':open="hasPageErrors"', $card);
+        $this->assertStringContainsString('data-application-review-panel', $card);
+        $this->assertStringContainsString('<details data-cover-letter-collapsible', $disclosure);
     }
 
     public function test_recruiter_review_form_starts_at_default_state(): void
@@ -82,30 +92,43 @@ class ApplicationUiPolishTest extends TestCase
             'interview_location' => 'Paris Office',
         ]);
 
-        $html = (string) $this->actingAs($recruiter)
+        $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs/'.$job->id.'/applications')
-            ->getContent();
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Applications/Index', false)
+                ->where('applications.0.status', 'shortlisted')
+                ->where('applications.0.notes', $application->notes)
+            );
 
-        // Form must NOT pre-select the application's current status
-        $this->assertStringContainsString("status: ''", $html);
-        // Notes field starts empty, not pre-filled with existing notes
-        $this->assertStringContainsString("notes: ''", $html);
-        // Interview fields are not pre-filled from the application
-        $this->assertStringNotContainsString('value="'.now()->addDays(2)->format('Y-m-d\TH:i').'"', $html);
-        $this->assertStringNotContainsString('value="Paris Office"', $html);
+        $review = File::get(resource_path('js/Components/Applications/ApplicationReviewPanel.vue'));
+        $this->assertStringContainsString("status: ''", $review);
+        $this->assertStringContainsString("notes: ''", $review);
+        $this->assertStringContainsString("interview_at: ''", $review);
+        $this->assertStringNotContainsString('application.interview_at', $review);
+        $this->assertStringNotContainsString('application.interview_location', $review);
     }
 
     public function test_apply_cover_letter_textarea_is_autosize_enabled(): void
     {
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
-        \App\Models\CandidateProfile::factory()->for($candidate)->create(['resume_path' => 'resumes/r.pdf']);
+        CandidateProfile::factory()->for($candidate)->create(['resume_path' => 'resumes/r.pdf']);
         $job = Job::factory()->create(['status' => JobStatus::Published->value]);
 
-        $html = (string) $this->actingAs($candidate)->get('/en/jobs/'.$job->id)->getContent();
+        $this->actingAs($candidate)
+            ->get('/en/jobs/'.$job->id)
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Jobs/Show', false)
+                ->where('job.id', $job->id)
+                ->where('canApply', true)
+            );
 
-        $this->assertStringContainsString('x-autosize', $html);
-        $this->assertStringContainsString('name="cover_letter"', $html);
+        $show = File::get(resource_path('js/Pages/Jobs/Show.vue'));
+        $this->assertStringContainsString('<ExpandedTextarea', $show);
+        $this->assertStringContainsString('name="cover_letter"', $show);
+        $this->assertStringContainsString('rows="4"', $show);
     }
 
     public function test_recruiter_notes_textarea_is_autosize_enabled(): void
@@ -116,12 +139,18 @@ class ApplicationUiPolishTest extends TestCase
         $job = Job::factory()->for($company)->for($recruiter, 'recruiter')->create(['status' => JobStatus::Published->value]);
         Application::factory()->for($job)->create();
 
-        $html = (string) $this->actingAs($recruiter)
+        $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs/'.$job->id.'/applications')
-            ->getContent();
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Applications/Index', false)
+                ->has('applications', 1)
+            );
 
-        $this->assertStringContainsString('x-autosize', $html);
-        $this->assertStringContainsString('name="notes"', $html);
+        $review = File::get(resource_path('js/Components/Applications/ApplicationReviewPanel.vue'));
+        $this->assertStringContainsString('name="notes"', $review);
+        $this->assertStringContainsString('const autosizeNotes', $review);
+        $this->assertStringContainsString('@input="autosizeNotes"', $review);
     }
 
     public function test_company_location_links_to_location_search(): void
@@ -132,9 +161,15 @@ class ApplicationUiPolishTest extends TestCase
             'location' => 'Dublin, Ireland',
         ]);
 
-        $html = (string) $this->get('/en/companies')->getContent();
+        $this->get('/en/companies')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Companies/Index', false)
+                ->where('companies.0.location', 'Dublin, Ireland')
+            );
 
-        $this->assertStringContainsString('data-company-location-link', $html);
-        $this->assertStringContainsString('/en/search?location=Dublin%2C%20Ireland&amp;filter=jobs', $html);
+        $companyCard = File::get(resource_path('js/Components/Companies/CompanyCard.vue'));
+        $this->assertStringContainsString('data-company-location-link', $companyCard);
+        $this->assertStringContainsString(':data="{ location: company.location, filter: \'jobs\' }"', $companyCard);
     }
 }

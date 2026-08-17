@@ -6,6 +6,8 @@ use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -24,11 +26,17 @@ class RecruiterJobCreationTest extends TestCase
     {
         $recruiter = $this->makeRecruiter();
 
-        $this->actingAs($recruiter)->get('/en/recruiter/jobs/create')
-            ->assertOk()
-            ->assertSee('name="salary_min"', false)
-            ->assertSee('name="salary_max"', false)
-            ->assertSee('name="category"', false);
+        $response = $this->actingAs($recruiter)->get('/en/recruiter/jobs/create')
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Jobs/Create', false)
+        );
+
+        $jobForm = File::get(resource_path('js/Components/Recruiter/JobForm.vue'));
+        $this->assertStringContainsString('id="salary_min"', $jobForm);
+        $this->assertStringContainsString('id="salary_max"', $jobForm);
+        $this->assertStringContainsString('id="category"', $jobForm);
 
         $this->actingAs($recruiter)->post('/en/recruiter/jobs', [])
             ->assertSessionHasErrors(['title', 'description', 'location', 'salary_min', 'salary_max', 'category', 'remote_type', 'status']);

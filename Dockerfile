@@ -21,7 +21,7 @@ RUN npm run build
 # =============================================================================
 # Stage 2: Install PHP dependencies
 # =============================================================================
-FROM php:8.2-cli AS composer-builder
+FROM php:8.4-cli AS composer-builder
 
 # Copy composer binary from official image
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -56,7 +56,7 @@ RUN composer dump-autoload --optimize --no-dev
 # =============================================================================
 # Stage 3: Final production image
 # =============================================================================
-FROM php:8.2-apache AS production
+FROM php:8.4-apache AS production
 
 # Build arguments for flexibility
 ARG APP_ENV=production

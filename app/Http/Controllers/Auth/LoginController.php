@@ -5,12 +5,38 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class LoginController extends Controller
 {
     public function showLoginForm()
     {
-        return view('auth.login');
+        return Inertia::render('Auth/Login', [
+            'labels' => [
+                'title' => __('auth.login_title'),
+                'subtitle' => __('auth.login_subtitle'),
+                'email' => __('auth.email'),
+                'email_placeholder' => __('auth.email_placeholder'),
+                'password' => __('auth.password'),
+                'password_placeholder' => __('auth.password_placeholder'),
+                'forgot_password' => __('auth.forgot_password'),
+                'submit' => __('auth.login_button'),
+                'new_to_recruivo' => __('auth.new_to_recruivo'),
+                'create_account' => __('auth.create_account'),
+                'email_verified' => __('auth.email_verified'),
+                'account_created' => __('auth.account_created'),
+                'toggle_password_visibility' => __('common.toggle_password_visibility'),
+            ],
+            'messages' => [
+                'verified' => session('verified'),
+                'registered' => session('registered'),
+                'status' => session('status'),
+                'info' => session('info'),
+            ],
+            'old' => [
+                'email' => old('email', ''),
+            ],
+        ]);
     }
 
     public function login(Request $request)

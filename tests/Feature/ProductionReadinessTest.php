@@ -10,13 +10,15 @@ use App\Models\Job;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\UserAccountDeletionService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
+use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -47,10 +49,16 @@ class ProductionReadinessTest extends TestCase
         $response = $this->actingAs($candidate)->get('/en/profile');
 
         $response->assertOk()
-            ->assertSee(__('profile.resume_uploaded'))
-            ->assertSee(__('profile.replace_resume'))
-            ->assertSee('data-resume-upload', false)
-            ->assertDontSee('1_1723540000.pdf');
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Profile/Edit', false)
+                ->where('candidateProfile.resume_path', 'resumes/1_1723540000.pdf')
+            );
+
+        $profile = File::get(resource_path('js/Pages/Profile/Edit.vue'));
+        $this->assertStringContainsString('resume_uploaded', $profile);
+        $this->assertStringContainsString('replace_resume', $profile);
+        $this->assertStringContainsString('profile_resume', $profile);
+        $this->assertStringNotContainsString('1_1723540000.pdf', $profile);
     }
 
     public function test_candidate_cannot_apply_to_an_unpublished_job(): void
@@ -148,17 +156,19 @@ class ProductionReadinessTest extends TestCase
         ]);
         $demo->assignRole('Recruiter');
 
-        $this->actingAs($demo)
+        $response = $this->actingAs($demo)
             ->get('/en/profile')
-            ->assertOk()
-            ->assertSee('Visible Demo Company')
-            ->assertSee('data-demo-read-only-settings', false)
-            ->assertSee('data-profile-settings-fields disabled', false)
-            ->assertSee('data-email-settings-fields disabled', false)
-            ->assertSee('data-password-settings-fields disabled', false)
-            ->assertSee(__('profile.update_profile'))
-            ->assertSee(__('profile.request_email_change'))
-            ->assertSee(__('profile.change_password'));
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Profile/Edit', false)
+            ->where('user.is_demo', true)
+            ->where('company.name', 'Visible Demo Company')
+        );
+
+        $profile = File::get(resource_path('js/Pages/Profile/Edit.vue'));
+        $this->assertStringContainsString(':disabled="user.is_demo"', $profile);
+        $this->assertStringContainsString('demo_read_only', $profile);
     }
 
     public function test_demo_account_profile_is_read_only_through_the_api(): void

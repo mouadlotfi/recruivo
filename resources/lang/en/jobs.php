@@ -5,10 +5,14 @@ return [
     'new_job' => 'New Job',
     'edit_job' => 'Edit Job',
     'job_details' => 'Job Details',
+    'full_description' => 'Full Description',
+    'meta_description_with_company' => ':title at :company',
     'job_title' => 'Job Title',
     'description' => 'Description',
     'location' => 'Location',
     'all_locations' => 'All locations',
+    'min_salary' => 'Min salary',
+    'max_salary' => 'Max salary',
     'search_jobs' => 'Search jobs',
     'filter_jobs' => 'Filter jobs',
     'clear_filters' => 'Clear filters',
@@ -44,7 +48,7 @@ return [
     'back_to_home' => 'Back to Home',
     'loading_more' => 'Loading more jobs…',
     'try_again' => 'Could not load more jobs. Try again',
-    
+
     // Job Details
     'back_to_jobs' => 'Back to jobs',
     'you_have_applied' => 'Application submitted',
@@ -66,7 +70,7 @@ return [
     'closes_on' => 'Closes :date',
     'about_company' => 'About :company',
     'view_company_profile' => 'View company profile →',
-    
+
     // Application Messages
     'application_submitted' => 'Application submitted successfully!',
     'already_applied_error' => 'You have already applied to this job.',
@@ -86,4 +90,3 @@ return [
     'demo_cannot_save_jobs' => 'This demo account is read-only and cannot save jobs.',
     'recommended_for_you' => 'Recommended for you',
 ];
-

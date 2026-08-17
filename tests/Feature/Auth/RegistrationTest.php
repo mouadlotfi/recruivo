@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -78,13 +79,19 @@ class RegistrationTest extends TestCase
 
     public function test_company_registration_form_does_not_render_a_personal_name_field(): void
     {
-        $this->get('/en/register')
-            ->assertOk()
-            ->assertDontSee('id="recruiter_name"', false)
-            ->assertSee('id="company_name"', false)
-            ->assertDontSee('id="company_email"', false)
-            ->assertSee('name="company[location]"', false)
-            ->assertSee('x-show="accountType === \'candidate\'"', false);
+        $response = $this->get('/en/register')->assertOk();
+        $page = $response->getContent();
+
+        $this->assertStringContainsString('"component":"Auth\\/Register"', $page);
+        $this->assertStringContainsString('"company_name":"Company name"', $page);
+
+        $registerPage = File::get(resource_path('js/Pages/Auth/Register.vue'));
+
+        $this->assertStringContainsString('id="company_name"', $registerPage);
+        $this->assertStringContainsString('name="company[location]"', $registerPage);
+        $this->assertStringContainsString('v-show="form.account_type === \'candidate\'"', $registerPage);
+        $this->assertStringNotContainsString('id="recruiter_name"', $registerPage);
+        $this->assertStringNotContainsString('id="company_email"', $registerPage);
     }
 
     public function test_company_registration_requires_a_location(): void
@@ -114,4 +121,3 @@ class RegistrationTest extends TestCase
             ->assertDontSee('private@company.test');
     }
 }
-

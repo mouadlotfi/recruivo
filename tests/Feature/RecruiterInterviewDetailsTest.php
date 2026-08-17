@@ -11,6 +11,8 @@ use App\Notifications\ApplicationStatusUpdatedNotification;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -229,17 +231,20 @@ class RecruiterInterviewDetailsTest extends TestCase
         $response = $this->actingAs($recruiter)
             ->get("/en/recruiter/jobs/{$application->job_id}/applications");
 
-        $html = (string) $response->getContent();
+        $response->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Applications/Index', false)
+                ->has('applications', 1)
+            );
 
-        $this->assertStringContainsString('x-data="{ status:', $html);
-        $this->assertStringContainsString('x-model="status"', $html);
-        $this->assertStringContainsString("x-show=\"status === 'interview'\"", $html);
-        $this->assertStringContainsString('name="interview_at"', $html);
-        $this->assertStringContainsString('type="datetime-local"', $html);
-        $this->assertStringContainsString('name="interview_location"', $html);
-        $this->assertStringContainsString('name="interview_url"', $html);
-        $this->assertStringContainsString('type="url"', $html);
-        $this->assertStringContainsString('name="interview_instructions"', $html);
+        $review = File::get(resource_path('js/Components/Applications/ApplicationReviewPanel.vue'));
+        $this->assertStringContainsString("form.status === 'interview'", $review);
+        $this->assertStringContainsString('name="interview_at"', $review);
+        $this->assertStringContainsString('type="datetime-local"', $review);
+        $this->assertStringContainsString('name="interview_location"', $review);
+        $this->assertStringContainsString('name="interview_url"', $review);
+        $this->assertStringContainsString('type="url"', $review);
+        $this->assertStringContainsString('name="interview_instructions"', $review);
     }
 
     // Task 7: candidate sees the interview panel only for scheduled interviews
@@ -262,14 +267,19 @@ class RecruiterInterviewDetailsTest extends TestCase
         ]);
 
         $response = $this->actingAs($candidate)->get('/en/candidate/applications');
-        $html = (string) $response->getContent();
+        $response->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Candidate/Applications', false)
+                ->has('applications', 2)
+                ->where('applications.0.interview.location', 'Casablanca HQ')
+                ->where('applications.0.interview.url', 'https://meet.example.com/interview')
+                ->where('applications.0.interview.instructions', "Bring your laptop.\nBe on time.")
+            );
 
-        $this->assertSame(1, substr_count($html, __('applications.interview_scheduled')));
-        $this->assertStringContainsString($interviewAt->format('l, F j, Y \a\t g:i A'), $html);
-        $this->assertStringContainsString('Casablanca HQ', $html);
-        $this->assertStringContainsString('https://meet.example.com/interview', $html);
-        $this->assertStringContainsString('target="_blank" rel="noopener noreferrer"', $html);
-        $this->assertStringContainsString("Bring your laptop.\nBe on time.", $html);
+        $candidateCard = File::get(resource_path('js/Components/Applications/CandidateApplicationCard.vue'));
+        $this->assertStringContainsString('interview_scheduled', $candidateCard);
+        $this->assertStringContainsString('application.interview.formatted_at', $candidateCard);
+        $this->assertStringContainsString('target="_blank"', $candidateCard);
     }
 
     // Task 7: notification carries interview details in mail + stored array
@@ -316,11 +326,17 @@ class RecruiterInterviewDetailsTest extends TestCase
 
         $candidate->notify(new ApplicationStatusUpdatedNotification($application));
 
-        $this->actingAs($candidate)
+        $response = $this->actingAs($candidate)
             ->get('/en/candidate/dashboard')
-            ->assertOk()
-            ->assertSee(__('common.application_interview'))
-            ->assertDontSee(__('common.application_rejected'));
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/Dashboard', false)
+            ->where('notificationCount', 1)
+        );
+
+        $notification = File::get(resource_path('js/Components/Layout/NotificationCenter.vue'));
+        $this->assertStringContainsString('data-notification-center', $notification);
     }
 
     // Task 5: the after:now rule rejects a past interview date

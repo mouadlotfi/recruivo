@@ -8,6 +8,7 @@ use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -114,13 +115,24 @@ class RoleNavigationTest extends TestCase
         $candidate = User::factory()->create(['name' => 'Clickable Applicant']);
         $candidate->assignRole('Candidate');
         $job = Job::factory()->for($company)->for($recruiter, 'recruiter')->create();
-        Application::factory()->for($candidate, 'candidate')->for($job)->create();
+        $application = Application::factory()->for($candidate, 'candidate')->for($job)->create();
 
         $this->actingAs($recruiter)
             ->get('/en/recruiter/dashboard')
             ->assertOk()
-            ->assertSee('data-recent-applicant-link', false)
-            ->assertSee('href="'.localized_route('recruiter.jobs.applications', $job).'"', false);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Dashboard', false)
+                ->has('recentApplications', 1)
+                ->where('recentApplications.0.id', $application->id)
+                ->where('recentApplications.0.candidate.name', $candidate->name)
+                ->where('recentApplications.0.job.id', $job->id)
+                ->where('recentApplications.0.job.title', $job->title)
+            );
+
+        $dashboard = File::get(resource_path('js/Pages/Recruiter/Dashboard.vue'));
+
+        $this->assertStringContainsString('localeUrl(`/recruiter/jobs/${application.job.id}/applications`)', $dashboard);
+        $this->assertStringNotContainsString('/recruiter/applicants/', $dashboard);
     }
 
     public function test_recruiter_job_cards_render_the_application_count_once(): void
@@ -147,13 +159,23 @@ class RoleNavigationTest extends TestCase
         $recruiter->assignRole('Recruiter');
         $job = Job::factory()->for($company)->for($recruiter, 'recruiter')->create();
 
-        $this->actingAs($recruiter)
+        $response = $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs')
-            ->assertOk()
-            ->assertSee('href="'.localized_route('recruiter.jobs.show', $job).'"', false)
-            ->assertSee('data-recruiter-job-card', false)
-            ->assertSee('before:absolute before:inset-0', false)
-            ->assertSee('data-job-actions', false);
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Jobs/Index', false)
+            ->has('jobs', 1)
+            ->where('jobs.0.id', $job->id)
+            ->where('jobs.0.title', $job->title)
+        );
+
+        $jobsPage = File::get(resource_path('js/Pages/Recruiter/Jobs/Index.vue'));
+
+        $this->assertStringContainsString('const jobShowUrl = (job: RecruiterJobSummary) => localeUrl(`/recruiter/jobs/${job.id}`)', $jobsPage);
+        $this->assertStringContainsString('data-recruiter-job-card', $jobsPage);
+        $this->assertStringContainsString('before:absolute before:inset-0', $jobsPage);
+        $this->assertStringContainsString('data-job-actions', $jobsPage);
     }
 
     public function test_recruiter_can_open_an_owned_job_detail_page_from_manage_jobs(): void
@@ -169,16 +191,24 @@ class RoleNavigationTest extends TestCase
             'salary_max' => 12000,
         ]);
 
-        $this->actingAs($recruiter)
+        $response = $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs/'.$job->id)
-            ->assertOk()
-            ->assertViewIs('recruiter.jobs.show')
-            ->assertSee('Senior Laravel Developer')
-            ->assertSee('Build and maintain reliable Laravel applications.')
-            ->assertSee('San Francisco')
-            ->assertSee(localized_route('recruiter.jobs.applications', $job), false)
-            ->assertSee(localized_route('recruiter.jobs.edit', $job), false)
-            ->assertSee(localized_route('recruiter.jobs.index'), false);
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Jobs/Show', false)
+            ->where('job.id', $job->id)
+            ->where('job.title', 'Senior Laravel Developer')
+            ->where('job.description', 'Build and maintain reliable Laravel applications.')
+            ->where('job.location', 'San Francisco')
+        );
+
+        $jobPage = File::get(resource_path('js/Pages/Recruiter/Jobs/Show.vue'));
+
+        $this->assertStringContainsString("localeUrl('/recruiter/jobs')", $jobPage);
+        $this->assertStringContainsString('/recruiter/jobs/${props.job.id}/applications', $jobPage);
+        $this->assertStringContainsString('/recruiter/jobs/${props.job.id}/edit', $jobPage);
+        $this->assertStringNotContainsString('/recruiter/applicants/', $jobPage);
     }
 
     public function test_candidate_navigation_links_to_saved_jobs_but_recruiter_navigation_does_not(): void
@@ -189,7 +219,28 @@ class RoleNavigationTest extends TestCase
         $this->actingAs($candidate)
             ->get('/en')
             ->assertOk()
-            ->assertSee('href="'.localized_route('candidate.saved-jobs.index').'"', false);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Home/Index', false)
+            );
+
+        foreach ([
+            resource_path('js/Components/Layout/Navigation.vue'),
+            resource_path('js/Components/Layout/MobileNav.vue'),
+        ] as $navigationPath) {
+            $navigation = File::get($navigationPath);
+            $this->assertStringContainsString("localeUrl('/candidate/saved-jobs')", $navigation);
+
+            $recruiterMarker = str_contains($navigation, '<template v-if="isRecruiter">')
+                ? '<template v-if="isRecruiter">'
+                : '<template v-else-if="isRecruiter">';
+            $recruiterStart = strpos($navigation, $recruiterMarker);
+            $candidateStart = strpos($navigation, '<template v-else-if="isCandidate">');
+
+            $this->assertNotFalse($recruiterStart);
+            $this->assertNotFalse($candidateStart);
+            $recruiterBranch = substr($navigation, $recruiterStart, $candidateStart - $recruiterStart);
+            $this->assertStringNotContainsString('/candidate/saved-jobs', $recruiterBranch);
+        }
 
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create(['email_verified_at' => now()]);
@@ -198,7 +249,9 @@ class RoleNavigationTest extends TestCase
         $this->actingAs($recruiter)
             ->get('/en/recruiter/dashboard')
             ->assertOk()
-            ->assertDontSee('href="'.localized_route('candidate.saved-jobs.index').'"', false);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Dashboard', false)
+            );
     }
 
     public function test_candidate_mobile_navigation_keeps_four_columns_with_saved_jobs(): void

@@ -6,6 +6,8 @@ use App\Enums\JobStatus;
 use App\Models\Company;
 use App\Models\Job;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class SmartSearchTest extends TestCase
@@ -80,7 +82,7 @@ class SmartSearchTest extends TestCase
     {
         $script = file_get_contents(resource_path('js/search.js'));
 
-        $this->assertStringContainsString("absolute inset-x-0 top-full", $script);
+        $this->assertStringContainsString('absolute inset-x-0 top-full', $script);
         $this->assertStringContainsString('w-full overflow-y-auto', $script);
     }
 
@@ -118,7 +120,7 @@ class SmartSearchTest extends TestCase
         $this->assertStringNotContainsString('w-[min(44rem', $script);
 
         // The page surface keeps its full-width listbox.
-        $this->assertStringContainsString("absolute inset-x-0 top-full", $script);
+        $this->assertStringContainsString('absolute inset-x-0 top-full', $script);
         $this->assertStringContainsString('w-full overflow-y-auto', $script);
     }
 
@@ -175,11 +177,17 @@ class SmartSearchTest extends TestCase
 
         $response = $this->get('/en/search?search=cloud');
 
-        $response->assertOk();
-        $content = $response->getContent();
-        $this->assertMatchesRegularExpression('/data-search-tab="all"[^>]*>.*?\(\d+/s', $content, 'All tab should carry a result count.');
-        $this->assertMatchesRegularExpression('/data-search-tab="jobs"[^>]*>.*?\(\d+/s', $content, 'Jobs tab should carry a result count.');
-        $this->assertMatchesRegularExpression('/data-search-tab="companies"[^>]*>.*?\(\d+/s', $content, 'Companies tab should carry a result count.');
+        $response->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Search/Index', false)
+                ->where('totalCount', 2)
+                ->where('jobsCount', 1)
+                ->where('companiesCount', 1)
+            );
+
+        $searchPage = File::get(resource_path('js/Pages/Search/Index.vue'));
+        $this->assertStringContainsString('data-search-tab', $searchPage);
+        $this->assertStringContainsString('tab.count', $searchPage);
     }
 
     public function test_search_page_clear_and_submit_actions_share_a_non_overlapping_control_group(): void
@@ -197,9 +205,16 @@ class SmartSearchTest extends TestCase
     {
         $response = $this->get('/en/search?search=cloud&remote_type=remote&location=Dublin');
 
-        $response->assertOk();
-        $response->assertSee('data-active-filter-chip', false);
-        $response->assertSee('Dublin');
+        $response->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Search/Index', false)
+                ->where('remoteType', 'remote')
+                ->where('location', 'Dublin')
+            );
+
+        $searchPage = File::get(resource_path('js/Pages/Search/Index.vue'));
+        $this->assertStringContainsString('data-active-filter-chip', $searchPage);
+        $this->assertStringContainsString('remove_filter', $searchPage);
     }
 
     public function test_search_page_empty_state_offers_popular_suggestions(): void
@@ -211,8 +226,13 @@ class SmartSearchTest extends TestCase
             'published_at' => now(),
         ]);
 
-        $this->get('/en/search')
-            ->assertOk()
-            ->assertSee('data-popular-search', false);
+        $response = $this->get('/en/search')->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Search/Index', false)
+            ->where('popularSearches.0', 'DevOps')
+        );
+
+        $searchPage = File::get(resource_path('js/Pages/Search/Index.vue'));
+        $this->assertStringContainsString('data-popular-search', $searchPage);
     }
 }

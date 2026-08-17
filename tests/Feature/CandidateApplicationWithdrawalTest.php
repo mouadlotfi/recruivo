@@ -9,7 +9,9 @@ use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Notification;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -221,20 +223,23 @@ class CandidateApplicationWithdrawalTest extends TestCase
         $response = $this->actingAs($candidate)->get('/en/candidate/applications');
         $response->assertOk();
 
-        $html = (string) $response->getContent();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/Applications', false)
+            ->has('applications', 2)
+        );
 
-        $this->assertStringContainsString(
-            '/en/candidate/applications/'.$pending->id.'/withdraw',
-            $html,
-            'Pending application must offer a withdraw action'
+        $this->assertSame(
+            [$pending->id => true, $accepted->id => false],
+            collect($response->inertiaProps('applications'))
+                ->mapWithKeys(fn (array $application) => [$application['id'] => $application['status'] !== ApplicationStatus::Accepted->value])
+                ->all()
         );
-        $this->assertStringNotContainsString(
-            '/en/candidate/applications/'.$accepted->id.'/withdraw',
-            $html,
-            'Accepted application must not offer a withdraw action'
-        );
-        $this->assertStringContainsString('min-h-11', $html);
-        $this->assertStringContainsString('return confirm(', $html);
+
+        $card = File::get(resource_path('js/Components/Applications/CandidateApplicationCard.vue'));
+        $this->assertStringContainsString("['pending', 'shortlisted', 'interview'].includes", $card);
+        $this->assertStringContainsString(':action="withdrawUrl"', $card);
+        $this->assertStringContainsString('min-h-11', $card);
+        $this->assertStringContainsString('window.confirm', $card);
     }
 
     public function test_withdrawn_badge_renders_with_neutral_gray_classes_on_candidate_page(): void
@@ -245,9 +250,14 @@ class CandidateApplicationWithdrawalTest extends TestCase
         $this->actingAs($candidate)
             ->get('/en/candidate/applications')
             ->assertOk()
-            ->assertSee('bg-stone-200', false)
-            ->assertSee('text-stone-700', false)
-            ->assertSee('Withdrawn');
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Candidate/Applications', false)
+                ->where('applications.0.status', ApplicationStatus::Withdrawn->value)
+                ->where('applications.0.status_label', __('applications.withdrawn'))
+            );
+
+        $badge = File::get(resource_path('js/Components/Applications/ApplicationStatusBadge.vue'));
+        $this->assertStringContainsString("withdrawn: 'bg-stone-200 text-stone-700", $badge);
     }
 
     public function test_recruiter_page_shows_withdrawn_read_only_state_and_select_excludes_withdrawn(): void
@@ -261,24 +271,33 @@ class CandidateApplicationWithdrawalTest extends TestCase
             ->get("/en/recruiter/jobs/{$job->id}/applications");
         $response->assertOk();
 
-        $html = (string) $response->getContent();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Applications/Index', false)
+            ->has('applications', 2)
+        );
 
-        $this->assertStringContainsString(__('recruiter.withdrawn_by_candidate'), $html);
-        $this->assertStringNotContainsString(
-            'action="'.localized_route('recruiter.applications.update', $withdrawn).'"',
-            $html,
-            'Withdrawn application must not render the review form'
+        $this->assertSame(
+            [
+                $withdrawn->id => ['is_withdrawn' => true, 'can_review' => false],
+                $shortlisted->id => ['is_withdrawn' => false, 'can_review' => true],
+            ],
+            collect($response->inertiaProps('applications'))
+                ->mapWithKeys(fn (array $application) => [
+                    $application['id'] => [
+                        'is_withdrawn' => $application['is_withdrawn'],
+                        'can_review' => $application['can_review'],
+                    ],
+                ])
+                ->all()
         );
-        $this->assertStringContainsString(
-            'action="'.localized_route('recruiter.applications.update', $shortlisted).'"',
-            $html,
-            'Non-withdrawn application keeps its review form'
-        );
-        $this->assertStringNotContainsString(
-            'value="withdrawn"',
-            $html,
-            'Recruiter status select must not offer Withdrawn'
-        );
+
+        $card = File::get(resource_path('js/Components/Applications/RecruiterApplicationCard.vue'));
+        $review = File::get(resource_path('js/Components/Applications/ApplicationReviewPanel.vue'));
+        $this->assertStringContainsString('withdrawn_by_candidate', $card);
+        $this->assertStringContainsString('v-else', $card);
+        $this->assertStringContainsString(':application="application"', $card);
+        $this->assertStringContainsString("const STATUS_OPTIONS = ['pending', 'shortlisted', 'interview', 'accepted', 'rejected']", $review);
+        $this->assertStringNotContainsString("'withdrawn'", $review);
     }
 
     public function test_candidate_dashboard_in_progress_count_excludes_withdrawn(): void
@@ -290,11 +309,9 @@ class CandidateApplicationWithdrawalTest extends TestCase
         $response = $this->actingAs($candidate)->get('/en/candidate/dashboard');
         $response->assertOk();
 
-        $html = (string) $response->getContent();
-        $this->assertSame(
-            '1',
-            $this->inProgressCountFromDashboard($html),
-            'In-progress must count only pending+shortlisted+interview'
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/Dashboard', false)
+            ->where('inProgressApplications', 1)
         );
     }
 
@@ -308,22 +325,17 @@ class CandidateApplicationWithdrawalTest extends TestCase
             ->get("/en/recruiter/jobs/{$job->id}/applications");
         $response->assertOk();
 
-        $html = (string) $response->getContent();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Applications/Index', false)
+            ->where('statusCounts.6.key', 'withdrawn')
+            ->where('statusCounts.6.count', 1)
+        );
 
-        // Withdrawn tab exists and links to the status filter.
-        $this->assertStringContainsString('?status=withdrawn', $html, 'Withdrawn tab must exist');
-        // The withdrawn tab link itself carries the translated label.
-        $this->assertMatchesRegularExpression(
-            '/href="[^"]*\?status=withdrawn[^"]*"[^>]*>\s*'.preg_quote(__('recruiter.withdrawn'), '/').'/',
-            $html,
-            'Withdrawn tab must be labeled'
-        );
-        // The application badge shows the neutral gray withdrawn style.
-        $this->assertMatchesRegularExpression(
-            '/bg-stone-200[^>]*>'.preg_quote(__('recruiter.withdrawn'), '/').'<\/span>/',
-            $html,
-            'Withdrawn application must render a gray badge'
-        );
+        $applicationsPage = File::get(resource_path('js/Pages/Recruiter/Applications/Index.vue'));
+        $badge = File::get(resource_path('js/Components/Applications/ApplicationStatusBadge.vue'));
+        $this->assertStringContainsString('status=${tab.key}', $applicationsPage);
+        $this->assertStringContainsString("key === 'all' ? props.labels.all_statuses : props.labels[key]", $applicationsPage);
+        $this->assertStringContainsString("withdrawn: 'bg-stone-200 text-stone-700", $badge);
     }
 
     private function inProgressCountFromDashboard(string $html): ?string

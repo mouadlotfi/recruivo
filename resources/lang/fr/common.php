@@ -24,6 +24,7 @@ return [
     'saved_jobs_short' => 'Enregistrés',
     'applications' => 'Candidatures',
     'manage' => 'Gérer',
+    'settings' => 'Paramètres',
     'primary_navigation' => 'Navigation principale',
     'dashboard' => 'Tableau de bord',
     'profile' => 'Profil',

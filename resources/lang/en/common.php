@@ -24,6 +24,7 @@ return [
     'saved_jobs_short' => 'Saved',
     'applications' => 'Applications',
     'manage' => 'Manage',
+    'settings' => 'Settings',
     'primary_navigation' => 'Primary navigation',
     'dashboard' => 'Dashboard',
     'profile' => 'Profile',

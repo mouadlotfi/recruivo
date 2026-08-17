@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\EnsureEmailIsVerified;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,10 +21,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'locale' => $request->route('locale') ?? config('locales.default', 'en'),
         ]));
 
+        $middleware->web(append: [
+            HandleInertiaRequests::class,
+        ]);
+
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-            'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            'role' => RoleMiddleware::class,
+            'guest' => RedirectIfAuthenticated::class,
+            'verified' => EnsureEmailIsVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

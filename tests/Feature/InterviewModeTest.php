@@ -4,12 +4,15 @@ namespace Tests\Feature;
 
 use App\Enums\ApplicationStatus;
 use App\Enums\JobStatus;
+use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
 use App\Models\Company;
 use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -117,13 +120,19 @@ class InterviewModeTest extends TestCase
     {
         [$recruiter, $application] = $this->makeRecruiterWithApplication();
 
-        $html = (string) $this->actingAs($recruiter)
+        $response = $this->actingAs($recruiter)
             ->get('/en/recruiter/jobs/'.$application->job_id.'/applications')
-            ->getContent();
+            ->assertOk();
 
-        $this->assertStringContainsString('name="interview_mode"', $html);
-        $this->assertStringContainsString('value="onsite"', $html);
-        $this->assertStringContainsString('value="online"', $html);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Applications/Index', false)
+            ->has('applications', 1)
+        );
+
+        $review = File::get(resource_path('js/Components/Applications/ApplicationReviewPanel.vue'));
+        $this->assertStringContainsString('name="interview_mode"', $review);
+        $this->assertStringContainsString('value="onsite"', $review);
+        $this->assertStringContainsString('value="online"', $review);
     }
 
     public function test_candidate_sees_online_interview_mode_with_link(): void
@@ -168,7 +177,7 @@ class InterviewModeTest extends TestCase
     {
         $application = Application::factory()->create(['interview_mode' => 'online']);
 
-        $resource = (new \App\Http\Resources\ApplicationResource($application))->resolve(request());
+        $resource = (new ApplicationResource($application))->resolve(request());
 
         $this->assertSame('online', $resource['interview_mode']);
     }

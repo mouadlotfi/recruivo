@@ -6,8 +6,12 @@ use App\Enums\JobStatus;
 use App\Models\Company;
 use App\Models\Job;
 use App\Models\User;
+use App\Policies\JobPolicy;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -32,7 +36,7 @@ class JobExpiryTest extends TestCase
         $expired = Job::factory()->create(['closes_at' => today()->subDay()]);
         $openEnded = Job::factory()->create(['closes_at' => null]);
 
-        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $active->closes_at);
+        $this->assertInstanceOf(Carbon::class, $active->closes_at);
         $this->assertFalse($active->isExpired());
         $this->assertTrue($expired->isExpired());
         $this->assertFalse($openEnded->isExpired());
@@ -119,7 +123,7 @@ class JobExpiryTest extends TestCase
         $candidate->assignRole('Candidate');
         $job = Job::factory()->create(['closes_at' => today()->subDay(), 'status' => JobStatus::Published->value]);
 
-        $this->assertFalse((new \App\Policies\JobPolicy())->view($candidate, $job));
+        $this->assertFalse((new JobPolicy)->view($candidate, $job));
     }
 
     public function test_job_create_accepts_future_or_today_closing_date(): void
@@ -211,14 +215,21 @@ class JobExpiryTest extends TestCase
 
         $this->actingAs($recruiter)->get('/en/recruiter/jobs/create')
             ->assertOk()
-            ->assertSee('name="closes_at"', false)
-            ->assertSee('type="date"', false)
-            ->assertSee('min="'.today()->toDateString().'"', false);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Jobs/Create', false)
+            );
 
         $this->actingAs($recruiter)->get('/en/recruiter/jobs/'.$job->id.'/edit')
             ->assertOk()
-            ->assertSee('name="closes_at"', false)
-            ->assertSee('type="date"', false);
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Jobs/Edit', false)
+                ->where('job.id', $job->id)
+            );
+
+        $jobForm = File::get(resource_path('js/Components/Recruiter/JobForm.vue'));
+        $this->assertStringContainsString('id="closes_at"', $jobForm);
+        $this->assertStringContainsString('type="date"', $jobForm);
+        $this->assertStringContainsString(':min="today"', $jobForm);
     }
 
     public function test_recruiter_job_index_labels_expired_job(): void
@@ -245,9 +256,15 @@ class JobExpiryTest extends TestCase
     {
         $job = Job::factory()->create(['closes_at' => null, 'status' => JobStatus::Published->value]);
 
-        $this->get('/en/jobs')
-            ->assertOk()
-            ->assertDontSee(__('jobs.closing_soon'));
+        $response = $this->get('/en/jobs')->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Jobs/Index', false)
+            ->where('jobs.0.closes_at', null)
+            ->where('jobs.0.is_closing_soon', false)
+        );
+
+        $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
+        $this->assertStringContainsString('v-if="job.is_closing_soon"', $jobCard);
     }
 
     private function makeRecruiter(): User

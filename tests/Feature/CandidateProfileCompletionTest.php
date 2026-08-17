@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\CandidateProfile;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -88,13 +91,15 @@ class CandidateProfileCompletionTest extends TestCase
         $response = $this->actingAs($user)->get('/en/candidate/dashboard');
 
         $response->assertOk();
-        $response->assertSee('data-profile-completion', false);
-        $response->assertSee('40%');
-        $response->assertSee(__('candidate.completion_skills'));
-        $response->assertSee(__('candidate.completion_resume'));
-        $response->assertSee(__('candidate.completion_experience'));
-        $response->assertDontSee(__('candidate.completion_headline'));
-        $response->assertSee('role="progressbar"', false);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/Dashboard', false)
+            ->where('profileCompletion.percentage', 40)
+            ->where('profileCompletion.missing', ['skills', 'resume', 'experience'])
+        );
+
+        $dashboard = File::get(resource_path('js/Pages/Candidate/Dashboard.vue'));
+        $this->assertStringContainsString('data-profile-completion', $dashboard);
+        $this->assertStringContainsString('role="progressbar"', $dashboard);
     }
 
     public function test_dashboard_hides_completion_card_when_profile_complete(): void
@@ -111,8 +116,14 @@ class CandidateProfileCompletionTest extends TestCase
         $response = $this->actingAs($user)->get('/en/candidate/dashboard');
 
         $response->assertOk();
-        $response->assertDontSee('data-profile-completion', false);
-        $response->assertDontSee(__('candidate.profile_complete'));
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/Dashboard', false)
+            ->where('profileCompletion.percentage', 100)
+            ->where('profileCompletion.missing', [])
+        );
+
+        $dashboard = File::get(resource_path('js/Pages/Candidate/Dashboard.vue'));
+        $this->assertStringContainsString('v-if="profileCompletion.percentage < 100"', $dashboard);
     }
 
     public function test_dashboard_no_longer_shows_tips_for_success(): void
@@ -144,14 +155,19 @@ class CandidateProfileCompletionTest extends TestCase
         $response = $this->actingAs($user)->get('/en/profile');
 
         $response->assertOk();
-        $response->assertSee('40%');
-        $response->assertSee('role="progressbar"', false);
-        $response->assertSee('id="experience"', false);
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Profile/Edit', false)
+            ->where('profileCompletion.percentage', 40)
+        );
+
+        $profile = File::get(resource_path('js/Pages/Profile/Edit.vue'));
+        $this->assertStringContainsString('role="progressbar"', $profile);
+        $this->assertStringContainsString('labels.experience', $profile);
     }
 
     public function test_profile_edit_hides_completion_for_recruiters(): void
     {
-        $company = \App\Models\Company::factory()->create();
+        $company = Company::factory()->create();
         $user = User::factory()->create([
             'company_id' => $company->id,
             'is_recruiter' => true,
@@ -179,7 +195,13 @@ class CandidateProfileCompletionTest extends TestCase
         $response = $this->actingAs($user)->get('/en/profile');
 
         $response->assertOk();
-        $response->assertDontSee('role="progressbar"', false);
-        $response->assertDontSee(__('profile.profile_complete'));
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Profile/Edit', false)
+            ->where('profileCompletion.percentage', 100)
+            ->where('profileCompletion.missing', [])
+        );
+
+        $profile = File::get(resource_path('js/Pages/Profile/Edit.vue'));
+        $this->assertStringContainsString('v-if="isCandidate && profileCompletion && profileCompletion.percentage < 100"', $profile);
     }
 }

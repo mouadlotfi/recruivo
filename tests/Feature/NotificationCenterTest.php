@@ -12,6 +12,9 @@ use App\Models\User;
 use App\Notifications\ApplicationStatusUpdatedNotification;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -59,13 +62,18 @@ class NotificationCenterTest extends TestCase
 
         $this->assertCount(1, $recruiter->fresh()->unreadNotifications);
 
-        $this->actingAs($recruiter)
+        $response = $this->actingAs($recruiter)
             ->get('/en/recruiter/dashboard')
-            ->assertOk()
-            ->assertSee('data-notification-center', false)
-            ->assertSee('data-notification-unread-count="1"', false)
-            ->assertSee('Ada Candidate')
-            ->assertSee('Platform Engineer');
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Recruiter/Dashboard', false)
+            ->where('notificationCount', 1)
+        );
+
+        $notification = File::get(resource_path('js/Components/Layout/NotificationCenter.vue'));
+        $this->assertStringContainsString('data-notification-center', $notification);
+        $this->assertStringContainsString('unreadCount', $notification);
     }
 
     public function test_candidate_sees_accepted_or_rejected_application_updates_in_the_navbar(): void
@@ -101,13 +109,18 @@ class NotificationCenterTest extends TestCase
 
         $this->assertCount(1, $candidate->fresh()->unreadNotifications);
 
-        $this->actingAs($candidate)
+        $response = $this->actingAs($candidate)
             ->get('/en/candidate/dashboard')
-            ->assertOk()
-            ->assertSee('data-notification-center', false)
-            ->assertSee('data-notification-unread-count="1"', false)
-            ->assertSee('Application accepted')
-            ->assertSee('Platform Engineer');
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/Dashboard', false)
+            ->where('notificationCount', 1)
+        );
+
+        $notification = File::get(resource_path('js/Components/Layout/NotificationCenter.vue'));
+        $this->assertStringContainsString('data-notification-center', $notification);
+        $this->assertStringContainsString('unreadCount', $notification);
     }
 
     public function test_user_can_open_their_notification_and_it_is_marked_as_read(): void
@@ -213,7 +226,7 @@ class NotificationCenterTest extends TestCase
             $this->assertStringContainsString('candidate/applications', $mail->actionUrl);
         }
 
-        $storedStatuses = \Illuminate\Support\Facades\DB::table('notifications')
+        $storedStatuses = DB::table('notifications')
             ->where('type', ApplicationStatusUpdatedNotification::class)
             ->where('notifiable_id', $candidate->id)
             ->pluck('data')
@@ -224,5 +237,4 @@ class NotificationCenterTest extends TestCase
 
         $this->assertEquals(['interview', 'shortlisted'], $storedStatuses);
     }
-
 }

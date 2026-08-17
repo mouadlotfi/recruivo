@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class PasswordResetController extends Controller
 {
@@ -16,7 +17,19 @@ class PasswordResetController extends Controller
      */
     public function showResetForm()
     {
-        return view('auth.forgot-password');
+        return Inertia::render('Auth/ForgotPassword', [
+            'labels' => [
+                'title' => __('auth.forgot_password_title'),
+                'description' => __('auth.forgot_password_desc'),
+                'email' => __('auth.email'),
+                'email_placeholder' => __('auth.email_placeholder'),
+                'submit' => __('auth.email_reset_link'),
+                'back_to_login' => __('auth.back_to_login'),
+                'create_account' => __('auth.create_account'),
+            ],
+            'old_email' => old('email', ''),
+            'messages' => ['status' => session('status')],
+        ]);
     }
 
     /**
@@ -42,7 +55,22 @@ class PasswordResetController extends Controller
      */
     public function showResetPasswordForm($token)
     {
-        return view('auth.reset-password', ['token' => $token, 'email' => request('email')]);
+        return Inertia::render('Auth/ResetPassword', [
+            'token' => $token,
+            'email' => request('email', old('email', '')),
+            'labels' => [
+                'title' => __('auth.set_new_password'),
+                'description' => __('auth.enter_new_password'),
+                'email' => __('auth.email'),
+                'password' => __('auth.new_password'),
+                'password_placeholder' => __('auth.new_password_placeholder'),
+                'password_confirmation' => __('auth.password_confirmation'),
+                'password_confirmation_placeholder' => __('auth.confirm_password_placeholder'),
+                'submit' => __('auth.reset_password_button'),
+                'back_to_login' => __('auth.back_to_login'),
+                'toggle_password_visibility' => __('common.toggle_password_visibility'),
+            ],
+        ]);
     }
 
     /**

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Enums\JobStatus;
 use App\Models\Job;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class JobInfiniteScrollTest extends TestCase
@@ -17,13 +19,19 @@ class JobInfiniteScrollTest extends TestCase
 
         $response = $this->get('/en/jobs');
 
-        $response->assertOk();
-        $response->assertSee('data-infinite-scroll', false);
-        $response->assertSee('data-show-more-label', false);
-        $response->assertSee('data-next-url', false);
-        $response->assertSee('Role 01');
-        $response->assertDontSee('Role 13');
-        $response->assertDontSee('Pagination Navigation');
+        $response->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Jobs/Index', false)
+                ->has('jobs', 12)
+                ->where('jobs.0.title', 'Role 01')
+                ->where('pagination.total', 13)
+                ->where('pagination.last_page', 2)
+            );
+
+        $jobsPage = File::get(resource_path('js/Pages/Jobs/Index.vue'));
+        $this->assertStringContainsString('data-infinite-items', $jobsPage);
+        $this->assertStringContainsString('labels.show_more', $jobsPage);
+        $this->assertStringNotContainsString('Pagination Navigation', $jobsPage);
     }
 
     public function test_infinite_scroll_request_returns_only_the_requested_job_page(): void
