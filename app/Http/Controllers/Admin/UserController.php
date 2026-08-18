@@ -65,6 +65,7 @@ class UserController extends Controller
                 'sidebar_overview' => __('admin.sidebar_overview'),
                 'sidebar_management' => __('admin.sidebar_management'),
                 'sidebar_users' => __('admin.sidebar_users'),
+                'sidebar_jobs' => __('admin.sidebar_jobs'),
                 'admin_area' => __('admin.admin_area'),
                 'registered_users_count' => __('admin.registered_users_count', ['count' => $users->total()]),
                 'search' => __('admin.search'),

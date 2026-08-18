@@ -48,8 +48,8 @@ class ApplicationController extends Controller
         $applications = $baseQuery
             ->when($status !== 'all', fn ($query) => $query->where('status', $status))
             ->with(['job.company', 'statusEvents.changedBy:id,name'])
-            ->latest()
-            ->oldest('id')
+            ->orderByDesc('created_at')
+            ->orderBy('id')
             ->paginate(10)
             ->withQueryString()
             ->through(fn (Application $application) => $this->serializeApplication($application));

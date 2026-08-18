@@ -7,7 +7,7 @@ return [
     'dashboard_subtitle' => "Monitor Recruivo's growth, activity, and platform health.",
     'manage_users' => 'Manage Users',
     'user_management' => 'User Management',
-    
+
     // Stats
     'total_users' => 'Total Users',
     'total_jobs' => 'Total Jobs',
@@ -16,11 +16,11 @@ return [
     'active_users' => 'Active Users',
     'published_jobs' => 'Published Jobs',
     'registered_companies' => 'Registered Companies',
-    
+
     // Quick Actions
     'view_all_users' => 'View All Users',
     'system_overview' => 'System Overview',
-    
+
     // System Status
     'system_status' => 'System Status',
     'system_online' => 'System Online',
@@ -29,7 +29,7 @@ return [
     'optimal_response_times' => 'Optimal response times',
     'security' => 'Security',
     'all_systems_secure' => 'All systems secure',
-    
+
     // Users
     'user_management_title' => 'User Management',
     'registered_users' => ':count registered :users',
@@ -63,7 +63,7 @@ return [
     'admin' => 'Admin',
     'recruiter' => 'Recruiter',
     'candidate' => 'Candidate',
-    
+
     // Flash Messages
     'user_deleted' => 'User deleted successfully.',
     'cannot_delete_admin' => 'Cannot delete admin users.',
@@ -78,16 +78,20 @@ return [
     'users_period' => 'registered during this period',
     'live_jobs' => 'Live jobs',
     'jobs_period' => 'posted during this period',
-    'applications' => 'Applications',
     'applications_period' => 'submitted during this period',
+    'applications_metric' => 'Applications',
     'recruiters' => 'Recruiters',
     'recruiters_period' => 'joined during this period',
     'no_comparison' => 'No prior-period comparison yet',
     'compared_to_previous' => 'vs previous period',
     'needs_attention' => 'Needs attention',
     'nothing_needs_attention' => 'Nothing needs your attention.',
-    'jobs_without_applications' => ':count jobs have no applications',
+    'jobs_without_applications' => ':count job has no applications|:count jobs have no applications',
+    'jobs_without_applications_metric' => 'Jobs without applications',
     'jobs_without_applications_description' => 'Published jobs older than 7 days with zero applications.',
+    'failed_jobs' => ':count failed job|:count failed jobs',
+    'failed_jobs_description' => 'Queued jobs that failed and require review.',
+    'requires_review' => 'Requires review',
     'view_jobs' => 'View jobs',
     'platform_growth' => 'Platform Growth',
     'growth_help' => 'New platform activity across the selected period.',
@@ -96,9 +100,14 @@ return [
     'metric_applications' => 'Applications',
     'metric_recruiters' => 'Recruiters',
     'no_chart_data' => 'No data was recorded during this period.',
+    'application_pipeline' => 'Application Pipeline',
+    'pipeline_help' => 'Applications submitted during the selected period, grouped by current status.',
     'marketplace_health' => 'Marketplace Health',
+    'marketplace_help' => 'A concise snapshot of candidate and recruiter engagement across Recruivo.',
     'average_applications_per_live_job' => 'Average applications per live job',
     'candidate_activation' => 'Candidate activation',
+    'candidate_activation_help' => 'Candidates who joined during the selected period and submitted at least one application.',
+    'recruiters_with_live_jobs' => 'Recruiters with live jobs',
     'recruiter_activation' => 'Recruiter activation',
     'no_data' => 'No data yet',
     'platform_activity' => 'Platform Activity',
@@ -109,7 +118,7 @@ return [
     'recent_activity' => 'Recent Activity',
     'no_recent_activity' => 'No recent platform activity.',
     'event' => 'Event',
-    'user' => 'User',
+    'activity_user' => 'User',
     'details' => 'Details',
     'time' => 'Time',
     'account_created' => 'Account created',
@@ -129,7 +138,22 @@ return [
     'sidebar_overview' => 'Overview',
     'sidebar_management' => 'Management',
     'sidebar_users' => 'Users',
+    'sidebar_jobs' => 'Jobs',
     'admin_area' => 'Admin',
+    'job_management_title' => 'Job management',
+    'job_management_subtitle' => 'Review all jobs, statuses, and application volume.',
+    'jobs_search_placeholder' => 'Search by title, location, category, company, recruiter, or email...',
+    'all_statuses' => 'All statuses',
+    'status' => 'Status',
+    'no_applications_filter' => 'No applications',
+    'no_jobs_found' => 'No jobs found',
+    'no_jobs_match' => 'No jobs match your filters.',
+    'published' => 'Published',
+    'draft' => 'Draft',
+    'closing_date' => 'Closing date',
+    'created' => 'Created',
+    'viewing_no_applications' => 'Viewing jobs with no applications',
+    'viewing_job' => 'Viewing job #:id',
     'loading' => 'Refreshing…',
     'unknown_user' => 'Unknown user',
 ];

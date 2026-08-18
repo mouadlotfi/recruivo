@@ -62,6 +62,16 @@ const linkClasses = (href: string) => [
                 </svg>
                 <span class="whitespace-nowrap">{{ labels.sidebar_users }}</span>
             </Link>
+            <Link
+                :href="localeUrl('/admin/jobs')"
+                :class="linkClasses(localeUrl('/admin/jobs'))"
+                :aria-current="isActive(localeUrl('/admin/jobs')) ? 'page' : undefined"
+            >
+                <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5h-16.5A1.5 1.5 0 002.25 9v9.75a1.5 1.5 0 001.5 1.5h16.5a1.5 1.5 0 001.5-1.5V9a1.5 1.5 0 00-1.5-1.5zM8.25 7.5V6A2.25 2.25 0 0110.5 3.75h3A2.25 2.25 0 0115.75 6v1.5M2.25 12h19.5" />
+                </svg>
+                <span class="whitespace-nowrap">{{ labels.sidebar_jobs }}</span>
+            </Link>
         </nav>
     </aside>
 </template>

@@ -6,10 +6,20 @@
 
 :root {
   color-scheme: light;
+  --recruivo-chart-amber: #d97706;
+  --recruivo-chart-teal: #0f766e;
+  --recruivo-chart-stone: #78716c;
+  --recruivo-chart-pending: #78716c;
+  --recruivo-chart-shortlisted: #d97706;
+  --recruivo-chart-interview: #0f766e;
+  --recruivo-chart-accepted: #15803d;
+  --recruivo-chart-rejected: #dc2626;
+  --recruivo-chart-withdrawn: #a8a29e;
 }
 
 html.dark {
   color-scheme: dark;
+  --recruivo-chart-teal: #2dd4bf;
 }
 
 html {

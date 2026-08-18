@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Enums\ApplicationStatus;
 use App\Models\Application;
 use App\Models\Job;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -29,6 +31,10 @@ final class AdminDashboardService
      * @var array<int, string>
      */
     private const ACTIVITY_LIMIT_PER_SOURCE = 8;
+
+    private const ANALYTICS_CACHE_VERSION = 'v1';
+
+    private const ANALYTICS_CACHE_TTL_SECONDS = 300;
 
     public function normalizeRange(mixed $range): int
     {
@@ -66,14 +72,11 @@ final class AdminDashboardService
         $registeredUserCount = $registeredUsers->count();
         $recruiterCount = $recruiters->count();
 
-        $growthSeries = [
-            'users' => $this->groupedSeries($this->registeredUsersQuery(), 'created_at', $period, $buckets, $aggregation),
-            'jobs' => $this->groupedSeries(Job::query()->whereNotNull('published_at'), 'published_at', $period, $buckets, $aggregation),
-            'applications' => $this->groupedSeries(Application::query(), 'created_at', $period, $buckets, $aggregation),
-            'recruiters' => $this->groupedSeries($this->recruitersQuery(), 'created_at', $period, $buckets, $aggregation),
-        ];
+        $growthSeries = $this->growthSeries($period, $buckets, $aggregation);
 
         $jobsWithoutApplications = $this->jobsWithoutApplicationsCount();
+        $pipelineCounts = $this->applicationPipelineCounts($period['start'], $period['end'], $aggregation);
+        $failedJobs = $this->failedJobsCount();
         $activitySeries = [
             'applications' => $growthSeries['applications'],
             'jobs' => $growthSeries['jobs'],
@@ -96,7 +99,6 @@ final class AdminDashboardService
                 ],
                 'applications' => [
                     'value' => $applicationCount,
-                    'period_count' => $applicationCount,
                     'comparison' => $this->comparison($applicationCount, $previousApplicationCount),
                 ],
                 'recruiters' => [
@@ -107,6 +109,16 @@ final class AdminDashboardService
             ],
             'attention' => [
                 'jobs_without_applications' => $jobsWithoutApplications,
+                'failed_jobs' => $failedJobs,
+            ],
+            'pipeline' => [
+                'range' => $range,
+                'period' => [
+                    'start' => $period['start'],
+                    'end' => $period['end'],
+                ],
+                'status_keys' => array_keys($pipelineCounts),
+                'counts' => $pipelineCounts,
             ],
             'growth' => [
                 'aggregation' => $aggregation,
@@ -120,11 +132,12 @@ final class AdminDashboardService
             'marketplace' => $this->marketplaceHealth(
                 $period['start'],
                 $period['end'],
-                $liveJobCount,
                 $jobsWithoutApplications,
+                $aggregation,
+                $buckets['keys'],
             ),
             'recent_activity' => $this->recentActivity(),
-            'system_health' => $this->systemHealth(),
+            'system_health' => $this->systemHealth($failedJobs),
         ];
     }
 
@@ -188,6 +201,25 @@ final class AdminDashboardService
         );
     }
 
+    /**
+     * @param  array<string, CarbonImmutable>  $period
+     * @param  array{keys: array<int, string>, labels: array<int, string>}  $buckets
+     * @return array<string, array<int, int>>
+     */
+    private function growthSeries(array $period, array $buckets, string $aggregation): array
+    {
+        return Cache::remember(
+            $this->analyticsCacheKey('growth', $period['start'], $period['end'], $aggregation, $buckets['keys']),
+            self::ANALYTICS_CACHE_TTL_SECONDS,
+            fn (): array => [
+                'users' => $this->groupedSeries($this->registeredUsersQuery(), 'created_at', $period, $buckets, $aggregation),
+                'jobs' => $this->groupedSeries(Job::query()->whereNotNull('published_at'), 'published_at', $period, $buckets, $aggregation),
+                'applications' => $this->groupedSeries(Application::query(), 'created_at', $period, $buckets, $aggregation),
+                'recruiters' => $this->groupedSeries($this->recruitersQuery(), 'created_at', $period, $buckets, $aggregation),
+            ],
+        );
+    }
+
     private function bucketExpression(string $column, string $aggregation): string
     {
         $driver = DB::connection()->getDriverName();
@@ -241,39 +273,118 @@ final class AdminDashboardService
     }
 
     /**
+     * @return array<string, int>
+     */
+    private function applicationPipelineCounts(CarbonImmutable $periodStart, CarbonImmutable $periodEnd, string $aggregation): array
+    {
+        return Cache::remember(
+            $this->analyticsCacheKey('pipeline', $periodStart, $periodEnd, $aggregation),
+            self::ANALYTICS_CACHE_TTL_SECONDS,
+            function () use ($periodStart, $periodEnd): array {
+                $counts = Application::query()
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->select('status', DB::raw('COUNT(*) as aggregate'))
+                    ->groupBy('status')
+                    ->pluck('aggregate', 'status')
+                    ->mapWithKeys(fn (mixed $value, mixed $key): array => [(string) $key => (int) $value])
+                    ->all();
+
+                return collect(ApplicationStatus::cases())
+                    ->mapWithKeys(fn (ApplicationStatus $status): array => [
+                        $status->value => $counts[$status->value] ?? 0,
+                    ])
+                    ->all();
+            },
+        );
+    }
+
+    private function failedJobsCount(): ?int
+    {
+        try {
+            if (! Schema::hasTable('failed_jobs')) {
+                return null;
+            }
+
+            return (int) DB::table('failed_jobs')->count();
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @param  array<int, string>  $bucketKeys
      * @return array<string, float|int|null>
      */
     private function marketplaceHealth(
         CarbonImmutable $periodStart,
         CarbonImmutable $periodEnd,
-        int $liveJobCount,
         int $jobsWithoutApplications,
+        string $aggregation,
+        array $bucketKeys,
     ): array {
-        $liveApplications = Application::query()
-            ->whereHas('job', fn (Builder $jobs): Builder => $jobs->published())
-            ->count();
-        $candidateRegistrations = $this->countBetween($this->candidatesQuery(), 'created_at', $periodStart, $periodEnd);
-        $activatedCandidates = $this->candidatesQuery()
-            ->whereBetween('created_at', [$periodStart, $periodEnd])
-            ->whereHas('applications')
-            ->count();
-        $activatedRecruiters = $this->recruitersQuery()
-            ->whereHas('jobs', fn (Builder $jobs): Builder => $jobs->published())
-            ->count();
-        $recruiterCount = $this->recruitersQuery()->count();
+        $derived = Cache::remember(
+            $this->analyticsCacheKey('marketplace', $periodStart, $periodEnd, $aggregation, $bucketKeys),
+            self::ANALYTICS_CACHE_TTL_SECONDS,
+            function () use ($periodStart, $periodEnd): array {
+                $liveJobCount = Job::published()->count();
+                $liveApplications = Application::query()
+                    ->whereHas('job', fn (Builder $jobs): Builder => $jobs->published())
+                    ->count();
+                $candidateRegistrations = $this->countBetween($this->candidatesQuery(), 'created_at', $periodStart, $periodEnd);
+                $activatedCandidates = $this->candidatesQuery()
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->whereHas('applications')
+                    ->count();
+                $activatedRecruiters = $this->recruitersQuery()
+                    ->whereHas('jobs', fn (Builder $jobs): Builder => $jobs->published())
+                    ->count();
+                $recruiterCount = $this->recruitersQuery()->count();
+
+                return [
+                    'average_applications_per_live_job' => $liveJobCount > 0
+                        ? round($liveApplications / $liveJobCount, 1)
+                        : null,
+                    'candidate_activation' => $candidateRegistrations > 0
+                        ? round(($activatedCandidates / $candidateRegistrations) * 100, 1)
+                        : null,
+                    'recruiters_with_live_jobs' => $recruiterCount > 0
+                        ? round(($activatedRecruiters / $recruiterCount) * 100, 1)
+                        : null,
+                ];
+            },
+        );
 
         return [
-            'average_applications_per_live_job' => $liveJobCount > 0
-                ? round($liveApplications / $liveJobCount, 1)
-                : null,
+            ...$derived,
             'jobs_without_applications' => $jobsWithoutApplications,
-            'candidate_activation' => $candidateRegistrations > 0
-                ? round(($activatedCandidates / $candidateRegistrations) * 100, 1)
-                : null,
-            'recruiter_activation' => $recruiterCount > 0
-                ? round(($activatedRecruiters / $recruiterCount) * 100, 1)
-                : null,
         ];
+    }
+
+    /**
+     * @param  array<int, string>  $bucketKeys
+     */
+    private function analyticsCacheKey(
+        string $dataset,
+        CarbonImmutable $periodStart,
+        CarbonImmutable $periodEnd,
+        string $aggregation,
+        array $bucketKeys = [],
+    ): string {
+        $bucketStart = $bucketKeys[0] ?? $periodStart->toDateString();
+        $bucketEnd = $bucketKeys === []
+            ? $periodEnd->toDateString()
+            : $bucketKeys[array_key_last($bucketKeys)];
+
+        return sprintf(
+            'admin-dashboard:analytics:%s:%s:aggregation:%s:period:%s:%s:buckets:%s:%s',
+            self::ANALYTICS_CACHE_VERSION,
+            $dataset,
+            $aggregation,
+            $periodStart->toDateString(),
+            $periodEnd->toDateString(),
+            $bucketStart,
+            $bucketEnd,
+        );
     }
 
     /**
@@ -292,11 +403,15 @@ final class AdminDashboardService
         foreach ($users as $user) {
             $isRecruiter = $user->roles->contains('name', 'Recruiter');
             $events[] = [
+                'id' => 'user:'.$user->id,
                 'kind' => $isRecruiter ? 'recruiter_joined' : 'candidate_joined',
                 'actor' => $isRecruiter ? ($user->company?->name ?? $user->name) : $user->name,
                 'detail' => null,
                 'occurred_at' => $user->created_at,
                 'job_id' => null,
+                'user_search' => $isRecruiter
+                    ? ($user->company?->name ?? $user->name)
+                    : $user->name,
             ];
         }
 
@@ -309,11 +424,13 @@ final class AdminDashboardService
 
         foreach ($jobs as $job) {
             $events[] = [
+                'id' => 'job:'.$job->id,
                 'kind' => 'job_published',
                 'actor' => $job->company?->name ?? $job->title,
                 'detail' => $job->title,
                 'occurred_at' => $job->published_at,
                 'job_id' => $job->id,
+                'user_search' => null,
             ];
         }
 
@@ -325,11 +442,13 @@ final class AdminDashboardService
 
         foreach ($applications as $application) {
             $events[] = [
+                'id' => 'application:'.$application->id,
                 'kind' => 'application_submitted',
                 'actor' => $application->candidate?->name ?? __('admin.unknown_user'),
                 'detail' => $application->job?->title,
                 'occurred_at' => $application->created_at,
                 'job_id' => $application->job?->id,
+                'user_search' => null,
             ];
         }
 
@@ -343,7 +462,7 @@ final class AdminDashboardService
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function systemHealth(): array
+    private function systemHealth(?int $failedJobs = null): array
     {
         $health = [
             [
@@ -368,21 +487,14 @@ final class AdminDashboardService
             ];
         }
 
-        if (Schema::hasTable('failed_jobs')) {
-            try {
-                $failedJobs = (int) DB::table('failed_jobs')->count();
-                $health[] = [
-                    'key' => 'failed_jobs',
-                    'status' => $failedJobs > 0 ? 'error' : 'clear',
-                    'value' => $failedJobs,
-                ];
-            } catch (Throwable) {
-                $health[] = [
-                    'key' => 'failed_jobs',
-                    'status' => 'unavailable',
-                    'value' => null,
-                ];
-            }
+        $failedJobs ??= $this->failedJobsCount();
+
+        if ($failedJobs !== null) {
+            $health[] = [
+                'key' => 'failed_jobs',
+                'status' => $failedJobs > 0 ? 'error' : 'clear',
+                'value' => $failedJobs,
+            ];
         }
 
         return $health;

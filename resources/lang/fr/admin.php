@@ -7,7 +7,7 @@ return [
     'dashboard_subtitle' => 'Surveillez la croissance, l’activité et la santé de Recruivo.',
     'manage_users' => 'Gérer les utilisateurs',
     'user_management' => 'Gestion des utilisateurs',
-    
+
     // Stats
     'total_users' => 'Total des utilisateurs',
     'total_jobs' => 'Total des emplois',
@@ -16,11 +16,11 @@ return [
     'active_users' => 'Utilisateurs actifs',
     'published_jobs' => 'Emplois publiés',
     'registered_companies' => 'Entreprises enregistrées',
-    
+
     // Quick Actions
     'view_all_users' => 'Voir tous les utilisateurs',
     'system_overview' => 'Aperçu du système',
-    
+
     // System Status
     'system_status' => 'État du système',
     'system_online' => 'Système en ligne',
@@ -29,7 +29,7 @@ return [
     'optimal_response_times' => 'Temps de réponse optimaux',
     'security' => 'Sécurité',
     'all_systems_secure' => 'Tous les systèmes sont sécurisés',
-    
+
     // Users
     'user_management_title' => 'Gestion des utilisateurs',
     'registered_users' => ':count :users enregistré(s)',
@@ -63,7 +63,7 @@ return [
     'admin' => 'Administrateur',
     'recruiter' => 'Recruteur',
     'candidate' => 'Candidat',
-    
+
     // Flash Messages
     'user_deleted' => 'Utilisateur supprimé avec succès.',
     'cannot_delete_admin' => 'Impossible de supprimer les utilisateurs administrateurs.',
@@ -78,16 +78,20 @@ return [
     'users_period' => 'inscrits pendant cette période',
     'live_jobs' => 'Emplois en ligne',
     'jobs_period' => 'publiés pendant cette période',
-    'applications' => 'Candidatures',
     'applications_period' => 'envoyées pendant cette période',
+    'applications_metric' => 'Candidatures',
     'recruiters' => 'Recruteurs',
     'recruiters_period' => 'inscrits pendant cette période',
     'no_comparison' => 'Pas encore de comparaison avec la période précédente',
     'compared_to_previous' => 'vs période précédente',
     'needs_attention' => 'À surveiller',
     'nothing_needs_attention' => 'Rien ne nécessite votre attention.',
-    'jobs_without_applications' => ':count emplois sans candidature',
+    'jobs_without_applications' => ':count emploi sans candidature|:count emplois sans candidature',
+    'jobs_without_applications_metric' => 'Emplois sans candidature',
     'jobs_without_applications_description' => 'Emplois publiés depuis plus de 7 jours sans aucune candidature.',
+    'failed_jobs' => ':count tâche échouée|:count tâches échouées',
+    'failed_jobs_description' => 'Tâches en file d’attente ayant échoué et nécessitant un examen.',
+    'requires_review' => 'À examiner',
     'view_jobs' => 'Voir les emplois',
     'platform_growth' => 'Croissance de la plateforme',
     'growth_help' => 'Nouvelle activité de la plateforme sur la période sélectionnée.',
@@ -96,9 +100,14 @@ return [
     'metric_applications' => 'Candidatures',
     'metric_recruiters' => 'Recruteurs',
     'no_chart_data' => 'Aucune donnée enregistrée pendant cette période.',
+    'application_pipeline' => 'Flux des candidatures',
+    'pipeline_help' => 'Candidatures envoyées pendant la période sélectionnée, regroupées par statut actuel.',
     'marketplace_health' => 'Santé du marché',
+    'marketplace_help' => 'Un aperçu concis de l’engagement des candidats et des recruteurs sur Recruivo.',
     'average_applications_per_live_job' => 'Candidatures moyennes par emploi en ligne',
     'candidate_activation' => 'Activation des candidats',
+    'candidate_activation_help' => 'Candidats inscrits pendant la période sélectionnée ayant envoyé au moins une candidature.',
+    'recruiters_with_live_jobs' => 'Recruteurs avec des emplois en ligne',
     'recruiter_activation' => 'Activation des recruteurs',
     'no_data' => 'Pas encore de données',
     'platform_activity' => 'Activité de la plateforme',
@@ -109,7 +118,7 @@ return [
     'recent_activity' => 'Activité récente',
     'no_recent_activity' => 'Aucune activité récente sur la plateforme.',
     'event' => 'Événement',
-    'user' => 'Utilisateur',
+    'activity_user' => 'Utilisateur',
     'details' => 'Détails',
     'time' => 'Heure',
     'account_created' => 'Compte créé',
@@ -129,7 +138,22 @@ return [
     'sidebar_overview' => 'Vue d’ensemble',
     'sidebar_management' => 'Gestion',
     'sidebar_users' => 'Utilisateurs',
+    'sidebar_jobs' => 'Emplois',
     'admin_area' => 'Admin',
+    'job_management_title' => 'Gestion des emplois',
+    'job_management_subtitle' => 'Examinez tous les emplois, leurs statuts et le volume de candidatures.',
+    'jobs_search_placeholder' => 'Rechercher par titre, lieu, catégorie, entreprise, recruteur ou e-mail...',
+    'all_statuses' => 'Tous les statuts',
+    'status' => 'Statut',
+    'no_applications_filter' => 'Sans candidature',
+    'no_jobs_found' => 'Aucun emploi trouvé',
+    'no_jobs_match' => 'Aucun emploi ne correspond à vos filtres.',
+    'published' => 'Publié',
+    'draft' => 'Brouillon',
+    'closing_date' => 'Date de clôture',
+    'created' => 'Créé',
+    'viewing_no_applications' => 'Affichage des emplois sans candidature',
+    'viewing_job' => 'Affichage de l’emploi n°:id',
     'loading' => 'Actualisation…',
     'unknown_user' => 'Utilisateur inconnu',
 ];

@@ -52,8 +52,8 @@ class ApplicationController extends Controller
         $applications = $job->applications()
             ->with(['candidate.candidateProfile', 'statusEvents.changedBy:id,name'])
             ->when($status !== 'all', fn ($query) => $query->where('status', $status))
-            ->latest()
-            ->oldest('id')
+            ->orderByDesc('created_at')
+            ->orderBy('id')
             ->paginate(20)
             ->withQueryString();
 

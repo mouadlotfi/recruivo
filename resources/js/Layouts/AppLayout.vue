@@ -63,6 +63,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                 </div>
                 <div class="flex items-center gap-1.5 sm:gap-2">
                     <button
+                        v-if="!isAdmin"
                         ref="searchTrigger"
                         id="mobile-search-toggle"
                         type="button"
@@ -144,6 +145,8 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
 
         <MobileNav v-if="!isAdmin" />
         <ScrollToTop />
-        <SearchModal v-model:open="searchOpen" :trigger="searchTrigger" />
+        <template v-if="!isAdmin">
+            <SearchModal v-model:open="searchOpen" :trigger="searchTrigger" />
+        </template>
     </div>
 </template>

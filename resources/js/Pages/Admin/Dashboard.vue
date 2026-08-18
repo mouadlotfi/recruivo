@@ -6,34 +6,67 @@ import AdminLayout from '../../Components/Admin/AdminLayout.vue'
 import DashboardChart from '../../Components/Admin/DashboardChart.vue'
 
 type MetricKey = 'users' | 'jobs' | 'applications' | 'recruiters'
+type MetricCardKey = 'users' | 'live_jobs' | 'applications' | 'recruiters'
 type Comparison = { percentage: number; direction: 'up' | 'down' | 'flat' } | null
 
-type Metric = {
+type SnapshotMetric = {
     value: number
     period_count: number
     comparison: Comparison
 }
 
+type ApplicationsMetric = {
+    value: number
+    comparison: Comparison
+}
+
+type AttentionItem = {
+    key: string
+    count: number
+    title: string
+    description: string
+    action_label: string
+    action_url: string | null
+    action: { label: string; url: string | null }
+    status: string
+    status_label: string
+}
+
+type PipelineStatus = {
+    key: string
+    label: string
+    count: number
+}
+
 type DashboardData = {
     range: number
     period: { start: string; end: string; label: string }
-    metrics: Record<MetricKey | 'live_jobs', Metric>
-    attention: { key: string; count: number; action_url: string | null }[]
+    metrics: {
+        users: SnapshotMetric
+        live_jobs: SnapshotMetric
+        applications: ApplicationsMetric
+        recruiters: SnapshotMetric
+    }
+    attention: AttentionItem[]
+    pipeline: {
+        range: number
+        period: { start: string; end: string }
+        status_keys: string[]
+        counts: Record<string, number>
+        statuses: PipelineStatus[]
+    }
     growth: {
         labels: string[]
         series: Record<MetricKey, number[]>
-    }
-    activity: {
-        labels: string[]
-        series: Record<'applications' | 'jobs' | 'users', number[]>
     }
     marketplace: {
         average_applications_per_live_job: number | null
         jobs_without_applications: number
         candidate_activation: number | null
-        recruiter_activation: number | null
+        recruiters_with_live_jobs: number | null
     }
     recentActivity: {
+        id: string
         kind: string
         event_label: string
         actor: string
@@ -91,15 +124,31 @@ const metricOptions = computed(() => [
 const growthDataset = computed(() => [{
     label: props.labels[`metric_${activeMetric.value}`],
     data: props.dashboard.growth.series[activeMetric.value],
-    color: '#d97706',
+    color: 'var(--recruivo-chart-amber)',
 }])
 const growthAriaLabel = computed(() => `${props.labels.platform_growth}: ${props.labels[`metric_${activeMetric.value}`]}`)
 
-const activityDatasets = computed(() => [
-    { label: props.labels.activity_applications, data: props.dashboard.activity.series.applications, color: '#d97706' },
-    { label: props.labels.activity_jobs, data: props.dashboard.activity.series.jobs, color: '#0f766e' },
-    { label: props.labels.activity_users, data: props.dashboard.activity.series.users, color: '#78716c' },
-])
+const statusColors: Record<string, string> = {
+    pending: 'var(--recruivo-chart-pending)',
+    shortlisted: 'var(--recruivo-chart-shortlisted)',
+    interview: 'var(--recruivo-chart-interview)',
+    accepted: 'var(--recruivo-chart-accepted)',
+    rejected: 'var(--recruivo-chart-rejected)',
+    withdrawn: 'var(--recruivo-chart-withdrawn)',
+}
+
+const applicationPipelineTitle = computed(() => props.labels.application_pipeline)
+const applicationPipelineHelp = computed(() => props.labels.pipeline_help)
+const pipelineDataset = computed(() => [{
+    label: props.labels.applications,
+    data: props.dashboard.pipeline.statuses.map((status) => status.count),
+    color: 'var(--recruivo-chart-teal)',
+    colors: props.dashboard.pipeline.statuses.map((status) => statusColors[status.key] ?? 'var(--recruivo-chart-stone)'),
+}])
+const pipelineAriaLabel = computed(() => `${applicationPipelineTitle.value}: ${props.dashboard.pipeline.statuses.map((status) => `${status.label} ${formatNumber(status.count)}`).join(', ')}`)
+
+const marketplaceHelp = computed(() => props.labels.marketplace_help)
+const candidateActivationHelp = computed(() => props.labels.candidate_activation_help)
 
 const marketplaceRows = computed(() => [
     {
@@ -107,24 +156,28 @@ const marketplaceRows = computed(() => [
         label: props.labels.average_applications_per_live_job,
         value: props.dashboard.marketplace.average_applications_per_live_job,
         format: 'decimal',
+        help: '',
     },
     {
         key: 'jobs_without_applications',
-        label: props.labels.jobs_without_applications.replace(':count', ''),
+        label: props.labels.jobs_without_applications_metric,
         value: props.dashboard.marketplace.jobs_without_applications,
         format: 'integer',
+        help: '',
     },
     {
         key: 'candidate_activation',
         label: props.labels.candidate_activation,
         value: props.dashboard.marketplace.candidate_activation,
         format: 'percent',
+        help: candidateActivationHelp.value,
     },
     {
-        key: 'recruiter_activation',
-        label: props.labels.recruiter_activation,
-        value: props.dashboard.marketplace.recruiter_activation,
+        key: 'recruiters_with_live_jobs',
+        label: props.labels.recruiters_with_live_jobs,
+        value: props.dashboard.marketplace.recruiters_with_live_jobs,
         format: 'percent',
+        help: '',
     },
 ])
 
@@ -156,8 +209,14 @@ const comparisonClass = (comparison: Comparison) => {
         : 'text-red-700 dark:text-red-400'
 }
 
-const attentionTitle = (item: DashboardData['attention'][number]) =>
-    props.labels[item.key].replace(':count', formatNumber(item.count))
+const attentionTitle = (item: AttentionItem) => item.title || props.labels[item.key] || item.key
+const attentionDescription = (item: AttentionItem) => item.description || props.labels[`${item.key}_description`] || ''
+const attentionClass = (status: string) => status === 'requires_review'
+    ? 'border-red-400'
+    : 'border-amber-400'
+const attentionActionClass = (status: string) => status === 'requires_review'
+    ? 'text-red-700 dark:text-red-400'
+    : 'text-amber-700 dark:text-amber-400'
 
 const healthClass = (status: string) => {
     if (status === 'error' || status === 'unavailable') return 'text-red-700 dark:text-red-400'
@@ -214,7 +273,10 @@ const changeRange = () => {
                     <article v-for="card in metricCards" :key="card.key" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
                         <p class="text-xs font-semibold uppercase tracking-[0.13em] text-stone-500 dark:text-stone-400">{{ card.label }}</p>
                         <p class="mt-3 text-3xl font-semibold tracking-tight text-stone-950 dark:text-white">{{ formatNumber(dashboard.metrics[card.key].value) }}</p>
-                        <p class="mt-2 text-xs text-stone-500 dark:text-stone-400">
+                        <p v-if="card.key === 'applications'" class="mt-2 text-xs text-stone-500 dark:text-stone-400">
+                            {{ card.periodLabel }}
+                        </p>
+                        <p v-else class="mt-2 text-xs text-stone-500 dark:text-stone-400">
                             +{{ formatNumber(dashboard.metrics[card.key].period_count) }} {{ card.periodLabel }}
                         </p>
                         <p :class="['mt-1 text-xs font-medium', comparisonClass(dashboard.metrics[card.key].comparison)]">
@@ -233,18 +295,21 @@ const changeRange = () => {
                     <span>{{ labels.nothing_needs_attention }}</span>
                 </div>
                 <ul v-else class="divide-y divide-stone-200/70 dark:divide-stone-800">
-                    <li v-for="item in dashboard.attention" :key="item.key" class="flex flex-col gap-3 border-l-2 border-amber-400 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                    <li v-for="item in dashboard.attention" :key="item.key" :class="['flex flex-col gap-3 border-l-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5', attentionClass(item.status)]">
                         <div class="flex min-w-0 items-start gap-3">
                             <span class="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-50 text-sm font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" aria-hidden="true">!</span>
                             <div class="min-w-0">
                                 <p class="font-medium text-stone-900 dark:text-white">{{ attentionTitle(item) }}</p>
-                                <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ labels[`${item.key}_description`] }}</p>
+                                <p v-if="attentionDescription(item)" class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ attentionDescription(item) }}</p>
                             </div>
                         </div>
-                        <Link v-if="item.action_url" :href="item.action_url" class="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-amber-700 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-amber-400 dark:hover:text-amber-300">
-                            {{ labels.view_jobs }}
+                        <Link v-if="item.action.url" :href="item.action.url" class="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" :class="attentionActionClass(item.status)">
+                            {{ item.action.label }}
                             <span class="ml-1" aria-hidden="true">→</span>
                         </Link>
+                        <span v-else class="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold" :class="attentionActionClass(item.status)" aria-disabled="true">
+                            {{ item.action.label }}
+                        </span>
                     </li>
                 </ul>
             </section>
@@ -256,13 +321,12 @@ const changeRange = () => {
                             <h2 id="growth-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.platform_growth }}</h2>
                             <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ labels.growth_help }}</p>
                         </div>
-                        <div class="flex max-w-full overflow-x-auto rounded-lg border border-stone-200/80 bg-stone-50/80 p-1 dark:border-stone-700 dark:bg-stone-950/50" role="tablist" :aria-label="labels.platform_growth">
+                        <div class="flex max-w-full overflow-x-auto rounded-lg border border-stone-200/80 bg-stone-50/80 p-1 dark:border-stone-700 dark:bg-stone-950/50" role="group" :aria-label="labels.platform_growth">
                             <button
                                 v-for="option in metricOptions"
                                 :key="option.key"
                                 type="button"
-                                role="tab"
-                                :aria-selected="activeMetric === option.key"
+                                :aria-pressed="activeMetric === option.key"
                                 :class="activeMetric === option.key ? 'bg-white text-amber-700 shadow-sm dark:bg-stone-800 dark:text-amber-300' : 'text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100'"
                                 class="min-h-9 whitespace-nowrap rounded-md px-2.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 sm:px-3"
                                 @click="activeMetric = option.key"
@@ -276,6 +340,7 @@ const changeRange = () => {
                             type="line"
                             :labels="dashboard.growth.labels"
                             :datasets="growthDataset"
+                            :locale="locale"
                             :aria-label="growthAriaLabel"
                             :empty-text="labels.no_chart_data"
                         />
@@ -285,28 +350,33 @@ const changeRange = () => {
                 <section aria-labelledby="health-heading" class="min-w-0 rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
                     <div>
                         <h2 id="health-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.marketplace_health }}</h2>
-                        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ labels.growth_help }}</p>
+                        <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ marketplaceHelp }}</p>
                     </div>
                     <dl class="mt-5 divide-y divide-stone-200/70 dark:divide-stone-800">
                         <div v-for="row in marketplaceRows" :key="row.key" class="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
-                            <dt class="max-w-[13rem] text-sm text-stone-600 dark:text-stone-400">{{ row.label }}</dt>
+                            <div class="min-w-0">
+                                <dt class="max-w-[13rem] text-sm text-stone-600 dark:text-stone-400">{{ row.label }}</dt>
+                                <p v-if="row.help" class="mt-1 max-w-[14rem] text-xs leading-5 text-stone-500 dark:text-stone-500">{{ row.help }}</p>
+                            </div>
                             <dd class="shrink-0 text-right text-sm font-semibold text-stone-900 dark:text-white">{{ formatMarketplaceValue(row.value, row.format) }}</dd>
                         </div>
                     </dl>
                 </section>
             </div>
 
-            <section aria-labelledby="activity-chart-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+            <section aria-labelledby="pipeline-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
                 <div>
-                    <h2 id="activity-chart-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.platform_activity }}</h2>
-                    <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ labels.activity_help }}</p>
+                    <h2 id="pipeline-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ applicationPipelineTitle }}</h2>
+                    <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">{{ applicationPipelineHelp }}</p>
                 </div>
                 <div class="mt-5">
                     <DashboardChart
                         type="bar"
-                        :labels="dashboard.activity.labels"
-                        :datasets="activityDatasets"
-                        :aria-label="labels.platform_activity"
+                        index-axis="y"
+                        :labels="dashboard.pipeline.statuses.map((status) => status.label)"
+                        :datasets="pipelineDataset"
+                        :locale="locale"
+                        :aria-label="pipelineAriaLabel"
                         :empty-text="labels.no_chart_data"
                     />
                 </div>
@@ -319,41 +389,53 @@ const changeRange = () => {
                 <div v-if="dashboard.recentActivity.length === 0" class="py-10 text-center text-sm text-stone-500 dark:text-stone-400">
                     {{ labels.no_recent_activity }}
                 </div>
-                <div v-else class="mt-4 overflow-x-auto">
-                    <table class="min-w-[38rem] w-full text-left text-sm">
-                        <caption class="sr-only">{{ labels.recent_activity }}</caption>
-                        <thead class="border-b border-stone-200/80 text-xs uppercase tracking-[0.1em] text-stone-500 dark:border-stone-800 dark:text-stone-400">
-                            <tr>
-                                <th scope="col" class="px-3 py-3 font-semibold">{{ labels.event }}</th>
-                                <th scope="col" class="px-3 py-3 font-semibold">{{ labels.user }}</th>
-                                <th scope="col" class="px-3 py-3 font-semibold">{{ labels.details }}</th>
-                                <th scope="col" class="px-3 py-3 text-right font-semibold">{{ labels.time }}</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-stone-200/70 dark:divide-stone-800">
-                            <tr v-for="activity in dashboard.recentActivity" :key="`${activity.kind}-${activity.occurred_at}-${activity.actor}`" class="text-stone-700 dark:text-stone-300">
-                                <td class="px-3 py-3 font-medium text-stone-900 dark:text-white">{{ activity.event_label }}</td>
-                                <td class="px-3 py-3">{{ activity.actor }}</td>
-                                <td class="max-w-[18rem] px-3 py-3">
-                                    <Link v-if="activity.url" :href="activity.url" class="font-medium text-amber-700 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-amber-400 dark:hover:text-amber-300">
-                                        {{ activity.detail }}
-                                    </Link>
-                                    <span v-else>{{ activity.detail }}</span>
-                                </td>
-                                <td class="whitespace-nowrap px-3 py-3 text-right text-xs text-stone-500 dark:text-stone-400">
-                                    <time :datetime="activity.occurred_at ?? undefined">{{ activity.time_label }}</time>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <template v-else>
+                    <div class="mt-4 hidden overflow-x-auto sm:block">
+                        <table class="min-w-[38rem] w-full text-left text-sm">
+                            <caption class="sr-only">{{ labels.recent_activity }}</caption>
+                            <thead class="border-b border-stone-200/80 text-xs uppercase tracking-[0.1em] text-stone-500 dark:border-stone-800 dark:text-stone-400">
+                                <tr>
+                                    <th scope="col" class="px-3 py-3 font-semibold">{{ labels.event }}</th>
+                                    <th scope="col" class="px-3 py-3 font-semibold">{{ labels.user }}</th>
+                                    <th scope="col" class="px-3 py-3 font-semibold">{{ labels.details }}</th>
+                                    <th scope="col" class="px-3 py-3 text-right font-semibold">{{ labels.time }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-200/70 dark:divide-stone-800">
+                                <tr v-for="activity in dashboard.recentActivity" :key="activity.id" class="text-stone-700 dark:text-stone-300">
+                                    <td class="px-3 py-3 font-medium text-stone-900 dark:text-white">{{ activity.event_label }}</td>
+                                    <td class="px-3 py-3">{{ activity.actor }}</td>
+                                    <td class="max-w-[18rem] px-3 py-3">
+                                        <Link v-if="activity.url" :href="activity.url" class="font-medium text-amber-700 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-amber-400 dark:hover:text-amber-300">
+                                            {{ activity.detail }}
+                                        </Link>
+                                        <span v-else>{{ activity.detail }}</span>
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-3 text-right text-xs text-stone-500 dark:text-stone-400">
+                                        <time :datetime="activity.occurred_at ?? undefined">{{ activity.time_label }}</time>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <ol class="mt-4 divide-y divide-stone-200/70 rounded-lg border border-stone-200/70 dark:divide-stone-800 dark:border-stone-800 sm:hidden">
+                        <li v-for="activity in dashboard.recentActivity" :key="activity.id" class="space-y-2 px-3 py-3">
+                            <div class="flex items-start justify-between gap-3">
+                                <p class="min-w-0 text-sm font-semibold text-stone-900 dark:text-white">{{ activity.event_label }}</p>
+                                <time class="shrink-0 text-xs text-stone-500 dark:text-stone-400" :datetime="activity.occurred_at ?? undefined">{{ activity.time_label }}</time>
+                            </div>
+                            <p class="text-xs font-medium text-stone-600 dark:text-stone-300">{{ activity.actor }}</p>
+                            <Link v-if="activity.url" :href="activity.url" class="block truncate text-sm font-medium text-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-amber-400">
+                                {{ activity.detail }}
+                            </Link>
+                            <p v-else class="truncate text-sm text-stone-600 dark:text-stone-400">{{ activity.detail }}</p>
+                        </li>
+                    </ol>
+                </template>
             </section>
 
             <section id="system-health" aria-labelledby="system-health-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
-                <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-                    <h2 id="system-health-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.system_health }}</h2>
-                    <p class="text-xs text-stone-500 dark:text-stone-400">{{ dashboard.period.label }}</p>
-                </div>
+                <h2 id="system-health-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.system_health }}</h2>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <div v-for="health in dashboard.systemHealth" :key="health.key" class="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-stone-200/70 px-3 py-3 dark:border-stone-800">
                         <div class="min-w-0">
