@@ -297,27 +297,28 @@ class JobController extends Controller
 
         // Show results if there's any search criteria
         if ($hasCriteria) {
-            // Search jobs
+            // Search jobs. Keyword search ranks by relevance in PHP (the
+            // scoring cannot be expressed in SQL), but remote_type/location
+            // are pushed down into the query so we don't materialize and then
+            // discard rows in PHP.
             $searchUser = auth()->user();
             $jobResults = $searchQuery
-                ? $searchService->jobs($searchQuery)
+                ? $searchService->jobs($searchQuery, $remoteType, $location)
                 : Job::published()
                     ->with('company')
                     ->withSavedStateFor($searchUser)
+                    ->when($remoteType, fn ($builder) => $builder->where('remote_type', $remoteType))
+                    ->when($location, fn ($builder) => $builder->where('location', 'like', '%'.$location.'%'))
                     ->when(
                         $searchUser?->hasRole('Candidate'),
                         fn ($builder) => $builder->withExists(['applications as has_applied' => fn ($q) => $q->where('candidate_id', $searchUser->id)])
                     )
                     ->latest('published_at')
                     ->get();
-            $jobResults = $jobResults
-                ->when($remoteType, fn ($items) => $items->where('remote_type', $remoteType))
-                ->when($location, fn ($items) => $items->filter(fn ($job) => str_contains(mb_strtolower($job->location ?? ''), mb_strtolower($location))))
-                ->values();
 
-            // Search companies
+            // Search companies (keyword only — location already filtered in SQL).
             if ($hasTextQuery) {
-                $companyResults = $searchService->companies($searchQuery)->values();
+                $companyResults = $searchService->companies($searchQuery, $location)->values();
             }
         }
 

@@ -25,11 +25,20 @@ class SmartSearchService
         return Str::of((string) $query)->lower()->squish()->toString();
     }
 
-    public function jobs(string $query): Collection
+    /**
+     * @param  string|null  $remoteType  Optional remote-type filter pushed into
+     *                                  the SQL query so we don't materialize jobs
+     *                                  merely to discard them in PHP.
+     * @param  string|null  $location    Optional location substring filter,
+     *                                  applied at the database level.
+     */
+    public function jobs(string $query, ?string $remoteType = null, ?string $location = null): Collection
     {
         return Job::published()
             ->with('company')
             ->withSavedStateFor(auth()->user())
+            ->when($remoteType, fn ($builder) => $builder->where('remote_type', $remoteType))
+            ->when($location, fn ($builder) => $builder->where('location', 'like', '%'.$location.'%'))
             ->latest('published_at')
             ->limit(300)
             ->get()
@@ -40,10 +49,15 @@ class SmartSearchService
             ->values();
     }
 
-    public function companies(string $query): Collection
+    /**
+     * @param  string|null  $location  Optional location substring filter,
+     *                                applied at the database level.
+     */
+    public function companies(string $query, ?string $location = null): Collection
     {
         return Company::query()
             ->withCount('jobs')
+            ->when($location, fn ($builder) => $builder->where('location', 'like', '%'.$location.'%'))
             ->latest()
             ->limit(200)
             ->get()

@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
-use Laravel\Scout\Scout;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,12 +35,6 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-reset', fn (Request $request) => Limit::perMinute(6)->by(
             Str::lower((string) $request->input('email')).'|'.$request->ip()
         ));
-
-        // Scout configuration for local environment
-        if (app()->environment('local') && config('scout.driver') === 'null') {
-            // Disable Scout indexing in local environment when using null driver
-            // This prevents unnecessary indexing operations during development
-        }
 
         // Set default password rules (fallback for places not using StrongPassword rule)
         Password::defaults(function () {

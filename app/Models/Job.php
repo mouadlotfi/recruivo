@@ -6,11 +6,10 @@ use App\Enums\JobStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Scout\Searchable;
 
 class Job extends Model
 {
-    use HasFactory, Searchable;
+    use HasFactory;
 
     protected $fillable = [
         'recruiter_id',
@@ -105,17 +104,5 @@ class Job extends Model
         return $query->withExists([
             'savedByCandidates as is_saved' => fn (Builder $saved) => $saved->whereKey($user->id),
         ]);
-    }
-
-    public function toSearchableArray(): array
-    {
-        return [
-            'title' => $this->title,
-            'description' => strip_tags($this->description),
-            'location' => $this->location,
-            'category' => $this->category,
-            'remote_type' => $this->remote_type,
-            'company' => $this->company?->name,
-        ];
     }
 }

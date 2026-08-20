@@ -33,6 +33,5 @@
         <server name="QUEUE_CONNECTION" value="sync" force="true"/>
         <server name="SESSION_DRIVER" value="array" force="true"/>
         <server name="SESSION_STORE" value="array" force="true"/>
-        <server name="SCOUT_DRIVER" value="collection" force="true"/>
     </php>
 </phpunit>
