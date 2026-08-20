@@ -81,7 +81,7 @@ class JobDiscoveryExperienceTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Jobs/Index', false)
-                ->where('jobs.0.location', 'Dublin, Ireland')
+                ->where('jobs.data.0.location', 'Dublin, Ireland')
             );
 
         $this->get("/en/jobs/{$job->id}")

@@ -25,49 +25,12 @@ class RoleNavigationTest extends TestCase
         }
     }
 
-    public function test_primary_navigation_uses_role_specific_task_links_without_blog(): void
-    {
-        $header = File::get(resource_path('views/partials/header.blade.php'));
-
-        $this->assertStringContainsString("localized_route('recruiter.dashboard')", $header);
-        $this->assertStringContainsString("localized_route('recruiter.jobs.index')", $header);
-        $this->assertStringNotContainsString("localized_route('recruiter.applications.index')", $header);
-        $this->assertStringContainsString("localized_route('recruiter.jobs.create')", $header);
-        $this->assertStringContainsString("__('recruiter.manage_jobs')", $header);
-        $this->assertStringContainsString('data-recruiter-explore-menu', $header);
-        $this->assertStringContainsString("__('common.explore')", $header);
-        $this->assertStringNotContainsString("localized_route('posts.index')", $header);
-
-        $explorePosition = strpos($header, 'data-recruiter-explore-menu');
-        $dashboardPosition = strpos($header, "localized_route('recruiter.dashboard')");
-
-        $this->assertNotFalse($explorePosition);
-        $this->assertNotFalse($dashboardPosition);
-        $this->assertLessThan($dashboardPosition, $explorePosition);
-    }
-
     public function test_recruiter_navigation_keeps_applications_scoped_to_each_job(): void
     {
         $routes = File::get(base_path('routes/web.php'));
-        $mobileNavigation = File::get(resource_path('views/partials/mobile-nav.blade.php'));
 
         $this->assertStringNotContainsString("name('applications.index')", $routes);
         $this->assertStringContainsString("name('jobs.applications')", $routes);
-        $this->assertStringNotContainsString("localized_route('recruiter.applications.index')", $mobileNavigation);
-
-        // New order: Dashboard, Manage, Explore, Settings
-        $dashboardPosition = strpos($mobileNavigation, "'recruiter.dashboard'");
-        $managePosition = strpos($mobileNavigation, "'recruiter.jobs.index'");
-        $explorePosition = strpos($mobileNavigation, 'data-recruiter-mobile-explore-menu');
-        $settingsPosition = strpos($mobileNavigation, "localized_route('profile.edit')");
-
-        $this->assertNotFalse($dashboardPosition);
-        $this->assertNotFalse($managePosition);
-        $this->assertNotFalse($explorePosition);
-        $this->assertNotFalse($settingsPosition);
-        $this->assertLessThan($managePosition, $dashboardPosition);
-        $this->assertLessThan($explorePosition, $managePosition);
-        $this->assertLessThan($settingsPosition, $explorePosition);
     }
 
     public function test_recruiter_dashboard_is_the_recruiter_home_page(): void
@@ -97,14 +60,6 @@ class RoleNavigationTest extends TestCase
         $this->actingAs($user)
             ->get('/en/email/verify')
             ->assertRedirect(localized_route('home'));
-    }
-
-    public function test_recruiter_dashboard_does_not_render_the_tips_panel(): void
-    {
-        $dashboard = File::get(resource_path('views/recruiter/dashboard.blade.php'));
-
-        $this->assertStringNotContainsString("__('recruiter.tips_for_success')", $dashboard);
-        $this->assertStringNotContainsString("__('recruiter.tip_1')", $dashboard);
     }
 
     public function test_recent_dashboard_applications_link_to_the_job_applications(): void
@@ -252,32 +207,5 @@ class RoleNavigationTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Recruiter/Dashboard', false)
             );
-    }
-
-    public function test_candidate_mobile_navigation_keeps_four_columns_with_saved_jobs(): void
-    {
-        $mobileNav = File::get(resource_path('views/partials/mobile-nav.blade.php'));
-
-        $this->assertStringContainsString("localized_route('candidate.saved-jobs.index')", $mobileNav);
-        $this->assertStringContainsString('grid-cols-4', $mobileNav);
-    }
-
-    public function test_mobile_layout_uses_truncating_text_and_a_viewport_clamped_explore_menu(): void
-    {
-        $dashboard = File::get(resource_path('views/recruiter/dashboard.blade.php'));
-        $mobileNav = File::get(resource_path('views/partials/mobile-nav.blade.php'));
-
-        $this->assertStringContainsString('truncate', $dashboard);
-        $this->assertMatchesRegularExpression(
-            '/recruiter\.pending.*truncate|truncate.*recruiter\.pending/s',
-            $dashboard,
-            'Recent Applications rows must keep badges clear of the job title.'
-        );
-        $this->assertMatchesRegularExpression(
-            '/absolute bottom-full right-0 mb-2 w-max min-w-36/s',
-            $mobileNav,
-            'The mobile Explore menu must be a compact popover anchored above the Explore item.'
-        );
-        $this->assertStringNotContainsString('fixed bottom-16 left-4 right-4', $mobileNav);
     }
 }

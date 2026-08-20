@@ -208,7 +208,7 @@ const errorClass = 'mt-1 text-xs text-red-600 dark:text-red-400'
             <button
                 type="submit"
                 :disabled="form.processing"
-                :aria-busy="form.processing.toString()"
+                :aria-busy="form.processing"
                 class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-60"
             >
                 {{ form.processing ? labels.loading : (mode === 'create' ? labels.create_job : labels.update_job) }}

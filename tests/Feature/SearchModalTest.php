@@ -27,11 +27,11 @@ class SearchModalTest extends TestCase
         $this->assertStringContainsString('event.preventDefault()', $modal);
         $this->assertStringContainsString("document.body.style.overflow = 'hidden'", $modal);
         $this->assertStringContainsString('previousBodyOverflow', $modal);
-        $this->assertStringContainsString('input.value?.focus()', $modal);
+        $this->assertStringContainsString('firstInput() ?? focusableElements()[0] ?? dialog.value', $modal);
         $this->assertStringContainsString('restoreFocus.value?.focus()', $modal);
         $this->assertStringContainsString("const close = () => {\n    query.value = ''", $modal);
-        $this->assertStringContainsString('pr-40', $modal);
-        $this->assertStringContainsString('sm:pr-44', $modal);
+        $this->assertStringContainsString('p-5', $modal);
+        $this->assertStringContainsString('sm:p-6', $modal);
     }
 
     public function test_search_modal_submits_a_localized_inertia_search_and_closes(): void
@@ -46,7 +46,7 @@ class SearchModalTest extends TestCase
         $this->assertStringContainsString('close()', $modal);
         $this->assertStringNotContainsString('window.location', $modal);
         $this->assertStringNotContainsString("from 'vue-router'", $modal);
-        $this->assertStringContainsString('@submit.prevent="submitSearch"', $modal);
+        $this->assertStringContainsString('@submit="submitSearch"', $modal);
     }
 
     public function test_both_layouts_use_the_shared_modal_button_and_controlled_state(): void

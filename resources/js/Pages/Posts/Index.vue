@@ -62,16 +62,8 @@ const handleImageError = (event: Event) => {
                 <p class="mt-2 text-stone-600 dark:text-stone-400">{{ labels.subtitle }}</p>
             </div>
 
-            <div
-                v-if="items.length"
-                data-infinite-scroll
-                data-infinite-key="posts"
-                :data-next-url="props.pagination.next_page_url ?? ''"
-                :data-show-more-label="labels.show_more"
-                :data-loading-label="labels.loading_more"
-                :data-retry-label="labels.load_more_failed"
-            >
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" data-infinite-items>
+            <div v-if="items.length">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                     <article
                         v-for="post in items"
                         :key="post.id"

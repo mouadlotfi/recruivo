@@ -45,6 +45,7 @@ return [
     'search_error' => 'Search is temporarily unavailable. Check your connection and try again.',
     'recent_searches' => 'Recent searches',
     'remove_recent_search' => 'Remove recent search',
+    'suggestions_available' => 'Suggestions available: :count',
     'did_you_mean' => 'Did you mean :query?',
     'broaden_search' => 'Try fewer words, remove a filter, or search by a related skill.',
     'edit_search' => 'Edit your search',

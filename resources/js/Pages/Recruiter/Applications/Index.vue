@@ -145,7 +145,7 @@ const subtitle = computed(() =>
             </div>
 
             <template v-else>
-                <div class="space-y-4" data-infinite-items>
+                <div class="space-y-4">
                     <RecruiterApplicationCard
                         v-for="application in items"
                         :key="application.id"

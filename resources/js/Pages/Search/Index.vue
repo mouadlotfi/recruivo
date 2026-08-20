@@ -5,6 +5,7 @@ import type { CompanyCardSummary, JobSummary, PageProps, Pagination } from '../.
 import AppLayout from '../../Layouts/AppLayout.vue'
 import JobCard from '../../Components/Jobs/JobCard.vue'
 import CompanyCard from '../../Components/Companies/CompanyCard.vue'
+import SearchAutocomplete from '../../Components/Search/Autocomplete.vue'
 
 const props = defineProps<{
     searchQuery: string
@@ -49,8 +50,7 @@ const paramsFor = (overrides: Partial<Record<'search' | 'filter' | 'remote_type'
     return params
 }
 
-// --- Search bar (plain form submission; the live autocomplete integration
-// from resources/js/search.js is a separate follow-up) ---
+// --- Search bar (live autocomplete via the shared SearchAutocomplete component) ---
 const searchInput = ref(props.searchQuery)
 watch(
     () => props.searchQuery,
@@ -187,42 +187,15 @@ const loadMoreCompanies = () => {
     <AppLayout>
         <Head :title="labels.search" />
         <div class="space-y-6">
-            <!-- Sticky compact search bar — plain form, no live autocomplete -->
+            <!-- Sticky compact search bar with live autocomplete -->
             <div class="search-container relative" data-search-surface="page">
-                <form class="relative" @submit.prevent="submitSearch">
-                <label for="page-search" class="sr-only">{{ labels.search_placeholder }}</label>
-                <input
-                    id="page-search"
+                <SearchAutocomplete
                     v-model="searchInput"
-                    type="search"
-                    autocomplete="off"
-                    role="combobox"
-                    aria-autocomplete="list"
-                    aria-controls="page-search-suggestions"
-                    aria-expanded="false"
-                    :placeholder="labels.search_placeholder"
-                    class="search-input w-full rounded-2xl border border-stone-200 bg-white py-3.5 pl-12 pr-36 text-base text-stone-900 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-200/60 dark:border-stone-700 dark:bg-stone-900 dark:text-white dark:focus:border-amber-500 dark:focus:ring-amber-500/15 sm:py-4 sm:text-lg"
-                >
-                <svg class="pointer-events-none absolute inset-y-0 left-4 my-auto h-5 w-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                <div data-search-actions class="absolute inset-y-0 right-2 my-auto flex items-center gap-1">
-                    <button
-                        type="button"
-                        data-search-clear
-                        :class="searchInput ? 'inline-flex' : 'hidden'"
-                        class="h-10 w-10 shrink-0 items-center justify-center text-stone-400 transition-colors hover:text-stone-700 focus:outline-none focus-visible:rounded-full focus-visible:ring-2 focus-visible:ring-amber-400 dark:text-stone-500 dark:hover:text-stone-200"
-                        :aria-label="labels.clear_search"
-                        @click="searchInput = ''"
-                    >
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                    <button
-                        type="submit"
-                        class="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-amber-600 px-4 text-sm font-semibold text-white transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-300 sm:h-11"
-                    >
-                        {{ labels.search }}
-                    </button>
-                </div>
-                </form>
+                    :search-url="searchUrl"
+                    input-id="page-search"
+                    :labels="labels"
+                    @submit="submitSearch"
+                />
             </div>
 
             <template v-if="hasCriteria">
@@ -293,7 +266,7 @@ const loadMoreCompanies = () => {
 
                         <button
                             type="button"
-                            :aria-expanded="String(showFilters)"
+                            :aria-expanded="showFilters"
                             aria-controls="search-filter-panel"
                             class="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
                             @click="showFilters = !showFilters"
@@ -387,7 +360,7 @@ const loadMoreCompanies = () => {
                             <h2 id="search-jobs-heading" class="text-xl font-bold text-stone-900 dark:text-white sm:text-2xl">{{ labels.jobs_title }}</h2>
                             <span class="text-sm text-stone-500 dark:text-stone-400">{{ labels.jobs_count.replace(':count', String(jobsCount)) }}</span>
                         </div>
-                        <div class="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3" data-infinite-items>
+                        <div class="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
                             <JobCard v-for="job in jobItems" :key="job.id" :job="job" :labels="labels" />
                         </div>
                         <div v-if="jobsHasMore && jobItems.length" class="mt-6 text-center">
@@ -408,7 +381,7 @@ const loadMoreCompanies = () => {
                             <h2 id="search-companies-heading" class="text-xl font-bold text-stone-900 dark:text-white sm:text-2xl">{{ labels.companies_title }}</h2>
                             <span class="text-sm text-stone-500 dark:text-stone-400">{{ labels.companies_count.replace(':count', String(companiesCount)) }}</span>
                         </div>
-                        <div class="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3" data-infinite-items>
+                        <div class="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
                             <CompanyCard v-for="company in companyItems" :key="company.id" :company="company" :labels="labels" />
                         </div>
                         <div v-if="companiesHasMore && companyItems.length" class="mt-6 text-center">

@@ -161,6 +161,44 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Casts can and likely should be set in a `casts()` method on a model rather than the `$casts` property. Follow existing conventions from other models.
 
+=== frontend/architecture rules ===
+
+# Frontend Architecture (canonical)
+
+The web UI is built exclusively on:
+
+```text
+Laravel
+    ↓
+Inertia.js 3
+    ↓
+Vue 3
+    ↓
+TypeScript
+    ↓
+Tailwind CSS
+```
+
+There is exactly ONE web UI architecture. There is no parallel Blade-rendered version of any page.
+
+## Hard rules
+
+- **Web pages render through `Inertia::render(...)`**, never `view(...)`. Blade web UI is gone.
+- **All Vue SFCs use `<script setup lang="ts">`.** Plain `<script>` or JavaScript SFCs are not allowed.
+- **`resources/js/app.ts` is the single client entry point** (imports global CSS + boots Vue/Inertia). Never add `app.js`, `bootstrap.js`, or other runtime `.js` under `resources/js`. Config files such as `postcss.config.js`, `vite.config.ts` and `tailwind.config.ts` are the only acceptable `.js`/`.ts` config.
+- **Infinite scroll uses Inertia 3's native `<InfiniteScroll>` component** (`import { InfiniteScroll } from '@inertiajs/vue3'`) backed by server-side `Inertia::scroll(...)`. The legacy `infinite-scroll.js` / `X-Infinite-Scroll` / Blade fragment approach is removed.
+- **Navigation, search, theme, profile behavior live in Vue/TypeScript** (e.g. `Layout/Navigation.vue`, `Layout/SearchModal.vue`, `Layout/ThemeToggle.vue`, `Layout/ScrollToTop.vue`, `Layout/MobileNav.vue`). Use Inertia `<Link>` for internal SPA navigation; do not use `window.location =` / `location.href =` for normal navigation.
+- **Do not create parallel Blade pages.** Keep Blade limited to: the Inertia root shell (`resources/views/inertia.blade.php`) and legitimate server-only templates such as `resources/views/vendor/mail/**` (Laravel's mail system).
+- **Types** are centralized in `resources/js/types/index.ts`; shared page props / user / roles / flash are declared via the `InertiaConfig` augmentation in `resources/js/inertia.d.ts`. Avoid `any` / `as any` / `unknown as T` unless unavoidable.
+- **Localization** stays in the Laravel `resources/lang/{en,fr}` files and the shared `translations` page prop; do not hardcode English strings in Vue.
+- **SEO** (titles, meta, hreflang, localized URLs) is emitted via Inertia `<Head>` and the root `inertia.blade.php`; preserve it when touching public pages.
+
+## Verification
+
+- `bun run typecheck` (`vue-tsc --noEmit`) must pass — no TypeScript errors.
+- `bun run build` (Vite) must pass.
+- `php artisan test` (PHPUnit) must pass. Architecture contracts live in `tests/Feature/FrontendArchitectureTest.php`.
+
 === pint/core rules ===
 
 # Laravel Pint Code Formatter

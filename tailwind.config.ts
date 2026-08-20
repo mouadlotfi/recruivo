@@ -1,12 +1,12 @@
-import forms from '@tailwindcss/forms';
+import forms from '@tailwindcss/forms'
+import type { Config } from 'tailwindcss'
 
-/** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
   content: [
-    './resources/**/*.blade.php',
-    './resources/**/*.js',
-    './resources/**/*.vue',
+    './resources/views/inertia.blade.php',
+    './resources/js/**/*.vue',
+    './resources/js/**/*.ts',
   ],
   safelist: [
     'lg:flex',
@@ -22,5 +22,4 @@ export default {
     }
   },
   plugins: [forms]
-};
-
+} satisfies Config

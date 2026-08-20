@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, useId, watch } from 'vue'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
@@ -15,13 +15,17 @@ const props = defineProps<{
     type: 'line' | 'bar'
     labels: string[]
     datasets: DashboardChartDataset[]
-    ariaLabel: string
+    chartLabel: string
     emptyText: string
     locale: string
     indexAxis?: 'x' | 'y'
 }>()
 
-const canvas = ref<HTMLCanvasElement | null>(null)
+// The canvas is addressed by its id (Chart.js accepts a string selector) so
+// the SFC never has to hand a DOM element across the type boundary into
+// chart.js — its element types can be structurally incompatible with the
+// DOM lib the template/script is checked against.
+const canvasId = useId()
 const hasData = computed(() => props.datasets.some((dataset) => dataset.data.some((value) => value > 0)))
 const formatValue = (value: number) => new Intl.NumberFormat(props.locale).format(value)
 const summary = computed(() => props.datasets
@@ -49,7 +53,7 @@ const destroyChart = () => {
 const renderChart = () => {
     destroyChart()
 
-    if (!canvas.value || !hasData.value) {
+    if (!hasData.value) {
         return
     }
 
@@ -59,7 +63,7 @@ const renderChart = () => {
     const indexAxis = props.indexAxis ?? 'x'
     const isHorizontal = props.type === 'bar' && indexAxis === 'y'
 
-    chart = new Chart(canvas.value, {
+    chart = new Chart(canvasId, {
         type: props.type,
         data: {
             labels: props.labels,
@@ -177,12 +181,12 @@ onBeforeUnmount(() => {
 <template>
     <div
         role="img"
-        :aria-label="hasData ? ariaLabel : emptyText"
+        :aria-label="hasData ? chartLabel : emptyText"
         class="min-w-0"
     >
         <p class="sr-only">{{ accessibleSummary }}</p>
         <div v-if="hasData" class="relative h-64 w-full sm:h-72">
-            <canvas ref="canvas" aria-hidden="true"></canvas>
+            <canvas :id="canvasId" aria-hidden="true"></canvas>
         </div>
         <div v-else class="flex min-h-64 items-center justify-center rounded-lg border border-dashed border-stone-200 px-6 text-center text-sm text-stone-500 dark:border-stone-700 dark:text-stone-400 sm:min-h-72">
             {{ emptyText }}

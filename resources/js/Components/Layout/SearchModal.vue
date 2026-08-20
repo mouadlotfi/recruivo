@@ -3,10 +3,18 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } fro
 import { router, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
+import SearchAutocomplete from '../Search/Autocomplete.vue'
+
+// Minimal structural contract (focus only) so callers can pass any element
+// type — template refs may be checked against a different DOM lib than this
+// component's — and the modal only ever calls .focus() on it.
+interface FocusableElement {
+    focus(): void
+}
 
 const props = defineProps<{
     open: boolean
-    trigger?: HTMLElement | null
+    trigger?: FocusableElement | null
 }>()
 
 const emit = defineEmits<{
@@ -18,7 +26,7 @@ const { t } = useTranslation()
 const query = ref('')
 const dialog = ref<HTMLElement | null>(null)
 const input = ref<HTMLInputElement | null>(null)
-const restoreFocus = ref<HTMLElement | null>(null)
+const restoreFocus = ref<FocusableElement | null>(null)
 const previousBodyOverflow = ref('')
 const modalId = useId()
 const titleId = `${modalId}-title`
@@ -32,7 +40,9 @@ const close = () => {
 }
 
 const focusInput = () => {
-    nextTick(() => input.value?.focus())
+    nextTick(() => {
+        ;(firstInput() ?? focusableElements()[0] ?? dialog.value).focus()
+    })
 }
 
 const onWindowKeydown = (event: KeyboardEvent) => {
@@ -50,8 +60,12 @@ const onWindowFocusin = (event: FocusEvent) => {
 
     event.preventDefault()
     event.stopPropagation()
-    ;(input.value ?? focusableElements()[0] ?? dialog.value).focus()
+    ;(firstInput() ?? input.value ?? focusableElements()[0] ?? dialog.value).focus()
 }
+
+// The autocomplete input lives inside the child SearchAutocomplete component;
+// the dialog's first input is the search field — not the close button.
+const firstInput = () => dialog.value?.querySelector<HTMLElement>('input:not([disabled])') ?? null
 
 const focusableElements = () => Array.from(
     dialog.value?.querySelectorAll<HTMLElement>(
@@ -169,39 +183,25 @@ const submitSearch = () => {
                     </button>
                 </div>
 
-                <form class="mt-6" @submit.prevent="submitSearch">
-                    <label :for="inputId" class="sr-only">{{ t('search') }}</label>
-                    <div class="relative">
-                        <input
-                            :id="inputId"
-                            ref="input"
-                            v-model="query"
-                            type="search"
-                            autocomplete="off"
-                            :placeholder="t('search_placeholder')"
-                            class="w-full rounded-xl border border-stone-200 bg-white py-3.5 pl-4 pr-40 text-base text-stone-900 shadow-sm transition placeholder:text-stone-400 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-200/60 dark:border-stone-700 dark:bg-stone-950 dark:text-white dark:placeholder:text-stone-500 dark:focus:border-amber-500 dark:focus:ring-amber-500/15 sm:pr-44"
-                        >
-                        <div class="absolute inset-y-0 right-2 flex items-center gap-1">
-                            <button
-                                v-if="query"
-                                type="button"
-                                :aria-label="t('clear_search')"
-                                class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-500 dark:hover:bg-stone-800 dark:hover:text-stone-200"
-                                @click="query = ''; focusInput()"
-                            >
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                            <button
-                                type="submit"
-                                class="inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-lg bg-amber-600 px-3 text-sm font-semibold text-white transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 dark:hover:bg-amber-500/90"
-                            >
-                                {{ t('search') }}
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                <SearchAutocomplete
+                    v-model="query"
+                    :search-url="searchUrl"
+                    :input-id="inputId"
+                    :labels="{
+                        search: t('search'),
+                        search_placeholder: t('search_placeholder'),
+                        clear_search: t('clear_search'),
+                        search_all_results: t('search_all_results'),
+                        recent_searches: t('recent_searches'),
+                        remove_recent_search: t('remove_recent_search'),
+                        no_search_suggestions: t('no_search_suggestions'),
+                        search_error: t('search_error'),
+                        suggestions_available: t('suggestions_available'),
+                        loading: t('loading'),
+                    }"
+                    class="mt-6"
+                    @submit="submitSearch"
+                />
             </section>
         </div>
     </Teleport>

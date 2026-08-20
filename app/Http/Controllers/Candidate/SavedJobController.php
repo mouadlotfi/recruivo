@@ -7,7 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Job;
 use App\Services\DemoAccountGuard;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
+use Inertia\ScrollMetadata;
 
 class SavedJobController extends Controller
 {
@@ -22,15 +24,11 @@ class SavedJobController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        if ($request->header('X-Infinite-Scroll') === '1') {
-            return response()->json([
-                'html' => view('jobs.partials.cards', compact('jobs'))->render(),
-                'next_url' => $jobs->nextPageUrl(),
-            ]);
-        }
-
         return Inertia::render('Candidate/SavedJobs', [
-            'jobs' => array_map(fn (Job $job) => $this->serializeJob($job), $jobs->items()),
+            'jobs' => Inertia::scroll(
+                fn () => $this->serializedScroll($jobs),
+                metadata: fn () => ScrollMetadata::fromPaginator($jobs),
+            ),
             'pagination' => [
                 'total' => $jobs->total(),
                 'per_page' => $jobs->perPage(),
@@ -57,6 +55,27 @@ class SavedJobController extends Controller
                 'onsite' => __('jobs.onsite'),
             ],
         ]);
+    }
+
+    /**
+     * Serialize a paginator into the {data, meta} shape consumed by the
+     * client's native InfiniteScroll component.
+     *
+     * @return array{data: array<int, array<string, mixed>>, meta: array<string, mixed>}
+     */
+    private function serializedScroll(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'data' => array_map(fn (Job $job) => $this->serializeJob($job), $paginator->items()),
+            'meta' => [
+                'total' => $paginator->total(),
+                'per_page' => $paginator->perPage(),
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'next_page_url' => $paginator->nextPageUrl(),
+                'prev_page_url' => $paginator->previousPageUrl(),
+            ],
+        ];
     }
 
     /**

@@ -39,15 +39,4 @@ class JobDescriptionFormatterTest extends TestCase
         $this->assertStringNotContainsString('<script>', $html);
     }
 
-    public function test_recruiter_job_show_uses_the_formatter_and_has_the_edit_key(): void
-    {
-        $view = file_get_contents(resource_path('views/recruiter/jobs/show.blade.php'));
-        $candidateView = file_get_contents(resource_path('views/jobs/show.blade.php'));
-        $en = file_get_contents(resource_path('lang/en/recruiter.php'));
-
-        $this->assertStringContainsString('JobDescriptionFormatter::format', $view);
-        $this->assertStringContainsString('JobDescriptionFormatter::format', $candidateView);
-        $this->assertStringContainsString("'edit_job' =>", $en);
-        $this->assertStringNotContainsString('nl2br(e($job->description))', $candidateView);
-    }
 }

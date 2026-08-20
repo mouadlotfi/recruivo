@@ -1,4 +1,4 @@
-import type { PageProps as InertiaPageProps } from '@inertiajs/core'
+import type { SharedPageProps } from '@inertiajs/core'
 
 export interface User {
     id: number
@@ -15,17 +15,13 @@ export interface Flash {
     error?: string
 }
 
-export interface PageProps extends InertiaPageProps {
-    auth: {
-        user: User | null
-    }
-    locale: string
-    supportedLocales: string[]
-    translations: Record<string, Record<string, string>>
-    flash: Flash
-    notificationCount: number
-    errors: Record<string, string>
-}
+/**
+ * The globally shared shell props (auth, locale, supportedLocales,
+ * translations, flash, notificationCount, errors) are declared once via the
+ * InertiaConfig augmentation in ./inertia.d.ts. Page-specific payloads below
+ * are merged onto the page at serialization time per route.
+ */
+export type PageProps = SharedPageProps
 
 // --- Candidate/Applications page payload (serialized in ApplicationController) ---
 
@@ -181,6 +177,23 @@ export interface Pagination {
     last_page: number
     next_page_url: string | null
     prev_page_url: string | null
+}
+
+/**
+ * The {data, meta} shape a native Inertia ScrollProp (Inertia::scroll) sends
+ * for an infinite-scroll list. `data` is appended across pages by the client's
+ * InfiniteScroll component; `meta` describes the current page.
+ */
+export interface ScrollPagination<T> {
+    data: T[]
+    meta: {
+        total: number
+        per_page: number
+        current_page: number
+        last_page: number
+        next_page_url: string | null
+        prev_page_url: string | null
+    }
 }
 
 // --- Recruiter/Applications page payload (serialized in Recruiter/ApplicationController) ---

@@ -217,7 +217,7 @@ class SavedJobsTest extends TestCase
 
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Candidate/SavedJobs', false)
-            ->has('jobs', 0)
+            ->has('jobs.data', 0)
         );
 
         $savedJobs = File::get(resource_path('js/Pages/Candidate/SavedJobs.vue'));
@@ -227,7 +227,7 @@ class SavedJobsTest extends TestCase
         $this->assertStringContainsString("localeUrl('/jobs')", $savedJobs);
     }
 
-    public function test_saved_jobs_page_renders_saved_job_cards(): void
+    public function test_saved_jobs_page_renders_saved_job_cards_with_the_native_scroll_component(): void
     {
         $candidate = $this->candidate();
         $job = $this->publishedJob(['title' => 'Bookmarked Role']);
@@ -236,12 +236,24 @@ class SavedJobsTest extends TestCase
         $response = $this->actingAs($candidate)->get('/en/candidate/saved-jobs')->assertOk();
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Candidate/SavedJobs', false)
-            ->has('jobs', 1)
-            ->where('jobs.0.title', 'Bookmarked Role')
+            ->has('jobs.data', 1)
+            ->where('jobs.data.0.title', 'Bookmarked Role')
         );
 
         $savedJobs = File::get(resource_path('js/Pages/Candidate/SavedJobs.vue'));
+        $this->assertStringContainsString('InfiniteScroll', $savedJobs);
+        $this->assertStringContainsString('data="jobs"', $savedJobs);
+        $this->assertStringContainsString('manual', $savedJobs);
+        $this->assertStringContainsString('only-next', $savedJobs);
         $this->assertStringContainsString('data-infinite-items', $savedJobs);
+    }
+
+    public function test_saved_jobs_controller_has_no_custom_infinite_scroll_fragment_branch(): void
+    {
+        $controller = File::get(app_path('Http/Controllers/Candidate/SavedJobController.php'));
+
+        $this->assertStringNotContainsString('X-Infinite-Scroll', $controller);
+        $this->assertStringNotContainsString('jobs.partials.cards', $controller);
     }
 
     public function test_candidate_job_cards_render_a_bookmark_control_with_an_accessible_44px_target(): void
@@ -252,8 +264,8 @@ class SavedJobsTest extends TestCase
         $response = $this->actingAs($candidate)->get('/en/jobs')->assertOk();
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Jobs/Index', false)
-            ->where('jobs.0.id', $job->id)
-            ->where('jobs.0.is_saved', false)
+            ->where('jobs.data.0.id', $job->id)
+            ->where('jobs.data.0.is_saved', false)
         );
 
         $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
@@ -271,8 +283,8 @@ class SavedJobsTest extends TestCase
         $response = $this->actingAs($candidate)->get('/en/jobs')->assertOk();
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Jobs/Index', false)
-            ->where('jobs.0.id', $job->id)
-            ->where('jobs.0.is_saved', true)
+            ->where('jobs.data.0.id', $job->id)
+            ->where('jobs.data.0.is_saved', true)
         );
 
         $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
@@ -316,7 +328,7 @@ class SavedJobsTest extends TestCase
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Jobs/Index', false)
             ->where('auth.user.is_demo', true)
-            ->where('jobs.0.is_saved', false)
+            ->where('jobs.data.0.is_saved', false)
         );
 
         $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
@@ -335,7 +347,7 @@ class SavedJobsTest extends TestCase
         $response = $this->actingAs($candidate)->get('/en/jobs')->assertOk();
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Jobs/Index', false)
-            ->has('jobs', 2)
+            ->has('jobs.data', 2)
         );
 
         $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
@@ -344,7 +356,7 @@ class SavedJobsTest extends TestCase
 
     public function test_job_card_bookmark_control_uses_a_44px_target_and_accessible_label(): void
     {
-        $contents = File::get(resource_path('views/components/job-card.blade.php'));
+        $contents = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
 
         $this->assertStringContainsString('h-11 w-11', $contents);
         $this->assertStringContainsString('relative z-10', $contents);

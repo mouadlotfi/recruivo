@@ -259,8 +259,8 @@ class JobExpiryTest extends TestCase
         $response = $this->get('/en/jobs')->assertOk();
         $response->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Jobs/Index', false)
-            ->where('jobs.0.closes_at', null)
-            ->where('jobs.0.is_closing_soon', false)
+            ->where('jobs.data.0.closes_at', null)
+            ->where('jobs.data.0.is_closing_soon', false)
         );
 
         $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));

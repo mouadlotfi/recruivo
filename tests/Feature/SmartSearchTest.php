@@ -70,80 +70,69 @@ class SmartSearchTest extends TestCase
 
     public function test_search_markup_uses_the_combobox_and_listbox_contract(): void
     {
-        $header = file_get_contents(resource_path('views/partials/header.blade.php'));
+        $autocompletePath = resource_path('js/Components/Search/Autocomplete.vue');
+        $this->assertFileExists($autocompletePath);
+        $autocomplete = File::get($autocompletePath);
 
-        $this->assertStringContainsString('role="combobox"', $header);
-        $this->assertStringContainsString('aria-autocomplete="list"', $header);
-        $this->assertStringContainsString('data-search-clear', $header);
-        $this->assertStringContainsString("setAttribute('role', 'listbox')", file_get_contents(resource_path('js/search.js')));
+        $this->assertStringContainsString('role="combobox"', $autocomplete);
+        $this->assertStringContainsString('aria-autocomplete="list"', $autocomplete);
+        $this->assertStringContainsString('aria-expanded', $autocomplete);
+        $this->assertStringContainsString('aria-controls', $autocomplete);
+        $this->assertStringContainsString('aria-activedescendant', $autocomplete);
+        $this->assertStringContainsString('role="listbox"', $autocomplete);
+        $this->assertStringContainsString('aria-live="polite"', $autocomplete);
     }
 
     public function test_search_suggestions_match_the_width_of_their_search_container(): void
     {
-        $script = file_get_contents(resource_path('js/search.js'));
+        $autocomplete = File::get(resource_path('js/Components/Search/Autocomplete.vue'));
 
-        $this->assertStringContainsString('absolute inset-x-0 top-full', $script);
-        $this->assertStringContainsString('w-full overflow-y-auto', $script);
+        $this->assertStringContainsString('absolute inset-x-0 top-full', $autocomplete);
+        $this->assertStringContainsString('w-full overflow-y-auto', $autocomplete);
     }
 
-    public function test_navbar_search_uses_a_single_always_visible_search_icon_without_an_inline_bar(): void
+    public function test_vue_search_surfaces_share_the_autocomplete_component(): void
     {
-        $header = file_get_contents(resource_path('views/partials/header.blade.php'));
-        $view = file_get_contents(resource_path('views/search.blade.php'));
+        $modal = File::get(resource_path('js/Components/Layout/SearchModal.vue'));
+        $page = File::get(resource_path('js/Pages/Search/Index.vue'));
 
-        // The inline navbar search bar is gone.
-        $this->assertStringNotContainsString('id="nav-search"', $header);
-        $this->assertStringNotContainsString('data-search-surface="navbar"', $header);
-
-        // Exactly one search entry point in the navbar: the icon toggle, visible at every viewport and role.
-        $this->assertSame(1, substr_count($header, 'id="mobile-search-toggle"'));
-        $this->assertStringContainsString('id="mobile-search-toggle"', $header);
-        $toggle = substr($header, strpos($header, 'id="mobile-search-toggle"'), 2000);
-        $this->assertStringNotContainsString('sm:hidden', $toggle, 'The search icon must not be hidden on desktop.');
-        $this->assertStringContainsString('aria-label', $toggle);
-
-        // The modal is the single navbar search surface; the page search surface remains.
-        $this->assertStringContainsString('data-search-surface="mobile"', $header);
-        $this->assertStringContainsString('id="mobile-search-modal"', $header);
-        $this->assertStringContainsString('data-search-surface="page"', $view);
-        $this->assertStringContainsString('role="combobox"', $header);
+        $this->assertStringContainsString("import SearchAutocomplete from '../Search/Autocomplete.vue'", $modal);
+        $this->assertStringContainsString('<SearchAutocomplete', $modal);
+        $this->assertStringContainsString("import SearchAutocomplete from '../../Components/Search/Autocomplete.vue'", $page);
+        $this->assertStringContainsString('<SearchAutocomplete', $page);
+        $this->assertStringNotContainsString('autocomplete integration from resources/js/search.js is a separate follow-up', $page);
     }
 
     public function test_search_autocomplete_drops_the_navbar_special_case_and_keeps_the_page_width_contract(): void
     {
-        $script = file_get_contents(resource_path('js/search.js'));
+        $autocomplete = File::get(resource_path('js/Components/Search/Autocomplete.vue'));
 
-        // No dead navbar branch remains.
-        $this->assertStringNotContainsString('isNavbarSearch', $script);
-        $this->assertStringNotContainsString("dataset.searchSurface === 'navbar'", $script);
-        $this->assertStringNotContainsString('left-1/2', $script);
-        $this->assertStringNotContainsString('w-[min(44rem', $script);
+        $this->assertStringNotContainsString('isNavbarSearch', $autocomplete);
+        $this->assertStringNotContainsString("dataset.searchSurface === 'navbar'", $autocomplete);
+        $this->assertStringNotContainsString('left-1/2', $autocomplete);
+        $this->assertStringNotContainsString('w-[min(44rem', $autocomplete);
 
-        // The page surface keeps its full-width listbox.
-        $this->assertStringContainsString('absolute inset-x-0 top-full', $script);
-        $this->assertStringContainsString('w-full overflow-y-auto', $script);
+        $this->assertStringContainsString('absolute inset-x-0 top-full', $autocomplete);
+        $this->assertStringContainsString('w-full overflow-y-auto', $autocomplete);
     }
 
     public function test_recent_searches_have_individual_remove_actions(): void
     {
-        $script = file_get_contents(resource_path('js/search.js'));
-        $header = file_get_contents(resource_path('views/partials/header.blade.php'));
-        $view = file_get_contents(resource_path('views/search.blade.php'));
+        $autocomplete = File::get(resource_path('js/Components/Search/Autocomplete.vue'));
 
-        $this->assertStringContainsString('data-remove-recent-search', $script);
-        $this->assertStringContainsString('removeRecentSearch(', $script);
-        $this->assertStringContainsString('data-search-remove-recent=', $header);
-        $this->assertStringContainsString('data-search-remove-recent=', $view);
+        $this->assertStringContainsString('data-remove-recent-search', $autocomplete);
+        $this->assertStringContainsString('removeRecentSearch(', $autocomplete);
+        $this->assertStringContainsString('recruivo:recent-searches', $autocomplete);
+        $this->assertStringContainsString('slice(0, 5)', $autocomplete);
         $this->assertStringContainsString("'remove_recent_search'", file_get_contents(resource_path('lang/en/common.php')));
         $this->assertStringContainsString("'remove_recent_search'", file_get_contents(resource_path('lang/fr/common.php')));
     }
 
     public function test_clear_control_remains_an_unboxed_icon_at_rest_and_on_hover(): void
     {
-        $view = file_get_contents(resource_path('views/search.blade.php'));
-        $header = file_get_contents(resource_path('views/partials/header.blade.php'));
+        $autocomplete = File::get(resource_path('js/Components/Search/Autocomplete.vue'));
 
-        foreach ([$view, $header] as $markup) {
+        foreach ([$autocomplete] as $markup) {
             $this->assertDoesNotMatchRegularExpression(
                 '/data-search-clear[^>]*class="[^"]*(?:hover:|dark:hover:)?bg-/',
                 $markup,
@@ -160,10 +149,10 @@ class SmartSearchTest extends TestCase
 
     public function test_search_autocomplete_works_on_lan_http_origins_without_secure_context_apis(): void
     {
-        $script = file_get_contents(resource_path('js/search.js'));
+        $autocomplete = File::get(resource_path('js/Components/Search/Autocomplete.vue'));
 
-        $this->assertStringNotContainsString('crypto.randomUUID()', $script);
-        $this->assertStringContainsString('nextSearchId(', $script);
+        $this->assertStringNotContainsString('crypto.randomUUID()', $autocomplete);
+        $this->assertStringContainsString('nextSearchId(', $autocomplete);
     }
 
     public function test_search_page_shows_result_counts_on_the_type_tabs(): void
@@ -192,13 +181,13 @@ class SmartSearchTest extends TestCase
 
     public function test_search_page_clear_and_submit_actions_share_a_non_overlapping_control_group(): void
     {
-        $view = file_get_contents(resource_path('views/search.blade.php'));
+        $autocomplete = File::get(resource_path('js/Components/Search/Autocomplete.vue'));
 
-        $this->assertStringContainsString('data-search-actions', $view);
-        $this->assertStringContainsString('absolute inset-y-0 right-2', $view);
-        $this->assertStringContainsString('gap-1', $view);
-        $this->assertStringContainsString('pr-36', $view);
-        $this->assertStringNotContainsString('data-search-clear class="absolute', $view);
+        $this->assertStringContainsString('data-search-actions', $autocomplete);
+        $this->assertStringContainsString('absolute inset-y-0 right-2', $autocomplete);
+        $this->assertStringContainsString('gap-1', $autocomplete);
+        $this->assertStringContainsString('pr-36', $autocomplete);
+        $this->assertStringNotContainsString('data-search-clear class="absolute', $autocomplete);
     }
 
     public function test_search_page_surfaces_active_filters_as_removable_chips(): void
@@ -244,5 +233,103 @@ class SmartSearchTest extends TestCase
 
         $searchPage = File::get(resource_path('js/Pages/Search/Index.vue'));
         $this->assertStringContainsString('data-popular-search', $searchPage);
+    }
+
+    public function test_search_autocomplete_labels_are_wired_from_laravel_translations(): void
+    {
+        $autocomplete = File::get(resource_path('js/Components/Search/Autocomplete.vue'));
+        $modal = File::get(resource_path('js/Components/Layout/SearchModal.vue'));
+        $middleware = File::get(app_path('Http/Middleware/HandleInertiaRequests.php'));
+
+        // No hardcoded English fallback strings survive in the component.
+        foreach (['Search all results', 'Recent searches', 'Remove recent search', 'No matching suggestions', 'Search jobs, companies'] as $english) {
+            $this->assertStringNotContainsString($english, $autocomplete);
+        }
+
+        // Autocomplete label keys match the backend's SEARCH_PAGE_LABEL_KEYS
+        // entries (search_all_results, search_error, ...) plus the shell keys.
+        $this->assertStringContainsString('search_all_results?: string', $autocomplete);
+        $this->assertStringContainsString('search_error?: string', $autocomplete);
+        $this->assertStringContainsString('suggestions_available?: string', $autocomplete);
+        $this->assertStringContainsString("label('search_all_results')", $autocomplete);
+        $this->assertStringContainsString("label('search_error')", $autocomplete);
+        $this->assertStringContainsString("label('suggestions_available')", $autocomplete);
+
+        // The modal passes every autocomplete label through t() from the
+        // shared shell translations — nothing falls back to English.
+        foreach ([
+            'search', 'search_placeholder', 'clear_search', 'search_all_results',
+            'recent_searches', 'remove_recent_search', 'no_search_suggestions',
+            'search_error', 'suggestions_available', 'loading',
+        ] as $key) {
+            $this->assertStringContainsString("$key: t('$key')", $modal, "Modal must pass the $key label through t().");
+        }
+
+        // The shell translation sources carry every key the autocomplete needs.
+        foreach ([
+            'search_all_results', 'no_search_suggestions', 'recent_searches',
+            'remove_recent_search', 'search_error', 'suggestions_available', 'loading',
+        ] as $key) {
+            $this->assertStringContainsString("'$key' => 'common.$key'", $middleware);
+        }
+    }
+
+    public function test_autocomplete_labels_are_available_in_both_locales(): void
+    {
+        foreach (['en', 'fr'] as $locale) {
+            $lang = file_get_contents(resource_path("lang/$locale/common.php"));
+            $this->assertStringContainsString("'suggestions_available'", $lang);
+            $this->assertStringContainsString("'loading'", $lang);
+            $this->assertStringContainsString("'recent_searches'", $lang);
+            $this->assertStringContainsString("'remove_recent_search'", $lang);
+            $this->assertStringContainsString("'search_all_results'", $lang);
+            $this->assertStringContainsString("'search_error'", $lang);
+            $this->assertStringContainsString("'no_search_suggestions'", $lang);
+        }
+    }
+
+    public function test_search_autocomplete_reports_loading_and_error_states(): void
+    {
+        $autocomplete = File::get(resource_path('js/Components/Search/Autocomplete.vue'));
+
+        // Typed loading and error state.
+        $this->assertStringContainsString('const isLoading = ref', $autocomplete);
+        $this->assertStringContainsString('const errorMessage = ref', $autocomplete);
+        $this->assertStringContainsString('isLoading.value = true', $autocomplete);
+        $this->assertStringContainsString('errorMessage.value = label(\'search_error\')', $autocomplete);
+
+        // Both states surface localized text in the listbox.
+        $this->assertStringContainsString("v-if=\"isLoading\"", $autocomplete);
+        $this->assertStringContainsString("v-else-if=\"errorMessage\"", $autocomplete);
+        $this->assertStringContainsString("label('loading')", $autocomplete);
+
+        // Aborts never surface as an error; only the newest request clears
+        // the loading flag.
+        $this->assertStringContainsString("error.name === 'AbortError'", $autocomplete);
+        $this->assertStringContainsString('if (controller === current) isLoading.value = false', $autocomplete);
+    }
+
+    public function test_search_modal_focuses_the_autocomplete_input_on_open(): void
+    {
+        $modal = File::get(resource_path('js/Components/Layout/SearchModal.vue'));
+
+        // focusInput targets the first input inside the dialog (the shared
+        // autocomplete field), falling back to the generic focusable set.
+        $this->assertStringContainsString("querySelector<HTMLElement>('input:not([disabled])')", $modal);
+        $this->assertStringContainsString('firstInput() ?? focusableElements()[0] ?? dialog.value', $modal);
+    }
+
+    public function test_search_submit_controls_reach_the_parent_submit_handler(): void
+    {
+        $autocomplete = File::get(resource_path('js/Components/Search/Autocomplete.vue'));
+
+        // The Search button submits through a native form (its own click used
+        // to be a no-op) and the search-all / recent-row actions emit submit.
+        $this->assertStringContainsString('<form class="relative w-full" @submit.prevent="submitCurrent">', $autocomplete);
+        $this->assertStringContainsString('type="submit"', $autocomplete);
+        $this->assertStringContainsString('@click="submitCurrent"', $autocomplete);
+        $this->assertStringContainsString('@click="chooseRecent(unescapeHtml(term))"', $autocomplete);
+        $this->assertStringContainsString("emit('submit')", $autocomplete);
+        $this->assertStringContainsString('event.preventDefault()', $autocomplete);
     }
 }

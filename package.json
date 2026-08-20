@@ -3,7 +3,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
@@ -15,13 +16,11 @@
     "vite": "^7.3.6"
   },
   "dependencies": {
-    "@alpinejs/focus": "^3.16.1",
     "@inertiajs/vue3": "^3.6.1",
     "@types/node": "^26.2.0",
     "@vitejs/plugin-vue": "^6.0.8",
-    "alpinejs": "^3.15.0",
     "chart.js": "^4.5.1",
-    "typescript": "^7.0.2",
+    "typescript": "^6.0.3",
     "vue": "^3.5.41",
     "vue-tsc": "^3.3.10"
   }

@@ -5,7 +5,7 @@ FROM node:${NODE_VERSION}-bookworm-slim AS node-builder
 
 WORKDIR /var/www/html
 
-COPY package.json package-lock.json vite.config.js postcss.config.js tailwind.config.js tsconfig.json ./
+COPY package.json package-lock.json vite.config.ts postcss.config.js tailwind.config.ts tsconfig.json ./
 RUN npm ci --prefer-offline --no-audit
 
 COPY resources ./resources

@@ -193,7 +193,7 @@ const iconButtonClass =
             </div>
 
             <template v-else>
-                <div class="space-y-4" data-infinite-items>
+                <div class="space-y-4">
                     <article
                         v-for="job in items"
                         :key="job.id"

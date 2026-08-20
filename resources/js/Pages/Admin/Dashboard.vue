@@ -341,7 +341,7 @@ const changeRange = () => {
                             :labels="dashboard.growth.labels"
                             :datasets="growthDataset"
                             :locale="locale"
-                            :aria-label="growthAriaLabel"
+                            :chart-label="growthAriaLabel"
                             :empty-text="labels.no_chart_data"
                         />
                     </div>
@@ -376,7 +376,7 @@ const changeRange = () => {
                         :labels="dashboard.pipeline.statuses.map((status) => status.label)"
                         :datasets="pipelineDataset"
                         :locale="locale"
-                        :aria-label="pipelineAriaLabel"
+                        :chart-label="pipelineAriaLabel"
                         :empty-text="labels.no_chart_data"
                     />
                 </div>

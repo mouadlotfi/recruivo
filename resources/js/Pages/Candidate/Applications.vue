@@ -134,7 +134,7 @@ const loadMore = () => {
             </div>
 
             <template v-else>
-                <div class="space-y-4" data-infinite-items>
+                <div class="space-y-4">
                     <CandidateApplicationCard
                         v-for="application in items"
                         :key="application.id"

@@ -45,6 +45,7 @@ return [
     'search_error' => 'La recherche est temporairement indisponible. Vérifiez votre connexion et réessayez.',
     'recent_searches' => 'Recherches récentes',
     'remove_recent_search' => 'Supprimer la recherche récente',
+    'suggestions_available' => 'Suggestions disponibles : :count',
     'did_you_mean' => 'Vouliez-vous dire :query ?',
     'broaden_search' => 'Essayez moins de mots, retirez un filtre ou recherchez une compétence associée.',
     'edit_search' => 'Modifier votre recherche',

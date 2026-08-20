@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
-import type { PageProps, User } from '../../types'
+import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
 import { useDismiss } from '../../composables/useDismiss'
 
 const page = usePage<PageProps>()
 const { t } = useTranslation()
 
-// Only rendered when auth.user exists (AppLayout gates it), so the cast is safe.
-const user = computed(() => page.props.auth.user as User)
+// Only rendered when auth.user exists (AppLayout gates it), so the non-null
+// assertion is safe. The type is derived from the shared shell props so no
+// separate User import is needed here.
+type AuthUser = NonNullable<PageProps['auth']['user']>
+const user = computed(() => page.props.auth.user as AuthUser)
 const isRecruiter = computed(() => user.value.roles.includes('Recruiter'))
 const initials = computed(() => (user.value.name?.trim().charAt(0) ?? '?').toUpperCase())
 

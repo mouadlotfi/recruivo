@@ -65,7 +65,7 @@ const loadMore = () => {
             </header>
 
             <div>
-                <div v-if="items.length" class="grid gap-6 md:grid-cols-2" data-infinite-items>
+                <div v-if="items.length" class="grid gap-6 md:grid-cols-2">
                     <CompanyCard v-for="company in items" :key="company.id" :company="company" :labels="labels" />
                 </div>
 

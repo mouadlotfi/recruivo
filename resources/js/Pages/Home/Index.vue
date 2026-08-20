@@ -280,7 +280,7 @@ const skipPreferences = () => {
                 </h2>
 
                 <div v-if="items.length">
-                    <div class="grid gap-6 md:grid-cols-2" data-infinite-items>
+                    <div class="grid gap-6 md:grid-cols-2">
                         <JobCard v-for="job in items" :key="job.id" :job="job" :labels="labels" />
                     </div>
                     <div v-if="hasMore" class="mt-6 text-center">

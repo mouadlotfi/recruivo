@@ -289,7 +289,7 @@ const toggleSaved = () => {
                             <button
                                 type="submit"
                                 :disabled="form.processing"
-                                :aria-busy="form.processing.toString()"
+                                :aria-busy="form.processing"
                                 class="inline-flex w-full items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60"
                             >
                                 {{ form.processing ? labels.loading : labels.apply_now_button }}
