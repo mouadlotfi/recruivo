@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { Head, router, usePage } from '@inertiajs/vue3'
 import type { PageProps, Pagination } from '../../types'
 import AdminLayout from '../../Components/Admin/AdminLayout.vue'
+import AdminBreadcrumb from '../../Components/Admin/AdminBreadcrumb.vue'
 
 type AdminJob = {
     id: number
@@ -112,8 +113,8 @@ const statusClass = (jobStatus: string) => jobStatus === 'published'
     <AdminLayout :labels="labels">
         <div class="space-y-6 sm:space-y-8">
             <header>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-400">{{ labels.admin_area }}</p>
-                <h1 class="text-2xl font-semibold text-stone-900 dark:text-white sm:text-3xl">{{ labels.job_management_title }}</h1>
+                <AdminBreadcrumb :items="[{ label: labels.job_management_title }]" />
+                <h1 class="mt-2 text-2xl font-semibold text-stone-900 dark:text-white sm:text-3xl">{{ labels.job_management_title }}</h1>
                 <p class="mt-2 max-w-2xl text-sm text-stone-600 dark:text-stone-400 sm:text-base">{{ labels.job_management_subtitle }}</p>
             </header>
 
@@ -157,9 +158,24 @@ const statusClass = (jobStatus: string) => jobStatus === 'published'
                         </button>
                     </div>
                 </form>
-                <div v-if="noApplications || job !== null" class="mt-3 space-y-1 text-xs font-medium text-amber-700 dark:text-amber-400">
-                    <p v-if="noApplications">{{ labels.viewing_no_applications }}</p>
-                    <p v-if="job !== null">{{ labels.viewing_job.replace(':id', String(job)) }}</p>
+                <div v-if="noApplications || job !== null" class="mt-3 flex flex-wrap items-center gap-2">
+                    <span
+                        v-if="noApplications"
+                        class="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300"
+                    >
+                        {{ labels.no_applications_filter }}
+                        <button
+                            type="button"
+                            class="inline-flex h-4 w-4 items-center justify-center rounded-full text-amber-600 transition hover:bg-amber-200/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                            :aria-label="labels.clear_no_applications"
+                            @click="noApplications = false; clearFilters()"
+                        >
+                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                        </button>
+                    </span>
+                    <span v-if="job !== null" class="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-medium text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
+                        {{ labels.viewing_job.replace(':id', String(job)) }}
+                    </span>
                 </div>
             </section>
 

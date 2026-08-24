@@ -210,14 +210,14 @@ const healthDotClass = (status: string) => {
 }
 
 const accentBorder = (accent: string) => {
-    if (accent === 'amber') return 'border-l-4 border-l-amber-500'
-    if (accent === 'teal') return 'border-l-4 border-l-teal-600'
-    return 'border-l-4 border-l-stone-400'
+    if (accent === 'amber') return 'before:bg-amber-500'
+    if (accent === 'teal') return 'before:bg-teal-600'
+    return 'before:bg-stone-400'
 }
 
 const changeRange = () => {
     isRefreshing.value = true
-    router.get(localeUrl('/admin/dashboard'), { range: selectedRange.value }, {
+    router.get(localeUrl('/admin/dashboard/preview'), { range: selectedRange.value }, {
         only: ['dashboard'],
         preserveState: true,
         preserveScroll: true,
@@ -270,7 +270,7 @@ const changeRange = () => {
                         :href="card.href ?? '#'"
                         :aria-disabled="card.href ? undefined : 'true'"
                         :tabindex="card.href ? undefined : '-1'"
-                        :class="['group relative overflow-hidden rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-stone-800 dark:bg-stone-900/70 sm:p-5', accentBorder(card.accent), card.href ? 'hover:border-amber-300 hover:shadow-sm dark:hover:border-amber-500/40' : 'pointer-events-none']"
+                        :class="['group relative overflow-hidden rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur transition before:absolute before:left-0 before:top-0 before:h-full before:w-1 before:content-[\'\'] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-stone-800 dark:bg-stone-900/70 sm:p-5', accentBorder(card.accent), card.href ? 'hover:border-amber-300 hover:shadow-sm dark:hover:border-amber-500/40' : 'pointer-events-none']"
                     >
                         <p class="text-[11px] font-semibold uppercase tracking-[0.13em] text-stone-500 dark:text-stone-400">{{ card.label }}</p>
                         <p class="mt-3 text-3xl font-semibold tracking-tight text-stone-950 dark:text-white">{{ formatNumber(dashboard.metrics[card.key].value) }}</p>

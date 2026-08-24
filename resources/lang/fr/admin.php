@@ -146,6 +146,7 @@ return [
     'all_statuses' => 'Tous les statuts',
     'status' => 'Statut',
     'no_applications_filter' => 'Sans candidature',
+    'clear_no_applications' => 'Effacer le filtre sans candidature',
     'no_jobs_found' => 'Aucun emploi trouvé',
     'no_jobs_match' => 'Aucun emploi ne correspond à vos filtres.',
     'published' => 'Publié',

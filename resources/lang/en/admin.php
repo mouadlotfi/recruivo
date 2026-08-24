@@ -146,6 +146,7 @@ return [
     'all_statuses' => 'All statuses',
     'status' => 'Status',
     'no_applications_filter' => 'No applications',
+    'clear_no_applications' => 'Clear no-applications filter',
     'no_jobs_found' => 'No jobs found',
     'no_jobs_match' => 'No jobs match your filters.',
     'published' => 'Published',

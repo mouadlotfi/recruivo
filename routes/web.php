@@ -158,6 +158,7 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(\App\Http\Mi
         // Admin routes
         Route::middleware('role:Admin')->prefix('admin')->name('admin.')->group(function () {
             Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/dashboard/preview', [\App\Http\Controllers\Admin\DashboardController::class, 'preview'])->name('dashboard.preview');
             Route::get('/jobs', [\App\Http\Controllers\Admin\JobController::class, 'index'])->name('jobs');
             Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users');
             Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');

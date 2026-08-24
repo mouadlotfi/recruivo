@@ -20,6 +20,16 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function preview(Request $request, AdminDashboardService $dashboardService): Response
+    {
+        $range = $dashboardService->normalizeRange($request->query('range'));
+
+        return Inertia::render('Admin/DashboardPreview', [
+            'dashboard' => fn (): array => $this->serializeDashboard($dashboardService->build($range)),
+            'labels' => $this->labels(),
+        ]);
+    }
+
     /**
      * @param  array<string, mixed>  $dashboard
      * @return array<string, mixed>

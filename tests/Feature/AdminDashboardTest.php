@@ -463,6 +463,48 @@ class AdminDashboardTest extends TestCase
         $this->assertLessThan(50, $queryCount);
     }
 
+    public function test_jobs_without_applications_attention_links_to_admin_jobs_filtered_not_public_jobs(): void
+    {
+        $admin = $this->admin();
+        $company = Company::factory()->create();
+        $recruiter = User::factory()->for($company)->create();
+        $recruiter->assignRole('Recruiter');
+
+        Job::factory()->for($company)->for($recruiter, 'recruiter')->create([
+            'status' => JobStatus::Published->value,
+            'published_at' => now()->subDays(8),
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/en/admin/dashboard')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('dashboard.attention.0.key', 'jobs_without_applications')
+                ->where('dashboard.attention.0.action_url', localized_route('admin.jobs', ['no_applications' => 1]))
+            );
+    }
+
+    public function test_dashboard_kpi_cards_resolve_to_real_admin_destinations(): void
+    {
+        $this->actingAs($this->admin())
+            ->get('/en/admin/dashboard')
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('labels.users', 'Registered users')
+                ->where('labels.live_jobs', 'Live jobs')
+                ->where('labels.recruiters', 'Recruiters')
+            );
+
+        // The KPI drill-down destinations must exist and be admin-scoped.
+        $this->get('/en/admin/users')->assertOk();
+        $this->get('/en/admin/jobs?status=published')->assertOk();
+        $this->get('/en/admin/users?role=Recruiter')->assertOk();
+
+        // A non-admin must never reach these (drill-down safety).
+        $candidate = User::factory()->create();
+        $candidate->assignRole('Candidate');
+        $this->actingAs($candidate)->get('/en/admin/users?role=Recruiter')->assertForbidden();
+        $this->actingAs($candidate)->get('/en/admin/jobs?status=published')->assertForbidden();
+    }
+
     private function admin(): User
     {
         $admin = User::factory()->create();
