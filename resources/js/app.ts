@@ -4,11 +4,8 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 
 import '../css/app.css'
 
-// CACHE-BUST: admin dashboard redesign rollout (remove after confirmed)
-const __BUILD_ID__ = 'admin-vuestic-2026-08-21'
-
 createInertiaApp({
-    title: (title) => (title ? `${title} — Recruivo` : `Recruivo ${__BUILD_ID__}`),
+    title: (title) => (title ? `${title} — Recruivo` : 'Recruivo'),
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.vue`,

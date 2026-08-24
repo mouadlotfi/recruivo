@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
 import AdminLayout from '../../Components/Admin/AdminLayout.vue'
@@ -101,11 +101,9 @@ const selectedRange = ref(String(props.dashboard.range))
 const activeMetric = ref<MetricKey>('applications')
 const isRefreshing = ref(false)
 
-watchRange()
-function watchRange() {
-    // keep local select in sync if range prop changes
-    selectedRange.value = String(props.dashboard.range)
-}
+watch(() => props.dashboard.range, (range) => {
+    selectedRange.value = String(range)
+})
 
 const rangeOptions = computed(() => [
     { value: '7', label: props.labels.last_7_days },
@@ -241,13 +239,9 @@ const changeRange = () => {
                     <p class="mt-1.5 text-sm text-stone-600 dark:text-stone-400">{{ dashboard.period.label }}</p>
                 </div>
                 <div class="flex shrink-0 items-center gap-2">
-                    <span class="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white/70 px-2.5 py-1 text-[11px] font-medium text-stone-500 dark:border-stone-700 dark:bg-stone-900/60 dark:text-stone-400">
-                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
-                        {{ labels.admin_area }} preview
-                    </span>
-                    <label for="preview-date-range" class="sr-only">{{ labels.range }}</label>
+                    <label for="dashboard-date-range" class="sr-only">{{ labels.range }}</label>
                     <select
-                        id="preview-date-range"
+                        id="dashboard-date-range"
                         v-model="selectedRange"
                         :disabled="isRefreshing"
                         :aria-busy="isRefreshing"
@@ -261,16 +255,19 @@ const changeRange = () => {
             </header>
 
             <!-- KPI summary -->
-            <section aria-labelledby="preview-kpi-heading">
-                <h2 id="preview-kpi-heading" class="sr-only">{{ labels.title }}</h2>
+            <section aria-labelledby="dashboard-kpi-heading">
+                <h2 id="dashboard-kpi-heading" class="sr-only">{{ labels.title }}</h2>
                 <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-                    <Link
+                    <component
+                        :is="card.href ? Link : 'div'"
                         v-for="card in metricCards"
                         :key="card.key"
-                        :href="card.href ?? '#'"
-                        :aria-disabled="card.href ? undefined : 'true'"
-                        :tabindex="card.href ? undefined : '-1'"
-                        :class="['group relative overflow-hidden rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-stone-800 dark:bg-stone-900/70 sm:p-5', accentBorder(card.accent), card.href ? 'hover:border-amber-300 hover:shadow-sm dark:hover:border-amber-500/40' : 'pointer-events-none']"
+                        :href="card.href || undefined"
+                        :class="[
+                            'relative overflow-hidden rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5',
+                            accentBorder(card.accent),
+                            card.href ? 'group transition hover:border-amber-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:hover:border-amber-500/40' : ''
+                        ]"
                     >
                         <p class="text-[11px] font-semibold uppercase tracking-[0.13em] text-stone-500 dark:text-stone-400">{{ card.label }}</p>
                         <p class="mt-3 text-3xl font-semibold tracking-tight text-stone-950 dark:text-white">{{ formatNumber(dashboard.metrics[card.key].value) }}</p>
@@ -283,17 +280,17 @@ const changeRange = () => {
                             <template v-if="card.key === 'applications'">{{ card.periodLabel }}</template>
                             <template v-else>+{{ formatNumber(dashboard.metrics[card.key].period_count) }} {{ card.periodLabel }}</template>
                         </p>
-                    </Link>
+                    </component>
                 </div>
             </section>
 
             <!-- Growth (2/3) + Attention (1/3) -->
             <div class="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-                <section aria-labelledby="preview-growth-heading" class="min-w-0 rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+                <section aria-labelledby="dashboard-growth-heading" class="min-w-0 rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
                     <div class="flex items-center gap-3 border-b border-stone-200/70 pb-3 dark:border-stone-800">
                         <span class="h-4 w-1 rounded-full bg-amber-500" aria-hidden="true"></span>
                         <div>
-                            <h2 id="preview-growth-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.platform_growth }}</h2>
+                            <h2 id="dashboard-growth-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.platform_growth }}</h2>
                             <p class="text-xs text-stone-500 dark:text-stone-400">{{ labels.growth_help }}</p>
                         </div>
                         <div class="ml-auto flex max-w-full overflow-x-auto rounded-lg border border-stone-200/80 bg-stone-50/80 p-1 dark:border-stone-700 dark:bg-stone-950/50" role="group" :aria-label="labels.platform_growth">
@@ -322,10 +319,10 @@ const changeRange = () => {
                     </div>
                 </section>
 
-                <section aria-labelledby="preview-attention-heading" class="rounded-xl border border-stone-200/70 bg-white/80 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70">
+                <section aria-labelledby="dashboard-attention-heading" class="rounded-xl border border-stone-200/70 bg-white/80 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70">
                     <div class="flex items-center gap-3 border-b border-stone-200/70 px-4 py-4 dark:border-stone-800 sm:px-5">
                         <span class="h-4 w-1 rounded-full bg-amber-500" aria-hidden="true"></span>
-                        <h2 id="preview-attention-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.needs_attention }}</h2>
+                        <h2 id="dashboard-attention-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.needs_attention }}</h2>
                     </div>
                     <div v-if="dashboard.attention.length === 0" class="flex items-center gap-3 px-4 py-6 text-sm text-stone-600 dark:text-stone-400 sm:px-5">
                         <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" aria-hidden="true">✓</span>
@@ -349,11 +346,11 @@ const changeRange = () => {
             </div>
 
             <!-- Application pipeline (segmented bar) -->
-            <section aria-labelledby="preview-pipeline-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+            <section aria-labelledby="dashboard-pipeline-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
                 <div class="flex items-center gap-3 border-b border-stone-200/70 pb-3 dark:border-stone-800">
                     <span class="h-4 w-1 rounded-full bg-teal-600" aria-hidden="true"></span>
                     <div>
-                        <h2 id="preview-pipeline-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ applicationPipelineTitle }}</h2>
+                        <h2 id="dashboard-pipeline-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ applicationPipelineTitle }}</h2>
                         <p class="text-xs text-stone-500 dark:text-stone-400">{{ applicationPipelineHelp }}</p>
                     </div>
                 </div>
@@ -384,11 +381,11 @@ const changeRange = () => {
             </section>
 
             <!-- Marketplace health -->
-            <section aria-labelledby="preview-marketplace-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+            <section aria-labelledby="dashboard-marketplace-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
                 <div class="flex items-center gap-3 border-b border-stone-200/70 pb-3 dark:border-stone-800">
                     <span class="h-4 w-1 rounded-full bg-teal-600" aria-hidden="true"></span>
                     <div>
-                        <h2 id="preview-marketplace-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.marketplace_health }}</h2>
+                        <h2 id="dashboard-marketplace-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.marketplace_health }}</h2>
                         <p class="text-xs text-stone-500 dark:text-stone-400">{{ marketplaceHelp }}</p>
                     </div>
                 </div>
@@ -404,11 +401,11 @@ const changeRange = () => {
             </section>
 
             <!-- Recent activity (timeline) -->
-            <section aria-labelledby="preview-activity-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+            <section aria-labelledby="dashboard-activity-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
                 <div class="flex items-center gap-3 border-b border-stone-200/70 pb-3 dark:border-stone-800">
                     <span class="h-4 w-1 rounded-full bg-amber-500" aria-hidden="true"></span>
                     <div>
-                        <h2 id="preview-activity-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.recent_activity }}</h2>
+                        <h2 id="dashboard-activity-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.recent_activity }}</h2>
                         <p class="text-xs text-stone-500 dark:text-stone-400">{{ labels.activity_help }}</p>
                     </div>
                 </div>
@@ -437,10 +434,10 @@ const changeRange = () => {
             </section>
 
             <!-- System health -->
-            <section id="preview-system-health" aria-labelledby="preview-system-health-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
+            <section id="dashboard-system-health" aria-labelledby="dashboard-system-health-heading" class="rounded-xl border border-stone-200/70 bg-white/80 p-4 backdrop-blur dark:border-stone-800 dark:bg-stone-900/70 sm:p-5">
                 <div class="flex items-center gap-3 border-b border-stone-200/70 pb-3 dark:border-stone-800">
                     <span class="h-4 w-1 rounded-full bg-emerald-500" aria-hidden="true"></span>
-                    <h2 id="preview-system-health-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.system_health }}</h2>
+                    <h2 id="dashboard-system-health-heading" class="text-base font-semibold text-stone-900 dark:text-white">{{ labels.system_health }}</h2>
                 </div>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <div v-for="health in dashboard.systemHealth" :key="health.key" class="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-stone-200/70 px-3 py-3 dark:border-stone-800">
