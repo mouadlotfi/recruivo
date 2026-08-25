@@ -25,7 +25,6 @@ class ApplicationController extends Controller
             && $submissionToken !== ''
             && hash_equals((string) ($submission['token'] ?? ''), $submissionToken);
 
-        // Check if user has already applied
         if ($user->applications()->where('job_id', $job->id)->exists()) {
             if ($isSameCompletedSubmission) {
                 return redirect(localized_route('jobs.show', $job))->with('success', __('jobs.application_submitted'));
@@ -76,7 +75,6 @@ class ApplicationController extends Controller
             $request->session()->put("job_application_submission.{$job->id}.completed", true);
         }
 
-        // Send notification to recruiter
         collect([$job->recruiter])
             ->merge($job->company?->recruiters ?? collect())
             ->filter()

@@ -49,9 +49,7 @@ class CompanyProfileController extends Controller
         $company = Company::findOrFail($user->company_id);
         $data = $request->validated();
         
-        // Handle logo upload
         if ($request->hasFile('logo')) {
-            // Delete old logo if exists
             if ($company->logo_path) {
                 Storage::disk('public')->delete($company->logo_path);
             }

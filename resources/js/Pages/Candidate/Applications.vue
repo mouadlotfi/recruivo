@@ -27,9 +27,7 @@ const tabs = computed(() =>
     })),
 )
 
-// "Show more" visits next_page_url with preserveState. Keep loaded pages in
-// local state, but replace the page returned by Inertia so status mutations
-// cannot leave stale cards behind.
+// Merges pagination chunks in local state while preserving real-time status updates.
 const items = ref<CandidateApplication[]>([...props.applications])
 watch(
     () => [props.status, props.pagination.current_page, props.applications] as const,

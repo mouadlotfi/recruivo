@@ -12,17 +12,14 @@ class JobPolicy
      */
     public function view(User $user, Job $job): bool
     {
-        // Recruiters can view their own company's jobs
         if ($user->hasRole('Recruiter')) {
             return $user->company_id === $job->company_id;
         }
 
-        // Admins can view any job
         if ($user->hasRole('Admin')) {
             return true;
         }
 
-        // Candidates can view published jobs
         return $job->isPubliclyVisible();
     }
 
@@ -39,12 +36,10 @@ class JobPolicy
      */
     public function update(User $user, Job $job): bool
     {
-        // Only recruiters from the same company can update
         if ($user->hasRole('Recruiter')) {
             return $user->company_id === $job->company_id;
         }
 
-        // Admins can update any job
         return $user->hasRole('Admin');
     }
 
@@ -53,12 +48,10 @@ class JobPolicy
      */
     public function delete(User $user, Job $job): bool
     {
-        // Only recruiters from the same company can delete
         if ($user->hasRole('Recruiter')) {
             return $user->company_id === $job->company_id;
         }
 
-        // Admins can delete any job
         return $user->hasRole('Admin');
     }
 }

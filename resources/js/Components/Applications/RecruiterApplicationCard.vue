@@ -15,9 +15,7 @@ const props = defineProps<{
 
 const page = usePage<PageProps>()
 
-// Same guard as the Blade @if($errors->any()) open — a failed validation
-// must not hide behind a collapsed card (all cards open on error; the errors
-// are shared page props, matching the Blade behavior).
+// Expand cards when validation errors exist so error messages are immediately visible.
 const hasPageErrors = computed(() => Object.keys(page.props.errors).length > 0)
 
 const showReviewPanel = computed(() => props.application.is_withdrawn || props.application.can_review)

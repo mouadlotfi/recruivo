@@ -79,9 +79,7 @@ class PasswordResetController extends Controller
     public function reset(Request $request)
     {
         $email = $request->input('email');
-        // Extract username from email (part before @)
         $username = $email ? explode('@', $email)[0] : null;
-
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],

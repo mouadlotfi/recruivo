@@ -18,20 +18,14 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Get locale from URL parameter
         $locale = $request->route('locale');
-        
-        // Get supported locales from config
         $supportedLocales = config('locales.supported', ['en', 'fr']);
         
-        // Validate and set locale
         if ($locale && in_array($locale, $supportedLocales)) {
             App::setLocale($locale);
         } else {
-            // Fall back to default locale from config
             App::setLocale(config('locales.default', config('app.locale')));
         }
-        
         return $next($request);
     }
 }

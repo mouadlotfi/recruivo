@@ -45,16 +45,14 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         $email = $this->input('email');
-        // Extract username from email (part before @)
         $username = $email ? explode('@', $email)[0] : null;
-
         return [
             'account_type' => ['required', Rule::in(['candidate', 'company'])],
             'name' => ['required_if:account_type,candidate', 'nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'confirmed', new StrongPassword($username)],
             'phone' => ['nullable', 'string', 'max:20'],
-            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'], // 5MB max
+            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
             'company.name' => ['required_if:account_type,company', 'string', 'max:255'],
             'company.tagline' => ['nullable', 'string', 'max:255'],
             'company.location' => ['required_if:account_type,company', 'nullable', 'string', 'max:255'],

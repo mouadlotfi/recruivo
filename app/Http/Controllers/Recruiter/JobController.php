@@ -109,10 +109,7 @@ class JobController extends Controller
         $data['company_id'] = $request->user()->company_id;
         $data['recruiter_id'] = $request->user()->id;
 
-        // Set status based on user selection
         $data['status'] = $data['status'] === 'published' ? JobStatus::Published : JobStatus::Draft;
-
-        // Set published_at if status is published
         if ($data['status'] === JobStatus::Published) {
             $data['published_at'] = now();
         }
@@ -159,11 +156,9 @@ class JobController extends Controller
 
         $data = $request->validated();
 
-        // Handle status changes
         if (isset($data['status'])) {
             $data['status'] = $data['status'] === 'published' ? JobStatus::Published : JobStatus::Draft;
 
-            // Set published_at if status is being changed to published
             if ($data['status'] === JobStatus::Published && $job->status !== JobStatus::Published) {
                 $data['published_at'] = now();
             }

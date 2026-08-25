@@ -12,7 +12,6 @@ class SearchController extends Controller
     {
         $query = $searchService->normalize($request->input('q', ''));
         
-        // Allow search from 1 character instead of 2
         if (strlen($query) < 1) {
             return response()->json([
                 'query' => '',
@@ -23,7 +22,6 @@ class SearchController extends Controller
 
         $locale = app()->getLocale();
 
-        // Search jobs - enhanced to match main search
         $jobs = $searchService->jobs($query)->take(5)
             ->map(function ($job) use ($locale) {
                 return [
@@ -36,7 +34,6 @@ class SearchController extends Controller
                 ];
             });
 
-        // Search companies - enhanced
         $companies = $searchService->companies($query)->take(5)
             ->map(function ($company) use ($locale) {
                 return [

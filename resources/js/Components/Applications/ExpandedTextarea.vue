@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onUnmounted, ref, useId } from 'vue'
 
-// Port of resources/views/components/expanded-textarea.blade.php to Vue.
-// Controlled component: the trigger button + modal live here, the real
-// textarea stays in the parent (v-model). Done commits the draft via
-// update:modelValue; Cancel/Escape discard it. Minimal focus handling:
-// focus the modal textarea on open, restore the trigger on close.
+// Modal textarea editor that commits drafts to the parent v-model on confirmation.
 const props = defineProps<{
     title: string
     expandLabel: string

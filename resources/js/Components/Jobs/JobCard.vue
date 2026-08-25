@@ -3,9 +3,7 @@ import { computed, ref } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps, JobSummary } from '../../types'
 
-// Port of resources/views/components/job-card.blade.php to Vue. Card root is
-// a relative div with a stretched title link (before:absolute) — every
-// in-card link/button needs relative z-10 or clicks open the job.
+// Card uses a stretched link overlay (before:absolute); interactive elements require relative z-10.
 const props = defineProps<{
     job: JobSummary
     labels: Record<string, string>

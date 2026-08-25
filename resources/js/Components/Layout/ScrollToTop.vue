@@ -4,8 +4,7 @@ import { useTranslation } from '../../composables/useTranslation'
 
 const { t } = useTranslation()
 
-// Port of resources/js/scroll-to-top.js: visible after 500px, smooth scroll
-// honouring prefers-reduced-motion.
+// Smooth scroll-to-top control, visible after 500px of scroll depth.
 const visible = ref(false)
 
 const updateVisibility = () => {

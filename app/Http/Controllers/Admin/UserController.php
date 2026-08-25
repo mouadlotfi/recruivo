@@ -25,7 +25,6 @@ class UserController extends Controller
             });
         }
 
-        // Filter by role
         if ($role = $request->input('role')) {
             $query->whereHas('roles', function ($q) use ($role) {
                 $q->where('name', $role);
@@ -108,7 +107,7 @@ class UserController extends Controller
             return back()->with('error', __('admin.cannot_delete_admin'));
         }
 
-        $deletionService->deleteUserAccount($user, false); // false = initiated by admin, not user
+        $deletionService->deleteUserAccount($user, false);
 
         return back()->with('success', __('admin.user_deleted'));
     }

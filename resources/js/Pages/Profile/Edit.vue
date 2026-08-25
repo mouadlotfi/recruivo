@@ -373,9 +373,6 @@ function dateRange(start: string, end: string | null, current: boolean): string 
 }
 
 function fieldError(key: string): string | undefined {
-    // Errors are keyed by the form's field names (including dotted paths such
-    // as `company.name`); a precise key cast is safe because any unknown key
-    // simply yields undefined at runtime, exactly as before.
     return profileForm.errors[key as keyof ProfileFormData]
 }
 

@@ -8,10 +8,6 @@ import { useDismiss } from '../../composables/useDismiss'
 const page = usePage<PageProps>()
 const { t } = useTranslation()
 
-// Port of resources/views/partials/notification-center.blade.php (bell + badge
-// + dropdown). The shared props only carry the unread count, not the list;
-// mark-all-as-read posts like the Blade form do. ponytail: render the list
-// when a notifications endpoint/page lands.
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 useDismiss(open, root)

@@ -64,15 +64,11 @@ class LoginController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
-            
-            // Check if this is the first login (no last_login_at set)
             if (!$user->last_login_at) {
                 $request->session()->put('first_login', true);
             }
             
-            // Update last login timestamp
             $user->update(['last_login_at' => now()]);
-            
             if ($user->hasRole('Admin')) {
                 return redirect()->intended(localized_route('admin.dashboard'));
             }

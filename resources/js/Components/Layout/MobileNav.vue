@@ -5,8 +5,6 @@ import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
 import { useDismiss } from '../../composables/useDismiss'
 
-// Mobile bottom nav — port of resources/views/partials/mobile-nav.blade.php.
-// The Explore popover is COMPACT (absolute above the item, w-max, not full-width).
 const page = usePage<PageProps>()
 const { t } = useTranslation()
 
@@ -16,7 +14,7 @@ const isCandidate = computed(() => user.value?.roles.includes('Candidate') ?? fa
 const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
-// Compare against the pathname only so query strings (filters, pagination) don't kill active states.
+// Match pathname prefix so active states persist during filter or query changes.
 const isActive = (href: string) => {
     const path = page.url.split('?')[0]
     return path === href || path.startsWith(`${href}/`)
@@ -30,8 +28,7 @@ const itemClasses = (href: string) => [itemClass, isActive(href) ? activeClass :
 const exploreOpen = ref(false)
 const recruiterExploreRoot = ref<HTMLElement | null>(null)
 const candidateExploreRoot = ref<HTMLElement | null>(null)
-// ponytail: two refs because template refs with the same name in exclusive v-if branches warn;
-// both handlers guard on their own (possibly null) root.
+// Separate template refs per role branch to avoid Vue duplicate-ref warnings.
 useDismiss(exploreOpen, recruiterExploreRoot)
 useDismiss(exploreOpen, candidateExploreRoot)
 const exploreActive = computed(() => isActive(localeUrl('/jobs')) || isActive(localeUrl('/companies')))

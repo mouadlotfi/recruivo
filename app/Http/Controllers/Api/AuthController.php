@@ -26,7 +26,6 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // Find user by personal email (both candidates and recruiters use personal email for login)
         $user = User::where('email', $credentials['email'])->first();
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
@@ -38,7 +37,6 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // Check if email is verified
         if (!$user->hasVerifiedEmail()) {
             return response()->json([
                 'message' => 'Please verify your email address before logging in.',
@@ -46,7 +44,7 @@ class AuthController extends Controller
                     'email' => ['Please verify your email address before logging in.']
                 ],
                 'requires_verification' => true,
-                'email' => $user->email, // Always use personal email for verification
+                'email' => $user->email,
             ], 403);
         }
 
@@ -65,7 +63,6 @@ class AuthController extends Controller
 
         $user = $this->registrationService->register($data, $resumeFile);
 
-        // Send custom signup confirmation notification
         $user->notify(new \App\Notifications\SignupConfirmationNotification($user));
 
         return response()->json([

@@ -100,10 +100,8 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(\App\Http\Mi
         $user->markEmailAsVerified();
         event(new \Illuminate\Auth\Events\Verified($user));
         
-        // Login the user automatically after verification
         auth()->login($user);
         
-        // Redirect based on user role
         if ($user->hasRole('Recruiter')) {
             return redirect(localized_route('recruiter.dashboard'))->with('verified', true);
         } elseif ($user->hasRole('Candidate')) {

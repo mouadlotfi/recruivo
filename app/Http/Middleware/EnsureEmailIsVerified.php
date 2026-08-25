@@ -25,9 +25,7 @@ class EnsureEmailIsVerified
             ($request->user() instanceof MustVerifyEmail &&
             ! $request->user()->hasVerifiedEmail())) {
             
-            // Get the locale from the route parameter
             $locale = $request->route('locale') ?? app()->getLocale();
-            
             return $request->expectsJson()
                     ? abort(403, __('auth.email_not_verified_api'))
                     : Redirect::route($redirectToRoute ?: 'verification.notice', ['locale' => $locale]);

@@ -14,22 +14,18 @@ class ProductionOptimize extends Command
     {
         $this->info('Optimizing application for production...');
 
-        // Clear all caches first
         $this->call('cache:clear');
         $this->call('config:clear');
         $this->call('route:clear');
         $this->call('view:clear');
         $this->call('event:clear');
 
-        // Optimize for production
         $this->call('config:cache');
         $this->call('route:cache');
         $this->call('view:cache');
         $this->call('event:cache');
 
-        // Optimize autoloader
         $this->call('optimize');
-
         $this->info('Application optimized for production!');
     }
 }

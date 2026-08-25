@@ -23,7 +23,6 @@ class SignupConfirmationNotification extends Notification implements ShouldQueue
     {
         $accountType = $this->user->hasRole('Recruiter') ? 'recruiter' : 'candidate';
 
-        // Use Laravel's built-in verification URL generation
         $verificationUrl = $notifiable->getEmailVerificationUrl();
 
         $mailMessage = (new MailMessage)

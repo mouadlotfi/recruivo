@@ -23,7 +23,6 @@ class EmailChangeVerificationNotification extends Notification implements Should
     {
         $accountType = $this->user->hasRole('Recruiter') ? 'recruiter' : 'candidate';
 
-        // Use the custom email change verification URL
         $verificationUrl = $this->user->getEmailChangeVerificationUrl();
 
         $mailMessage = (new MailMessage)

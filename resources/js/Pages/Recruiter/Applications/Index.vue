@@ -38,9 +38,7 @@ const manageTemplatesUrl = computed(() =>
     localeUrl(`/recruiter/note-templates?back=${encodeURIComponent(page.url)}`),
 )
 
-// "Show more" visits next_page_url with preserveState: Inertia swaps
-// `applications` for the fresh page's items, so keep a local list and append
-// whatever ids we don't already have.
+// Appends next-page application records to the local list.
 const items = ref<RecruiterApplication[]>([...props.applications])
 watch(
     () => props.applications,

@@ -5,9 +5,6 @@ import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
 import SearchAutocomplete from '../Search/Autocomplete.vue'
 
-// Minimal structural contract (focus only) so callers can pass any element
-// type — template refs may be checked against a different DOM lib than this
-// component's — and the modal only ever calls .focus() on it.
 interface FocusableElement {
     focus(): void
 }
@@ -63,8 +60,7 @@ const onWindowFocusin = (event: FocusEvent) => {
     ;(firstInput() ?? input.value ?? focusableElements()[0] ?? dialog.value).focus()
 }
 
-// The autocomplete input lives inside the child SearchAutocomplete component;
-// the dialog's first input is the search field — not the close button.
+// Focus the primary search input on open.
 const firstInput = () => dialog.value?.querySelector<HTMLElement>('input:not([disabled])') ?? null
 
 const focusableElements = () => Array.from(

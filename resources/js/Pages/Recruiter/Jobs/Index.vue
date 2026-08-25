@@ -14,9 +14,7 @@ const page = usePage<PageProps>()
 const locale = computed(() => page.props.locale)
 const localeUrl = (path: string) => `/${locale.value}${path}`
 
-// "Show more" visits next_page_url with preserveState: Inertia swaps `jobs`
-// for the fresh page's items. Keep one bucket per loaded server page so a
-// page-1 refresh replaces changed/deleted jobs without discarding later pages.
+// Buckets loaded jobs by page number to reconcile status changes without losing pagination state.
 const pageItems = ref(new Map<number, RecruiterJobSummary[]>([
     [props.pagination.current_page, [...props.jobs]],
 ]))
@@ -68,7 +66,6 @@ const jobShowUrl = (job: RecruiterJobSummary) => localeUrl(`/recruiter/jobs/${jo
 const jobApplicationsUrl = (job: RecruiterJobSummary) => localeUrl(`/recruiter/jobs/${job.id}/applications`)
 const jobEditUrl = (job: RecruiterJobSummary) => localeUrl(`/recruiter/jobs/${job.id}/edit`)
 
-// Native confirm() mirrors the Blade delete-modal's confirm step without a modal.
 const selectedJob = ref<RecruiterJobSummary | null>(null)
 const deleteDialog = ref<HTMLElement | null>(null)
 const deleteCancelButton = ref<HTMLButtonElement | null>(null)

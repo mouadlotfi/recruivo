@@ -13,8 +13,7 @@ const props = defineProps<{
 const page = usePage<PageProps>()
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
 
-// Contract values validated server-side (in:remote,hybrid,onsite /
-// in:draft,published) — labels come from the labels prop.
+// Allowed enum values validated by backend FormRequest.
 const REMOTE_TYPES = ['remote', 'hybrid', 'onsite'] as const
 const STATUSES = ['draft', 'published'] as const
 
@@ -52,7 +51,7 @@ const actionUrl = computed(() =>
         : localeUrl('/recruiter/jobs'),
 )
 
-// Local calendar date (matches the server's `today()` for the closes_at min).
+// Formatted as YYYY-MM-DD for native <input type="date"> min constraint.
 const today = (() => {
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, '0')

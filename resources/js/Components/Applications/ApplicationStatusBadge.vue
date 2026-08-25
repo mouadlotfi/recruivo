@@ -6,8 +6,6 @@ const props = defineProps<{
     label: string
     showDot?: boolean
 }>()
-
-// Same coding as resources/views/candidate/applications.blade.php
 const COLORS: Record<string, string> = {
     pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
     shortlisted: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',

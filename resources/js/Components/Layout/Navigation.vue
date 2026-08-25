@@ -5,8 +5,6 @@ import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
 import { useDismiss } from '../../composables/useDismiss'
 
-// Desktop nav — port of the <nav> block in resources/views/partials/header.blade.php.
-// Role checks are UI-only gating; routes enforce server-side.
 const page = usePage<PageProps>()
 const { t } = useTranslation()
 
@@ -16,7 +14,7 @@ const isCandidate = computed(() => user.value?.roles.includes('Candidate') ?? fa
 const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
-// Compare against the pathname only so query strings (filters, pagination) don't kill active states.
+// Match pathname prefix so active states persist during filter or query changes.
 const isActive = (href: string) => {
     const path = page.url.split('?')[0]
     return path === href || path.startsWith(`${href}/`)

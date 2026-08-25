@@ -8,9 +8,6 @@ import { useDismiss } from '../../composables/useDismiss'
 const page = usePage<PageProps>()
 const { t } = useTranslation()
 
-// Only rendered when auth.user exists (AppLayout gates it), so the non-null
-// assertion is safe. The type is derived from the shared shell props so no
-// separate User import is needed here.
 type AuthUser = NonNullable<PageProps['auth']['user']>
 const user = computed(() => page.props.auth.user as AuthUser)
 const isRecruiter = computed(() => user.value.roles.includes('Recruiter'))

@@ -34,14 +34,10 @@ class ProfileController extends Controller
         $demoAccountGuard->ensureProfileIsMutable($user);
         $data = $request->validated();
 
-        // Handle resume upload for candidates
         if ($request->hasFile('resume') && $user->hasRole('Candidate')) {
             $resumePath = $request->file('resume')->store('resumes', 'private');
-            
-            // Update or create candidate profile
             $candidateProfile = $user->candidateProfile;
             if ($candidateProfile) {
-                // Delete old resume if exists
                 if ($candidateProfile->resume_path) {
                     Storage::disk('private')->delete($candidateProfile->resume_path);
                 }
@@ -93,7 +89,6 @@ class ProfileController extends Controller
         $user = Auth::user();
         $demoAccountGuard->ensureProfileIsMutable($user);
         
-        // Verify current password
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'message' => 'The current password is incorrect.',
@@ -103,14 +98,11 @@ class ProfileController extends Controller
             ], 422);
         }
         
-        // Update password
         $user->update([
             'password' => Hash::make($request->password)
         ]);
         
-        // Send password change notification
         $user->notify(new PasswordChangedNotification($user));
-        
         return response()->json([
             'message' => 'Password changed successfully'
         ]);

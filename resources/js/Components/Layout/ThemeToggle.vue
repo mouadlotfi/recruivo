@@ -3,8 +3,7 @@ import { useTranslation } from '../../composables/useTranslation'
 
 const { t } = useTranslation()
 
-// Port of resources/js/theme.js: toggles .dark on <html> + localStorage recruivo:theme.
-// inertia.blade.php sets the initial class from the recruivo:theme cookie (dark when absent).
+// Syncs theme state across <html> class, localStorage, and cookie.
 const THEME_COOKIE = 'recruivo:theme'
 
 const syncTheme = (dark: boolean) => {
@@ -14,8 +13,7 @@ const syncTheme = (dark: boolean) => {
     document.cookie = `${THEME_COOKIE}=${value}; path=/; max-age=31536000`
 }
 
-// Re-apply the stored preference on mount so the class matches localStorage
-// even when the cookie is absent (e.g. toggles from before cookies were written).
+// Re-apply stored preference on client mount.
 const stored = localStorage.getItem(THEME_COOKIE)
 if (stored === 'light' || stored === 'dark') syncTheme(stored === 'dark')
 

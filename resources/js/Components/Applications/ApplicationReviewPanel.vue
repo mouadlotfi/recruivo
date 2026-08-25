@@ -4,12 +4,7 @@ import { useForm, usePage } from '@inertiajs/vue3'
 import type { PageProps, RecruiterApplication, RecruiterNoteTemplate, ReviewFormData } from '../../types'
 import ExpandedTextarea from './ExpandedTextarea.vue'
 
-// Review form for one application. Starts at a NEUTRAL default (status '',
-// empty notes, no interview pre-fill) — never pre-filled with the
-// application's current state (matches the Blade contract). After a
-// successful PATCH the controller redirects back; reset() puts the select
-// back on the placeholder. Validation errors arrive via Inertia's shared
-// `errors` prop and are shown per field.
+// Status review form. Starts with neutral selection to require deliberate choice.
 const props = defineProps<{
     application: RecruiterApplication
     noteTemplates: RecruiterNoteTemplate[]
@@ -28,7 +23,7 @@ const form = useForm<ReviewFormData>({
     interview_instructions: '',
 })
 
-// Withdrawn is candidate-owned — recruiters can never set it.
+// Withdrawn status is candidate-controlled and omitted from recruiter actions.
 const STATUS_OPTIONS = ['pending', 'shortlisted', 'interview', 'accepted', 'rejected']
 
 const updateUrl = `/${page.props.locale}/recruiter/applications/${props.application.id}`

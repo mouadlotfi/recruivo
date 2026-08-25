@@ -121,7 +121,6 @@ class User extends Authenticatable implements MustVerifyEmailContract
     {
         $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
         
-        // Generate the signed URL with all parameters
         $url = URL::temporarySignedRoute(
             'verification.verify',
             now()->addMinutes(config('auth.verification.expire', 60)),
@@ -132,26 +131,21 @@ class User extends Authenticatable implements MustVerifyEmailContract
             ]
         );
         
-        // Parse the URL to extract parameters
         $parsedUrl = parse_url($url);
         $path = $parsedUrl['path'] ?? '';
         $query = $parsedUrl['query'] ?? '';
         parse_str($query, $params);
         
-        // Extract id and hash from the path (format: /email/verify/{id}/{hash})
         $pathParts = explode('/', trim($path, '/'));
-        $id = $pathParts[2] ?? ''; // /email/verify/{id}/{hash}
+        $id = $pathParts[2] ?? '';
         $hash = $pathParts[3] ?? '';
         
-        // Build the frontend URL with proper parameters
-        $frontendVerificationUrl = $frontendUrl . '/email-verify?' . http_build_query([
+        return $frontendUrl . '/email-verify?' . http_build_query([
             'id' => $id,
             'hash' => $hash,
             'expires' => $params['expires'] ?? '',
             'signature' => $params['signature'] ?? '',
         ]);
-        
-        return $frontendVerificationUrl;
     }
 
     /**

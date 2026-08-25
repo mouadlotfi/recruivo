@@ -3,9 +3,7 @@ import { computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import type { CompanyCardSummary, PageProps } from '../../types'
 
-// Port of resources/views/components/company-card.blade.php. Card root is a
-// relative div with a stretched name link (before:absolute) — every in-card
-// link needs relative z-10 or clicks open the company.
+// Card uses a stretched link overlay (before:absolute); interactive elements require relative z-10.
 const props = defineProps<{
     company: CompanyCardSummary
     labels: Record<string, string>

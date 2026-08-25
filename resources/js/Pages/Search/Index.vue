@@ -34,9 +34,7 @@ const hasCriteria = computed(() => Boolean(props.searchQuery || props.remoteType
 const hasActiveFilters = computed(() => Boolean(props.location || props.remoteType))
 const remoteTypeLabel = computed(() => (props.remoteType ? props.labels[props.remoteType] : ''))
 
-// Query params for a link/submit: current search/filter/remote_type/location
-// unless overridden; null/empty values are dropped (mirrors the Blade page,
-// which always keeps the filter param).
+// Compiles active query parameters, omitting empty fields.
 const paramsFor = (overrides: Partial<Record<'search' | 'filter' | 'remote_type' | 'location', string | null>> = {}) => {
     const params: Record<string, string> = {}
     const search = 'search' in overrides ? overrides.search : props.searchQuery
@@ -50,7 +48,6 @@ const paramsFor = (overrides: Partial<Record<'search' | 'filter' | 'remote_type'
     return params
 }
 
-// --- Search bar (live autocomplete via the shared SearchAutocomplete component) ---
 const searchInput = ref(props.searchQuery)
 watch(
     () => props.searchQuery,
@@ -62,15 +59,12 @@ watch(
 const submitSearch = () => {
     router.get(searchUrl, paramsFor({ search: searchInput.value.trim() }), { preserveState: true, preserveScroll: true })
 }
-
-// --- Result-type tabs ---
 const tabs = computed(() => [
     { key: 'all', label: props.labels.all, count: props.totalCount },
     { key: 'jobs', label: props.labels.jobs, count: props.jobsCount },
     { key: 'companies', label: props.labels.companies, count: props.companiesCount },
 ])
 
-// --- Filter panel ---
 const showFilters = ref(false)
 const panelLocation = ref(props.location ?? '')
 const panelRemoteType = ref(props.remoteType ?? '')
@@ -94,8 +88,6 @@ const applyPanelFilters = () => {
     })
 }
 
-// --- Sections (blade semantics: a section shows when the CURRENT page has
-// items; the empty state replaces the sections when none do) ---
 const showJobsSection = computed(() => ['all', 'jobs'].includes(props.filter) && props.jobs.length > 0)
 const showCompaniesSection = computed(() => ['all', 'companies'].includes(props.filter) && props.companies.length > 0)
 const showNoResults = computed(() => {
@@ -109,9 +101,7 @@ const noResultsTitle = computed(() => {
     return props.labels.no_results_title
 })
 
-// --- Dual pagination. Each list requests only its own props while loading
-// more, so a bookmark partial reload can always replace the jobs page even
-// when the companies list has already loaded additional pages.
+// Dual pagination maintains independent page state for jobs and companies.
 const jobItems = ref<JobSummary[]>([...props.jobs])
 watch(
     () => props.jobs,

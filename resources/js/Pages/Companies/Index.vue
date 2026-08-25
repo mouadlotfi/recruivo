@@ -15,10 +15,7 @@ const page = usePage<PageProps>()
 const locale = computed(() => page.props.locale)
 const localeUrl = (path: string) => `/${locale.value}${path}`
 
-// "Show more" visits next_page_url with preserveState; Inertia swaps
-// `companies` for the fresh page's items, so keep a local list keyed by id.
-// A fresh visit always lands on page 1 and replaces the list; load-more
-// visits append new ids.
+// Appends next-page items while resetting on initial page loads.
 const items = ref<CompanyCardSummary[]>([...props.companies])
 watch(
     () => props.companies,

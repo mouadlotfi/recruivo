@@ -44,18 +44,11 @@ class ApplicationController extends Controller
 
         $resumePath = null;
         
-        // Check if user wants to use existing resume
         if ($request->input('use_existing_resume') === 'true') {
             $resumePath = $user->candidateProfile?->resume_path;
-        }
-        
-        // If no existing resume or user uploaded a new one, use the uploaded file
-        if ($request->hasFile('resume')) {
+        } elseif ($request->hasFile('resume')) {
             $resumePath = $request->file('resume')->store('resumes', 'private');
-        }
-        
-        // If still no resume path, try to use existing one as fallback
-        if (!$resumePath) {
+        } else {
             $resumePath = $user->candidateProfile?->resume_path;
         }
 

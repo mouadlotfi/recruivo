@@ -238,16 +238,12 @@ class ProfileController extends Controller
                 $user->candidateProfile()->updateOrCreate([], $profileData);
             }
 
-            // Handle resume upload
             if ($request->hasFile('resume')) {
                 $profile = $user->candidateProfile;
-
-                // Delete old resume if exists
                 if ($profile && $profile->resume_path) {
                     Storage::disk('private')->delete($profile->resume_path);
                 }
 
-                // Generate shorter filename: userid_timestamp.extension
                 $extension = $request->file('resume')->getClientOriginalExtension();
                 $filename = $user->id.'_'.time().'.'.$extension;
                 $resumePath = $request->file('resume')->storeAs('resumes', $filename, 'private');
@@ -262,11 +258,9 @@ class ProfileController extends Controller
                 }
             }
         } elseif ($user->hasRole('Recruiter') && $user->company) {
-            // Update company profile
             $companyData = $data['company'] ?? [];
             $user->company->update($companyData);
 
-            // Handle logo upload
             if ($request->hasFile('logo')) {
                 if ($user->company->logo_path) {
                     Storage::disk('public')->delete($user->company->logo_path);
@@ -320,7 +314,6 @@ class ProfileController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        // Send notification
         $user->notify(new PasswordChangedNotification($user));
 
         return back()->with('success', __('profile.password_changed'));
@@ -338,17 +331,14 @@ class ProfileController extends Controller
         $oldEmail = $user->email;
         $newEmail = $validated['email'];
 
-        // Generate verification token
         $token = Str::random(60);
 
-        // Store pending email and token
         $user->update([
             'pending_email' => $newEmail,
             'email_verification_token' => Hash::make($token),
             'email_change_requested_at' => now(),
         ]);
 
-        // Send verification email to NEW email address
         Notification::route('mail', $newEmail)
             ->notify(new EmailChangeVerificationNotification($user));
 
@@ -365,7 +355,6 @@ class ProfileController extends Controller
             return redirect(localized_route('profile.edit'))->with('error', __('profile.no_pending_email'));
         }
 
-        // Verify hash matches pending email
         if (! hash_equals($hash, sha1($user->pending_email))) {
             return redirect(localized_route('profile.edit'))->with('error', __('profile.invalid_verification_link'));
         }
@@ -373,7 +362,6 @@ class ProfileController extends Controller
         $oldEmail = $user->email;
         $newEmail = $user->pending_email;
 
-        // Update email
         $user->update([
             'email' => $newEmail,
             'pending_email' => null,
@@ -382,7 +370,6 @@ class ProfileController extends Controller
             'email_verified_at' => now(),
         ]);
 
-        // Send confirmation to old email
         Notification::route('mail', $oldEmail)
             ->notify(new EmailChangedNotification($user, $oldEmail));
 

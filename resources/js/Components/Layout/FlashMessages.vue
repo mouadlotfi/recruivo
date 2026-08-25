@@ -7,8 +7,7 @@ import { useTranslation } from '../../composables/useTranslation'
 const page = usePage<PageProps>()
 const { t } = useTranslation()
 
-// Port of resources/views/components/alert.blade.php styling for the shared
-// flash props: success/error alerts, auto-dismiss after 5s, manual dismiss.
+// Flash message alerts with 5-second auto-dismiss and manual close.
 type Alert = { kind: 'success' | 'error'; message: string }
 
 const alerts = ref<Alert[]>([])

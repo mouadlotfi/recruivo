@@ -32,8 +32,6 @@ const salaryRange = computed(() => {
     return `$${Number(min ?? 0).toLocaleString()} - $${Number(max ?? 0).toLocaleString()}`
 })
 
-// Same design-system map as JobCard.vue (hybrid=green, onsite=orange,
-// remote=purple, fallback amber).
 const REMOTE_TYPE_STYLES: Record<string, string> = {
     hybrid: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-500/10 dark:text-green-300 dark:hover:bg-green-500/20',
     onsite: 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20',
@@ -56,11 +54,7 @@ const applyUrl = computed(() => localeUrl(`/jobs/${props.job.id}/apply`))
 const saveUrl = computed(() => localeUrl(`/candidate/saved-jobs/${props.job.id}`))
 const companyUrl = computed(() => (props.job.company ? localeUrl(`/companies/${props.job.company.slug}`) : null))
 
-// Apply form. submission_token is the session-bound token issued by
-// JobController::show; the backend validates it against
-// session('job_application_submission.{job.id}') so a stale/forged page
-// cannot mark a completed submission. forceFormData sends multipart so the
-// uploaded resume File travels with the request.
+// Single-use session token prevents duplicate application submissions.
 const form = useForm<{
     resume_source: 'profile' | 'upload'
     resume: File | null

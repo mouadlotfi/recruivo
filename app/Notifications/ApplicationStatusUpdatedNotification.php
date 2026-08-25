@@ -31,7 +31,6 @@ class ApplicationStatusUpdatedNotification extends Notification implements Shoul
             ->greeting('Hi '.$notifiable->name)
             ->line(''.$companyName.' has marked your application for '.$job->title.' as '.$statusLabel.'.');
 
-        // Add interview details if this is an interview update
         if ($this->application->status === ApplicationStatus::Interview && $this->application->interview_at) {
             $mailMessage->line('Interview scheduled for '.$this->application->interview_at->translatedFormat('l, F j, Y \a\t g:i A'));
             if ($this->application->interview_location) {
@@ -45,7 +44,6 @@ class ApplicationStatusUpdatedNotification extends Notification implements Shoul
             }
         }
 
-        // Add notes if they exist
         if ($this->application->notes) {
             $mailMessage->line('Additional notes from the recruiter:')
                 ->line('"'.$this->application->notes.'"');

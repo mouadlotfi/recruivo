@@ -91,8 +91,7 @@ export interface JobSummary {
     salary_max: number | null
     closes_at: string | null
     is_closing_soon: boolean
-    // Present on the public jobs pages (JobController serializers); optional
-    // so the candidate/recruiter application serializers keep compiling.
+    // Populated on public listings; omitted on application-scoped summaries.
     closes_label?: string | null
     is_saved?: boolean
     has_applied?: boolean
@@ -111,11 +110,8 @@ export interface CompanyDetail extends CompanySummary {
     jobs: JobSummary[]
 }
 
-// --- Public jobs pages (serialized in JobController) ---
-
 export interface JobDetail extends JobSummary {
-    // Trusted server-side output of App\Support\JobDescriptionFormatter
-    // (every user-controlled line is escaped) — the ONLY v-html on the page.
+    // Sanitized HTML formatted by JobDescriptionFormatter.
     description_html: string
     posted_label: string
     company: CompanyDetail | null
@@ -277,7 +273,6 @@ export interface RecruiterJobSummary {
     closes_at: string | null
     is_expired: boolean
     created_at: string | null
-    // Composed server-side in the current locale (recruiter.* keys).
     posted_label: string
     published_label: string
     closes_label: string | null
@@ -285,17 +280,15 @@ export interface RecruiterJobSummary {
 }
 
 export interface RecruiterJobDetail extends RecruiterJobSummary {
-    // Raw plain-text description for the edit form.
     description: string
-    // Trusted server-side output of App\Support\JobDescriptionFormatter
-    // (every user-controlled line is escaped) — the ONLY v-html on the page.
+    // Sanitized HTML formatted by JobDescriptionFormatter.
     description_html: string
     location: string | null
     category: string | null
     remote_type: string | null
     salary_min: number | null
     salary_max: number | null
-    // Y-m-d (toDateString) so <input type="date"> binds directly.
+    // Formatted as YYYY-MM-DD for native <input type="date"> binding.
     closes_at: string | null
     closes_label: string | null
 }
