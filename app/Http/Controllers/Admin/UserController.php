@@ -76,6 +76,7 @@ class UserController extends Controller
                 'candidate' => __('admin.candidate'),
                 'clear' => __('admin.clear'),
                 'clear_button' => __('admin.clear_button'),
+                'clear_filters' => __('admin.clear'),
                 'no_users_found' => __('admin.no_users_found'),
                 'no_users_match' => __('admin.no_users_match'),
                 'no_users_match_criteria' => __('admin.no_users_match_criteria'),

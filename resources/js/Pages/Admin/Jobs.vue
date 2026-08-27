@@ -144,8 +144,13 @@ const statusClass = (jobStatus: string) => jobStatus === 'published'
                             <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                         </select>
                     </div>
-                    <label class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-stone-200 px-3 text-sm text-stone-700 dark:border-stone-700 dark:text-stone-300">
-                        <input v-model="noApplications" type="checkbox" name="no_applications" class="h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500 dark:border-stone-600 dark:bg-stone-800">
+                    <label class="inline-flex min-h-11 cursor-pointer items-center gap-2 px-1 text-sm font-medium text-stone-700 transition hover:text-stone-900 dark:text-stone-300 dark:hover:text-white">
+                        <input
+                            v-model="noApplications"
+                            type="checkbox"
+                            name="no_applications"
+                            class="h-4 w-4 rounded border-stone-300 text-amber-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-stone-600 dark:bg-stone-800 dark:focus-visible:ring-offset-stone-950"
+                        >
                         <span>{{ labels.no_applications_filter }}</span>
                     </label>
                     <div class="flex gap-2 xl:shrink-0">
@@ -228,7 +233,12 @@ const statusClass = (jobStatus: string) => jobStatus === 'published'
             </section>
 
             <div v-if="hasMore" class="flex min-h-12 items-center justify-center">
-                <button type="button" :disabled="loading" class="inline-flex min-h-11 items-center justify-center rounded-full bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70 dark:focus-visible:ring-offset-stone-950" @click="loadMore">
+                <button
+                    type="button"
+                    :disabled="loading"
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-stone-200 bg-white px-6 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:cursor-wait disabled:opacity-70 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                    @click="loadMore"
+                >
                     {{ loading ? labels.loading : labels.show_more }}
                 </button>
             </div>
