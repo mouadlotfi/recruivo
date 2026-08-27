@@ -251,13 +251,13 @@ const toggleSaved = () => {
                                 <legend class="text-sm font-medium text-stone-700 dark:text-stone-300">{{ labels.resume_source }}</legend>
                                 <label
                                     v-if="hasProfileResume"
-                                    class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-stone-200 px-3 py-2 text-sm dark:border-stone-700"
+                                    class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-stone-200 px-3 py-2 text-sm transition hover:border-amber-300 dark:border-stone-700 dark:hover:border-amber-500/40"
                                 >
-                                    <input v-model="resumeSource" type="radio" name="resume_source" value="profile">
+                                    <input v-model="resumeSource" type="radio" name="resume_source" value="profile" class="h-4 w-4 border-stone-300 text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-stone-600 dark:bg-stone-800 dark:focus-visible:ring-offset-stone-950">
                                     <span>{{ labels.use_profile_resume }}</span>
                                 </label>
-                                <label class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-stone-200 px-3 py-2 text-sm dark:border-stone-700">
-                                    <input v-model="resumeSource" type="radio" name="resume_source" value="upload">
+                                <label class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-stone-200 px-3 py-2 text-sm transition hover:border-amber-300 dark:border-stone-700 dark:hover:border-amber-500/40">
+                                    <input v-model="resumeSource" type="radio" name="resume_source" value="upload" class="h-4 w-4 border-stone-300 text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-stone-600 dark:bg-stone-800 dark:focus-visible:ring-offset-stone-950">
                                     <span>{{ labels.upload_application_resume }}</span>
                                 </label>
                                 <p v-if="form.errors.resume_source" class="text-xs text-red-600 dark:text-red-400">{{ form.errors.resume_source }}</p>

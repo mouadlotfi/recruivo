@@ -32,7 +32,7 @@ const sidebarOpen = ref(false)
                     <!-- Mobile Menu Button -->
                     <button
                         type="button"
-                        class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-amber-500 lg:hidden dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white"
+                        class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500 lg:hidden dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white"
                         @click="sidebarOpen = true"
                     >
                         <span class="sr-only">Open sidebar</span>

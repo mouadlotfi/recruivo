@@ -54,7 +54,12 @@ function removeSavedJob(jobId: number): void {
 
                 <template #next="{ hasMore, loading, fetch }">
                     <div v-if="hasMore && jobs.data.length" class="mt-8 flex min-h-12 items-center justify-center">
-                        <button type="button" :disabled="loading" class="inline-flex min-h-11 items-center justify-center rounded-full bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60 dark:focus:ring-offset-stone-950" @click="fetch">
+                        <button
+                            type="button"
+                            :disabled="loading"
+                            class="inline-flex min-h-11 items-center justify-center rounded-xl border border-stone-200 bg-white px-6 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:cursor-wait disabled:opacity-70 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+                            @click="fetch"
+                        >
                             {{ loading ? labels.loading_more : labels.show_more }}
                         </button>
                     </div>

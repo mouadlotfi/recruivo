@@ -187,7 +187,7 @@ const submit = () => {
         <button
             type="submit"
             :disabled="form.processing"
-            class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60 dark:focus:ring-offset-stone-900"
+            class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:opacity-60 dark:focus-visible:ring-offset-stone-900"
         >
             {{ labels.update }}
         </button>

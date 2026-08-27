@@ -181,7 +181,7 @@ function toggleSaved(): void {
                         data-job-location-link
                         :href="searchUrl"
                         :data="{ location: job.location, filter: 'jobs' }"
-                        class="relative z-10 flex items-center gap-1 rounded-md transition hover:text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:hover:text-amber-400"
+                        class="relative z-10 flex items-center gap-1 rounded-md transition hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:hover:text-amber-400"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />

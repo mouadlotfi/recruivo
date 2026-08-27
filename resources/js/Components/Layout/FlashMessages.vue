@@ -15,11 +15,11 @@ const alerts = ref<Alert[]>([])
 const styles: Record<Alert['kind'], { box: string; button: string }> = {
     success: {
         box: 'border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200',
-        button: 'text-green-600 dark:text-green-400 focus:ring-green-500',
+        button: 'text-green-600 dark:text-green-400 focus-visible:ring-green-500',
     },
     error: {
         box: 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200',
-        button: 'text-red-600 dark:text-red-400 focus:ring-red-500',
+        button: 'text-red-600 dark:text-red-400 focus-visible:ring-red-500',
     },
 }
 
@@ -66,7 +66,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
                 <button
                     type="button"
                     :aria-label="t('dismiss')"
-                    :class="['inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-offset-1', styles[alert.kind].button]"
+                    :class="['inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1', styles[alert.kind].button]"
                     @click="dismiss(alert)"
                 >
                     <span class="sr-only">{{ t('dismiss') }}</span>

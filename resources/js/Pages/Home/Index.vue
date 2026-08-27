@@ -355,7 +355,7 @@ const skipPreferences = () => {
                                         type="checkbox"
                                         name="preferred_categories[]"
                                         :value="category"
-                                        class="h-5 w-5 rounded border-stone-300 text-amber-600 focus:ring-amber-500 dark:border-stone-600"
+                                        class="h-5 w-5 rounded border-stone-300 text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:border-stone-600 dark:bg-stone-800 dark:focus-visible:ring-offset-stone-950"
                                     >
                                     {{ category }}
                                 </label>
@@ -364,7 +364,7 @@ const skipPreferences = () => {
                                 <button
                                     type="submit"
                                     :disabled="preferenceForm.processing"
-                                    class="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60"
+                                    class="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:opacity-60 dark:focus-visible:ring-offset-stone-950"
                                 >
                                     {{ labels.save_preferences }}
                                 </button>
