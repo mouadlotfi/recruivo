@@ -5,6 +5,7 @@ import type { PageProps } from '../types'
 import { useTranslation } from '../composables/useTranslation'
 import Navigation from '../Components/Layout/Navigation.vue'
 import SearchModal from '../Components/Layout/SearchModal.vue'
+import MobileNav from '../Components/Layout/MobileNav.vue'
 import NotificationCenter from '../Components/Layout/NotificationCenter.vue'
 import UserDropdown from '../Components/Layout/UserDropdown.vue'
 import ThemeToggle from '../Components/Layout/ThemeToggle.vue'
@@ -23,7 +24,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
 </script>
 
 <template>
-    <div class="min-h-screen flex flex-col bg-stone-50 text-stone-900 antialiased transition-colors duration-300 dark:bg-stone-950 dark:text-stone-100">
+    <div class="flex min-h-screen flex-col bg-stone-50 pb-16 text-stone-900 antialiased transition-colors duration-300 sm:pb-0 dark:bg-stone-950 dark:text-stone-100">
         <a href="#main-content" class="sr-only z-[100] rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">{{ t('skip_to_content') }}</a>
         <div class="relative isolate flex-1 overflow-hidden">
             <div class="pointer-events-none absolute inset-x-0 top-0 -z-10">
@@ -69,6 +70,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
         </div>
         <FlashMessages />
         <footer class="border-t border-stone-200 bg-white/70 py-6 text-sm text-stone-500 backdrop-blur dark:border-stone-800 dark:bg-stone-950/80 dark:text-stone-400"><div class="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 px-4 text-center sm:flex-row sm:justify-between sm:gap-2 sm:px-6 sm:text-left"><p class="max-w-md">{{ t('footer_text', { year: new Date().getFullYear() }) }}</p><div class="flex items-center gap-4 whitespace-nowrap"><a href="https://mouadlotfi.com" class="transition hover:text-amber-600 dark:hover:text-amber-400" target="_blank" rel="noopener noreferrer">Portfolio</a><a href="https://www.linkedin.com/in/mouad-lotfi/" class="transition hover:text-amber-600 dark:hover:text-amber-400" target="_blank" rel="noopener noreferrer">LinkedIn</a><a href="mailto:mouad.lotfi.work@gmail.com" class="transition hover:text-amber-600 dark:hover:text-amber-400">{{ t('contact') }}</a></div></div></footer>
+        <MobileNav v-if="!isAdmin" />
         <ScrollToTop />
         <template v-if="!isAdmin">
             <SearchModal v-model:open="searchOpen" :trigger="searchTrigger" />
