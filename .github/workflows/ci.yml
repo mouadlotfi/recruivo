@@ -62,9 +62,10 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Create storage and cache directories
-        run: mkdir -p storage/framework/{cache/data,sessions,views,testing} storage/logs bootstrap/cache
-
+      - name: Create storage and build directories
+        run: |
+          mkdir -p storage/framework/{cache/data,sessions,views,testing} storage/logs bootstrap/cache public/build
+          echo '{"resources/js/app.ts":{"file":"assets/app.js","isEntry":true,"src":"resources/js/app.ts"},"resources/css/app.css":{"file":"assets/app.css","src":"resources/css/app.css"}}' > public/build/manifest.json
       - name: Code style check (Pint)
         run: vendor/bin/pint --test
 
