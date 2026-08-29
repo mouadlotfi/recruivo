@@ -199,7 +199,7 @@ jobs:
         env:
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
           COOLIFY_HOST: http://100.100.217.81:8000
-          APP_UUID: ${{ secrets.COOLIFY_PRODUCTION_APP_UUID || 'bl65ekswfmd5tk5btvbtet0s' }}
+          APP_UUID: ${{ secrets.COOLIFY_PRODUCTION_APP_UUID || '3ioftpjgpbfag6p5uzoahwlw' }}
           APP_TAG_VALUE: sha-${{ github.sha }}
         run: |
           set -euo pipefail
@@ -327,7 +327,7 @@ jobs:
         env:
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
           COOLIFY_HOST: http://100.100.217.81:8000
-          APP_UUID: ${{ secrets.COOLIFY_DEMO_APP_UUID || 'fcnokwbclyp9zbcdsb8vtit3' }}
+          APP_UUID: ${{ secrets.COOLIFY_DEMO_APP_UUID || 'g2g8akaxgwhgaitmfp9mwepd' }}
           APP_TAG_VALUE: sha-${{ github.sha }}
         run: |
           set -euo pipefail
