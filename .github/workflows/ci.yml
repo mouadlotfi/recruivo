@@ -1,0 +1,424 @@
+# =============================================================================
+# CI/CD for Recruivo (Laravel 13 + Vue 3 Inertia + GHCR + Coolify)
+# =============================================================================
+# Pipeline:
+#   1. Backend: PHPUnit test suite + Pint style check
+#   2. Frontend: Vue TypeScript typecheck + Vite production build check
+#   3. Docker build validation on PRs (no push)
+#   4. Multi-stage build + push immutable images to GHCR on main (tagged with sha-${GITHUB_SHA})
+#   5. Production deployment via authenticated Coolify API + deployment polling + health verification
+#   6. Demo deployment via authenticated Coolify API + deployment polling + health verification
+# =============================================================================
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+  APP_IMAGE: ghcr.io/${{ github.repository_owner }}/recruivo
+  NGINX_IMAGE: ghcr.io/${{ github.repository_owner }}/recruivo-nginx
+
+jobs:
+  backend:
+    name: Backend tests + Pint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, bcmath, zip, gd, redis
+          coverage: none
+          tools: composer:v2
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Code style check (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Run PHPUnit tests
+        run: php artisan test --compact
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          CACHE_DRIVER: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          MAIL_MAILER: array
+
+  frontend:
+    name: Frontend typecheck + Vite build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install frontend dependencies
+        run: bun install
+
+      - name: TypeScript check (vue-tsc)
+        run: bun run typecheck
+
+      - name: Vite build check
+        run: bun run build
+
+  docker-build-check:
+    name: Docker build check (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: production
+            image: recruivo
+            scope: app
+          - target: nginx
+            image: recruivo-nginx
+            scope: nginx
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.target }} target
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          push: false
+          cache-from: type=gha,scope=${{ matrix.scope }}
+
+  build-images:
+    name: Build and push (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: production
+            image: ghcr.io/${{ github.repository_owner }}/recruivo
+            scope: app
+          - target: nginx
+            image: ghcr.io/${{ github.repository_owner }}/recruivo-nginx
+            scope: nginx
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.target }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          push: true
+          tags: |
+            ${{ matrix.image }}:sha-${{ github.sha }}
+            ${{ matrix.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.scope }}
+
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: [build-images]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment:
+      name: production
+      url: https://recruivo.work
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Connect to Tailscale (WIF)
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:ci
+          ping: 100.100.217.81
+
+      - name: Verify Coolify connectivity
+        run: curl --fail --silent --max-time 10 http://100.100.217.81:8000
+
+      - name: Update Production APP_TAG in Coolify
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_HOST: http://100.100.217.81:8000
+          APP_UUID: ${{ secrets.COOLIFY_PRODUCTION_APP_UUID || 'bl65ekswfmd5tk5btvbtet0s' }}
+          APP_TAG_VALUE: sha-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          echo "Updating Production APP_TAG -> ${APP_TAG_VALUE}..."
+          for PREVIEW in false true; do
+            HTTP_CODE=$(curl --silent --show-error --write-out "%{http_code}" --output /tmp/coolify_prod_env_resp.json \
+              -X PATCH \
+              -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{\"key\":\"APP_TAG\",\"value\":\"${APP_TAG_VALUE}\",\"is_preview\":${PREVIEW}}" \
+              "${COOLIFY_HOST}/api/v1/applications/${APP_UUID}/envs")
+
+            if [ "$HTTP_CODE" -ge 400 ]; then
+              echo "::error::Coolify API returned HTTP ${HTTP_CODE} when updating Production APP_TAG:"
+              cat /tmp/coolify_prod_env_resp.json || true
+              exit 1
+            fi
+          done
+          echo "Production APP_TAG successfully updated."
+
+      - name: Trigger and verify Production Coolify deployment
+        env:
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_PRODUCTION_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_HOST: http://100.100.217.81:8000
+        run: |
+          set -euo pipefail
+
+          echo "Triggering Production Coolify deploy webhook..."
+          RESPONSE=$(curl --fail --silent --show-error \
+            -X POST "${COOLIFY_WEBHOOK}" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}")
+
+          DEPLOYMENT_UUID=$(echo "$RESPONSE" | jq -r '.deployments[0].deployment_uuid // empty')
+
+          if [ -z "${DEPLOYMENT_UUID:-}" ] || [ "${DEPLOYMENT_UUID}" = "null" ]; then
+            echo "::error::Could not extract deployment_uuid from Coolify response:"
+            echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "Coolify Production deployment queued with UUID: ${DEPLOYMENT_UUID}"
+
+          TIMEOUT_SECONDS=600
+          POLL_INTERVAL=3
+          ELAPSED=0
+
+          echo "Waiting for Production deployment to complete (timeout: ${TIMEOUT_SECONDS}s)..."
+
+          while true; do
+            DEPLOY_INFO=$(curl --fail --silent --show-error \
+              -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+              "${COOLIFY_HOST}/api/v1/deployments/${DEPLOYMENT_UUID}")
+
+            STATUS=$(echo "$DEPLOY_INFO" | jq -r '.status // empty' | tr '[:upper:]' '[:lower:]')
+
+            echo "Production deployment status: ${STATUS:-unknown} (${ELAPSED}s elapsed)"
+
+            case "$STATUS" in
+              finished)
+                echo "Coolify Production deployment ${DEPLOYMENT_UUID} finished successfully."
+                break
+                ;;
+              failed|cancelled|canceled)
+                echo "::error::Coolify Production deployment ${DEPLOYMENT_UUID} ended with status: ${STATUS}"
+                echo "=== Deployment Details ==="
+                echo "$DEPLOY_INFO" | jq '{status: .status, commit: .commit, current_stage: .current_stage, error: .error, logs: .logs}' 2>/dev/null || echo "$DEPLOY_INFO"
+                exit 1
+                ;;
+              queued|in_progress|"")
+                # Still running
+                ;;
+              *)
+                echo "::warning::Unrecognized status '${STATUS}', continuing to poll..."
+                ;;
+            esac
+
+            if [ "$ELAPSED" -ge "$TIMEOUT_SECONDS" ]; then
+              echo "::error::Timed out after ${TIMEOUT_SECONDS}s waiting for Production deployment ${DEPLOYMENT_UUID}"
+              exit 1
+            fi
+
+            sleep "$POLL_INTERVAL"
+            ELAPSED=$((ELAPSED + POLL_INTERVAL))
+          done
+
+      - name: Verify Production application health
+        run: |
+          set -euo pipefail
+          echo "Verifying Production health check..."
+          HEALTH_URL="https://recruivo.work/api/health"
+          RESPONSE=$(curl --fail --silent --show-error --max-time 30 "${HEALTH_URL}")
+          echo "Health response: ${RESPONSE}"
+          STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
+          if [ "$STATUS" != "healthy" ]; then
+            echo "::error::Production health check reported non-healthy status: ${STATUS}"
+            exit 1
+          fi
+          echo "Production is healthy and fully operational."
+
+  deploy-demo:
+    name: Deploy Demo
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment:
+      name: demo
+      url: https://demo.recruivo.work
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Connect to Tailscale (WIF)
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:ci
+          ping: 100.100.217.81
+
+      - name: Verify Coolify connectivity
+        run: curl --fail --silent --max-time 10 http://100.100.217.81:8000
+
+      - name: Update Demo APP_TAG in Coolify
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_HOST: http://100.100.217.81:8000
+          APP_UUID: ${{ secrets.COOLIFY_DEMO_APP_UUID || 'fcnokwbclyp9zbcdsb8vtit3' }}
+          APP_TAG_VALUE: sha-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          echo "Updating Demo APP_TAG -> ${APP_TAG_VALUE}..."
+          for PREVIEW in false true; do
+            HTTP_CODE=$(curl --silent --show-error --write-out "%{http_code}" --output /tmp/coolify_demo_env_resp.json \
+              -X PATCH \
+              -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{\"key\":\"APP_TAG\",\"value\":\"${APP_TAG_VALUE}\",\"is_preview\":${PREVIEW}}" \
+              "${COOLIFY_HOST}/api/v1/applications/${APP_UUID}/envs")
+
+            if [ "$HTTP_CODE" -ge 400 ]; then
+              echo "::error::Coolify API returned HTTP ${HTTP_CODE} when updating Demo APP_TAG:"
+              cat /tmp/coolify_demo_env_resp.json || true
+              exit 1
+            fi
+          done
+          echo "Demo APP_TAG successfully updated."
+
+      - name: Trigger and verify Demo Coolify deployment
+        env:
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_DEMO_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_HOST: http://100.100.217.81:8000
+        run: |
+          set -euo pipefail
+
+          echo "Triggering Demo Coolify deploy webhook..."
+          RESPONSE=$(curl --fail --silent --show-error \
+            -X POST "${COOLIFY_WEBHOOK}" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}")
+
+          DEPLOYMENT_UUID=$(echo "$RESPONSE" | jq -r '.deployments[0].deployment_uuid // empty')
+
+          if [ -z "${DEPLOYMENT_UUID:-}" ] || [ "${DEPLOYMENT_UUID}" = "null" ]; then
+            echo "::error::Could not extract deployment_uuid from Coolify response:"
+            echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "Coolify Demo deployment queued with UUID: ${DEPLOYMENT_UUID}"
+
+          TIMEOUT_SECONDS=600
+          POLL_INTERVAL=3
+          ELAPSED=0
+
+          echo "Waiting for Demo deployment to complete (timeout: ${TIMEOUT_SECONDS}s)..."
+
+          while true; do
+            DEPLOY_INFO=$(curl --fail --silent --show-error \
+              -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+              "${COOLIFY_HOST}/api/v1/deployments/${DEPLOYMENT_UUID}")
+
+            STATUS=$(echo "$DEPLOY_INFO" | jq -r '.status // empty' | tr '[:upper:]' '[:lower:]')
+
+            echo "Demo deployment status: ${STATUS:-unknown} (${ELAPSED}s elapsed)"
+
+            case "$STATUS" in
+              finished)
+                echo "Coolify Demo deployment ${DEPLOYMENT_UUID} finished successfully."
+                break
+                ;;
+              failed|cancelled|canceled)
+                echo "::error::Coolify Demo deployment ${DEPLOYMENT_UUID} ended with status: ${STATUS}"
+                echo "=== Deployment Details ==="
+                echo "$DEPLOY_INFO" | jq '{status: .status, commit: .commit, current_stage: .current_stage, error: .error, logs: .logs}' 2>/dev/null || echo "$DEPLOY_INFO"
+                exit 1
+                ;;
+              queued|in_progress|"")
+                # Still running
+                ;;
+              *)
+                echo "::warning::Unrecognized status '${STATUS}', continuing to poll..."
+                ;;
+            esac
+
+            if [ "$ELAPSED" -ge "$TIMEOUT_SECONDS" ]; then
+              echo "::error::Timed out after ${TIMEOUT_SECONDS}s waiting for Demo deployment ${DEPLOYMENT_UUID}"
+              exit 1
+            fi
+
+            sleep "$POLL_INTERVAL"
+            ELAPSED=$((ELAPSED + POLL_INTERVAL))
+          done
+
+      - name: Verify Demo application health
+        run: |
+          set -euo pipefail
+          echo "Verifying Demo health check..."
+          HEALTH_URL="https://demo.recruivo.work/api/health"
+          RESPONSE=$(curl --fail --silent --show-error --max-time 30 "${HEALTH_URL}")
+          echo "Health response: ${RESPONSE}"
+          STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
+          if [ "$STATUS" != "healthy" ]; then
+            echo "::error::Demo health check reported non-healthy status: ${STATUS}"
+            exit 1
+          fi
+          echo "Demo is healthy and fully operational."

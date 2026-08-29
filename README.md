@@ -106,12 +106,12 @@ The following demo accounts are available in development and demo environments:
 
 2. Launch isolated demo stack:
    ```bash
-   docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml up -d --build
+   docker compose --env-file .env.demo --profile demo -f compose.yml -f compose.demo.yml up -d --build
    ```
 
 3. Seed canonical demo data:
    ```bash
-   docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml exec app php artisan migrate:fresh --seed --force
+   docker compose --env-file .env.demo --profile demo -f compose.yml -f compose.demo.yml exec app php artisan migrate:fresh --seed --force
    ```
 
 ### Demo Reset Command
@@ -124,7 +124,7 @@ php artisan demo:reset --force
 
 Or within Docker:
 ```bash
-docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml exec app php artisan demo:reset --force
+docker compose --env-file .env.demo --profile demo -f compose.yml -f compose.demo.yml exec app php artisan demo:reset --force
 ```
 
 *The demo reset command automatically clears application caches, re-runs fresh canonical migrations and seeders, re-syncs brand assets and sample resumes, and flushes cache stores. It is hard-blocked from running in production.*
@@ -160,9 +160,58 @@ Production architecture and deployment procedures are documented in detail in [d
 
 ---
 
+## CI/CD Pipeline (GitHub Actions + GHCR + Coolify)
+
+Recruivo uses an automated, reproducible deployment pipeline modeled after the Safelink reference architecture:
+
+```text
+                         GitHub
+                           |
+                      Pull Request
+                           |
+                    GitHub Actions
+              +------------+------------+
+              |            |            |
+            Tests        Lint       Typecheck
+              |            |            |
+              +------------+------------+
+                           |
+                     Docker Build
+                           |
+                     PR → STOP
+                           |
+                         main
+                           |
+                    Build Images
+                           |
+                         GHCR
+               ghcr.io/...:sha-<SHA>
+                           |
+             +-------------+-------------+
+             |                           |
+       Coolify Production           Coolify Demo
+             |                           |
+        APP_TAG=SHA                 APP_TAG=SHA
+             |                           |
+        Deploy                        Deploy
+             |                           |
+         Verify                       Verify
+        /api/health                  /api/health
+             |                           |
+         Production                     Demo
+```
+
+### Key Features
+- **Immutable Image Tags**: Every build is tagged with its unique Git SHA (`sha-${{ github.sha }}`) in GHCR.
+- **Private Coolify Connectivity**: Deployments authenticate through Tailscale Workload Identity Federation (WIF) without exposing the Coolify API to the public internet.
+- **Health Verification Gate**: Deployments only complete when `/api/health` returns `200 OK` and `"status":"healthy"`.
+- **Rollback**: Simply point `APP_TAG` to a previous immutable commit SHA in Coolify and trigger deployment.
+
+---
+
 ## Testing & Quality Assurance
 
-Run the test suite:
+Run the test suite locally:
 ```bash
 # Via Docker
 docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml run --rm app php artisan test --compact
@@ -174,9 +223,6 @@ docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml run --rm
 bun run typecheck
 bun run build
 ```
-
----
-
 ## License
 
 This project is licensed under the GNU General Public License v3.0 (GPL-3.0). See the [LICENSE](LICENSE) file for details.

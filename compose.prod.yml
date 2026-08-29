@@ -1,7 +1,8 @@
 services:
   app:
+    image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-production}}
     env_file:
-      - ${APP_ENV_FILE:-.env.production.example}
+      - ${APP_ENV_FILE:-.env.production}
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
@@ -17,9 +18,13 @@ services:
       bootstrap:
         condition: service_completed_successfully
 
+  nginx:
+    image: ${NGINX_IMAGE:-ghcr.io/mouadlotfi/recruivo-nginx:${APP_TAG:-production}}
+
   queue:
+    image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-production}}
     env_file:
-      - ${APP_ENV_FILE:-.env.production.example}
+      - ${APP_ENV_FILE:-.env.production}
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
@@ -36,8 +41,9 @@ services:
         condition: service_completed_successfully
 
   scheduler:
+    image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-production}}
     env_file:
-      - ${APP_ENV_FILE:-.env.production.example}
+      - ${APP_ENV_FILE:-.env.production}
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
@@ -54,8 +60,9 @@ services:
         condition: service_completed_successfully
 
   bootstrap:
+    image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-production}}
     env_file:
-      - ${APP_ENV_FILE:-.env.production.example}
+      - ${APP_ENV_FILE:-.env.production}
     environment:
       APP_ENV: production
       APP_DEBUG: "false"

@@ -124,16 +124,37 @@ The demo environment runs from the same production Docker image but uses `compos
 
 ```bash
 cp .env.demo.example .env.demo
-docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml up -d --build
+docker compose --env-file .env.demo --profile demo -f compose.yml -f compose.demo.yml up -d --build
 ```
 
 Seed or reset the demo canonical dataset:
 
 ```bash
-docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml exec app php artisan demo:reset --force
+docker compose --env-file .env.demo --profile demo -f compose.yml -f compose.demo.yml exec app php artisan demo:reset --force
 ```
-
 The demo overlay binds to port `${DEMO_APP_PORT:-8001}`, configures `MAIL_MAILER=log`, isolates MySQL (`demo_mysql_data`), Redis (`demo_redis_data`), and storage (`demo_storage`), and enables automated nightly resets via the scheduler.
+
+## CI/CD Deployment with GitHub Actions & Coolify
+
+Recruivo uses prebuilt GHCR container images pushed by GitHub Actions and deployed via Coolify:
+
+1. **Build & Validation in GitHub Actions**:
+   - Runs backend tests (`php artisan test`), style checks (`pint --test`), TypeScript check (`vue-tsc --noEmit`), and production Vite build.
+   - Builds multi-stage Docker images (`recruivo` app and `recruivo-nginx`).
+   - Pushes immutable images to GitHub Container Registry tagged with the commit SHA:
+     `ghcr.io/mouadlotfi/recruivo:sha-${GITHUB_SHA}`
+     `ghcr.io/mouadlotfi/recruivo-nginx:sha-${GITHUB_SHA}`
+
+2. **Coolify Deployment Flow**:
+   - Authenticates through Tailscale Workload Identity Federation (WIF).
+   - Sets `APP_TAG=sha-${GITHUB_SHA}` on the Coolify application via the API.
+   - Triggers the deploy webhook.
+   - Polls deployment status until completion.
+   - Verifies the application health endpoint (`https://<domain>/api/health`).
+
+3. **Rollback Procedure**:
+   - Set `APP_TAG` to the previous commit SHA (e.g. `sha-prev123`) in Coolify.
+   - Click Deploy in Coolify to redeploy the previous immutable image without rebuilding from source.
 
 
 ## Production build and deployment

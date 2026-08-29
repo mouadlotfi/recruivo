@@ -9,19 +9,21 @@
 #   - Safe mail transport (log / sandbox)
 #
 # Run demo with:
-#   docker compose -f compose.yml -f compose.demo.yml up -d --build
+#   docker compose --env-file .env.demo --profile demo -f compose.yml -f compose.demo.yml up -d --build
 # =============================================================================
 
 name: recruivo-demo
 
 services:
   nginx:
-    ports:
+    image: ${NGINX_IMAGE:-ghcr.io/mouadlotfi/recruivo-nginx:${APP_TAG:-production}}
+    ports: !override
       - "${DEMO_APP_PORT:-8001}:80"
-    volumes:
+    volumes: !override
       - demo_storage:/var/www/html/storage:ro
 
   app:
+    image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-production}}
     env_file:
       - ${APP_ENV_FILE:-.env.demo}
     environment:
@@ -41,6 +43,7 @@ services:
         condition: service_completed_successfully
 
   queue:
+    image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-production}}
     env_file:
       - ${APP_ENV_FILE:-.env.demo}
     environment:
@@ -60,6 +63,7 @@ services:
         condition: service_completed_successfully
 
   scheduler:
+    image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-production}}
     env_file:
       - ${APP_ENV_FILE:-.env.demo}
     environment:
@@ -79,6 +83,8 @@ services:
         condition: service_completed_successfully
 
   bootstrap:
+    profiles: ["demo"]
+    image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-production}}
     env_file:
       - ${APP_ENV_FILE:-.env.demo}
     environment:
