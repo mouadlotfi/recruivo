@@ -46,6 +46,7 @@ class RegisterRequest extends FormRequest
     {
         $email = $this->input('email');
         $username = $email ? explode('@', $email)[0] : null;
+
         return [
             'account_type' => ['required', Rule::in(['candidate', 'company'])],
             'name' => ['required_if:account_type,candidate', 'nullable', 'string', 'max:255'],

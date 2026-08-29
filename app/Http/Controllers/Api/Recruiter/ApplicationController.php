@@ -44,7 +44,7 @@ class ApplicationController extends Controller
 
         return response()->json([
             'message' => 'Application updated successfully.',
-            'data' => new ApplicationResource($application)
+            'data' => new ApplicationResource($application),
         ]);
     }
 
@@ -53,11 +53,13 @@ class ApplicationController extends Controller
         $job = $application->job;
         $this->authorizeJob($job);
 
-        if (!$application->resume_path || !Storage::disk('private')->exists($application->resume_path)) {
+        $resumePath = $application->resume_path ?: $application->candidate->candidateProfile?->resume_path;
+
+        if (! $resumePath || ! Storage::disk('private')->exists($resumePath)) {
             return response()->json(['message' => 'Resume not found'], 404);
         }
 
-        return Storage::disk('private')->download($application->resume_path);
+        return Storage::disk('private')->download($resumePath);
     }
 
     protected function authorizeJob(Job $job): void

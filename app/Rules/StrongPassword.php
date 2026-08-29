@@ -4,6 +4,7 @@ namespace App\Rules;
 
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Translation\PotentiallyTranslatedString;
 
 class StrongPassword implements ValidationRule
 {
@@ -22,19 +23,21 @@ class StrongPassword implements ValidationRule
     /**
      * Run the validation rule.
      *
-     * @param  \Closure(string, ?string=): \Illuminate\Translation\PotentiallyTranslatedString  $fail
+     * @param  Closure(string, ?string=): PotentiallyTranslatedString  $fail
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         // Check length: 12-64 characters
         if (strlen($value) < 12 || strlen($value) > 64) {
             $fail(__('validation.password_length'));
+
             return;
         }
 
         // Check if password contains username (case-insensitive)
         if ($this->username && stripos($value, $this->username) !== false) {
             $fail(__('validation.password_no_username'));
+
             return;
         }
 
@@ -48,6 +51,7 @@ class StrongPassword implements ValidationRule
 
         if ($typesCount < 3) {
             $fail(__('validation.password_complexity'));
+
             return;
         }
     }

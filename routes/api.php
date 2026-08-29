@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanyController;
@@ -7,12 +9,15 @@ use App\Http\Controllers\Api\CompanyLogoController;
 use App\Http\Controllers\Api\CompanyProfileController;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\Recruiter\DashboardController;
+use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Candidate\ResumeController;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 Route::get('/health', function () {
     $checks = [
@@ -24,7 +29,7 @@ Route::get('/health', function () {
     try {
         DB::connection()->getPdo();
         $checks['checks']['database'] = 'ok';
-    } catch (\Exception $e) {
+    } catch (Throwable $e) {
         $checks['checks']['database'] = 'failed';
         $checks['status'] = 'unhealthy';
     }
@@ -32,11 +37,21 @@ Route::get('/health', function () {
     try {
         Cache::store()->get('health_check');
         $checks['checks']['cache'] = 'ok';
-    } catch (\Exception $e) {
+    } catch (Throwable $e) {
         $checks['checks']['cache'] = 'failed';
+        $checks['status'] = 'unhealthy';
+    }
+
+    try {
+        Storage::disk('private')->exists('health_check');
+        $checks['checks']['storage'] = 'ok';
+    } catch (Throwable $e) {
+        $checks['checks']['storage'] = 'failed';
+        $checks['status'] = 'unhealthy';
     }
 
     $statusCode = $checks['status'] === 'healthy' ? 200 : 503;
+
     return response()->json($checks, $statusCode);
 })->name('api.health');
 
@@ -45,7 +60,7 @@ Route::get('/jobs/{job}', [JobController::class, 'show'])->name('api.jobs.show')
 Route::get('/companies', [CompanyController::class, 'index'])->name('api.companies.index');
 Route::get('/companies/{company:slug}', [CompanyController::class, 'show'])->name('api.companies.show');
 Route::get('/companies/{slug}/logo', [CompanyLogoController::class, 'show'])->name('api.companies.logo');
-Route::get('/search/suggestions', [\App\Http\Controllers\Api\SearchController::class, 'suggestions'])->name('api.search.suggestions');
+Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('api.search.suggestions');
 
 // Authentication routes
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth-login');
@@ -54,12 +69,12 @@ Route::post('/auth/register', [AuthController::class, 'register'])->middleware('
 // Email verification routes (no authentication required)
 Route::post('/email/verification-notification', function (Request $request) {
     $request->validate([
-        'email' => 'required|email'
+        'email' => 'required|email',
     ]);
 
-    $user = \App\Models\User::where('email', $request->email)->first();
-    
-    if ($user && !$user->hasVerifiedEmail()) {
+    $user = User::where('email', $request->email)->first();
+
+    if ($user && ! $user->hasVerifiedEmail()) {
         $user->sendEmailVerificationNotification();
     }
 
@@ -74,29 +89,29 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Candidate routes
     Route::post('/jobs/{jobId}/apply', [ApplicationController::class, 'store'])
+        ->middleware('throttle:job-apply')
         ->name('api.jobs.apply');
-
     // Recruiter routes
     Route::middleware('role:Recruiter')->group(function () {
         // Job management
-        Route::get('/recruiter/jobs', [\App\Http\Controllers\Api\Recruiter\JobController::class, 'index']);
-        Route::post('/recruiter/jobs', [\App\Http\Controllers\Api\Recruiter\JobController::class, 'store']);
-        Route::get('/recruiter/jobs/{job}', [\App\Http\Controllers\Api\Recruiter\JobController::class, 'show']);
-        Route::put('/recruiter/jobs/{job}', [\App\Http\Controllers\Api\Recruiter\JobController::class, 'update']);
-        Route::delete('/recruiter/jobs/{job}', [\App\Http\Controllers\Api\Recruiter\JobController::class, 'destroy']);
-        Route::post('/recruiter/jobs/{job}/toggle', [\App\Http\Controllers\Api\Recruiter\JobController::class, 'toggle']);
+        Route::get('/recruiter/jobs', [App\Http\Controllers\Api\Recruiter\JobController::class, 'index']);
+        Route::post('/recruiter/jobs', [App\Http\Controllers\Api\Recruiter\JobController::class, 'store']);
+        Route::get('/recruiter/jobs/{job}', [App\Http\Controllers\Api\Recruiter\JobController::class, 'show']);
+        Route::put('/recruiter/jobs/{job}', [App\Http\Controllers\Api\Recruiter\JobController::class, 'update']);
+        Route::delete('/recruiter/jobs/{job}', [App\Http\Controllers\Api\Recruiter\JobController::class, 'destroy']);
+        Route::post('/recruiter/jobs/{job}/toggle', [App\Http\Controllers\Api\Recruiter\JobController::class, 'toggle']);
 
         // Dashboard metrics
-        Route::get('/recruiter/dashboard', [\App\Http\Controllers\Api\Recruiter\DashboardController::class, 'index']);
+        Route::get('/recruiter/dashboard', [DashboardController::class, 'index']);
 
         // Company profile management
         Route::get('/recruiter/company-profile', [CompanyProfileController::class, 'show']);
         Route::put('/recruiter/company-profile', [CompanyProfileController::class, 'update']);
 
         // Application management
-        Route::get('/recruiter/jobs/{job}/applications', [\App\Http\Controllers\Api\Recruiter\ApplicationController::class, 'index']);
-        Route::patch('/recruiter/applications/{application}', [\App\Http\Controllers\Api\Recruiter\ApplicationController::class, 'update']);
-        Route::get('/recruiter/applications/{application}/resume', [\App\Http\Controllers\Api\Recruiter\ApplicationController::class, 'downloadResume']);
+        Route::get('/recruiter/jobs/{job}/applications', [App\Http\Controllers\Api\Recruiter\ApplicationController::class, 'index']);
+        Route::patch('/recruiter/applications/{application}', [App\Http\Controllers\Api\Recruiter\ApplicationController::class, 'update']);
+        Route::get('/recruiter/applications/{application}/resume', [App\Http\Controllers\Api\Recruiter\ApplicationController::class, 'downloadResume']);
     });
 
     // Profile management (for all authenticated users)
@@ -106,8 +121,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Candidate routes
     Route::middleware('role:Candidate')->group(function () {
-        Route::get('/candidate/applications', [\App\Http\Controllers\Api\Candidate\ApplicationController::class, 'index']);
-        Route::get('/candidate/resume', [\App\Http\Controllers\Candidate\ResumeController::class, 'view'])
+        Route::get('/candidate/applications', [App\Http\Controllers\Api\Candidate\ApplicationController::class, 'index']);
+        Route::get('/candidate/resume', [ResumeController::class, 'view'])
             ->name('api.candidate.resume');
     });
 

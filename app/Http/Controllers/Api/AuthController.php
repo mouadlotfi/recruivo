@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Concerns\FormatsAuthenticatedUsers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
+use App\Notifications\SignupConfirmationNotification;
 use App\Services\UserRegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,20 +29,20 @@ class AuthController extends Controller
 
         $user = User::where('email', $credentials['email'])->first();
 
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             return response()->json([
                 'message' => 'These credentials do not match our records.',
                 'errors' => [
-                    'email' => ['These credentials do not match our records.']
-                ]
+                    'email' => ['These credentials do not match our records.'],
+                ],
             ], 422);
         }
 
-        if (!$user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail()) {
             return response()->json([
                 'message' => 'Please verify your email address before logging in.',
                 'errors' => [
-                    'email' => ['Please verify your email address before logging in.']
+                    'email' => ['Please verify your email address before logging in.'],
                 ],
                 'requires_verification' => true,
                 'email' => $user->email,
@@ -63,7 +64,7 @@ class AuthController extends Controller
 
         $user = $this->registrationService->register($data, $resumeFile);
 
-        $user->notify(new \App\Notifications\SignupConfirmationNotification($user));
+        $user->notify(new SignupConfirmationNotification($user));
 
         return response()->json([
             'message' => 'Registration successful! Please check your email to verify your account.',
@@ -76,7 +77,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Successfully logged out'
+            'message' => 'Successfully logged out',
         ]);
     }
 
@@ -88,5 +89,4 @@ class AuthController extends Controller
             'user' => $this->formatUserResponse($user),
         ]);
     }
-
 }

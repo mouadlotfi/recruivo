@@ -62,4 +62,3 @@ class ApplicationPolicy
         return $user->hasRole('Admin');
     }
 }
-

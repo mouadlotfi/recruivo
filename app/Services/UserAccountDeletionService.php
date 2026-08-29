@@ -24,7 +24,7 @@ class UserAccountDeletionService
         $email = $user->email;
         $name = $user->name ?? $user->email; // For recruiters who might not have a name
 
-        $paths = new Collection();
+        $paths = new Collection;
 
         if ($user->profile_picture_path) {
             $paths->push($user->profile_picture_path);

@@ -12,9 +12,7 @@ use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-    }
+    public function register(): void {}
 
     public function boot(): void
     {
@@ -34,7 +32,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-reset', fn (Request $request) => Limit::perMinute(6)->by(
             Str::lower((string) $request->input('email')).'|'.$request->ip()
         ));
-
+        RateLimiter::for('job-apply', fn (Request $request) => Limit::perMinute(15)->by(
+            $request->user()?->id ?: $request->ip()
+        ));
         // Set default password rules (fallback for places not using StrongPassword rule)
         Password::defaults(function () {
             return Password::min(12)

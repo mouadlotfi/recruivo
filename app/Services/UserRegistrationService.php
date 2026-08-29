@@ -15,9 +15,8 @@ class UserRegistrationService
     /**
      * Register a new user (candidate or recruiter).
      *
-     * @param array $data Validated registration data
-     * @param UploadedFile|null $resumeFile Optional resume file for candidates
-     * @return User
+     * @param  array  $data  Validated registration data
+     * @param  UploadedFile|null  $resumeFile  Optional resume file for candidates
      */
     public function register(array $data, ?UploadedFile $resumeFile = null): User
     {
@@ -30,10 +29,10 @@ class UserRegistrationService
         }
 
         $user = $this->createUser($data, $company?->id, $isCompanyAccount);
-        
+
         $this->assignRole($user, $isCompanyAccount);
 
-        if (!$isCompanyAccount && $resumeFile) {
+        if (! $isCompanyAccount && $resumeFile) {
             $this->createCandidateProfile($user, $resumeFile);
         }
 
@@ -42,9 +41,6 @@ class UserRegistrationService
 
     /**
      * Create a new company.
-     *
-     * @param array $companyData
-     * @return Company
      */
     protected function createCompany(array $companyData): Company
     {
@@ -61,8 +57,8 @@ class UserRegistrationService
         ]);
 
         // Filter out empty values
-        $companyData = array_filter($companyData, fn ($value) => !is_null($value) && $value !== '');
-        
+        $companyData = array_filter($companyData, fn ($value) => ! is_null($value) && $value !== '');
+
         $companyName = $companyData['name'];
 
         return Company::create(array_merge($companyData, [
@@ -73,11 +69,6 @@ class UserRegistrationService
 
     /**
      * Create a new user.
-     *
-     * @param array $data
-     * @param int|null $companyId
-     * @param bool $isRecruiter
-     * @return User
      */
     protected function createUser(array $data, ?int $companyId, bool $isRecruiter): User
     {
@@ -107,16 +98,12 @@ class UserRegistrationService
 
     /**
      * Assign the appropriate role to the user.
-     *
-     * @param User $user
-     * @param bool $isRecruiter
-     * @return void
      */
     protected function assignRole(User $user, bool $isRecruiter): void
     {
         $roleName = $isRecruiter ? 'Recruiter' : 'Candidate';
         $role = Role::where('name', $roleName)->first();
-        
+
         if ($role) {
             $user->assignRole($role);
         }
@@ -124,19 +111,14 @@ class UserRegistrationService
 
     /**
      * Create a candidate profile with resume.
-     *
-     * @param User $user
-     * @param UploadedFile $resumeFile
-     * @return CandidateProfile
      */
     protected function createCandidateProfile(User $user, UploadedFile $resumeFile): CandidateProfile
     {
         $resumePath = $resumeFile->store('resumes', 'private');
-        
+
         return CandidateProfile::create([
             'user_id' => $user->id,
             'resume_path' => $resumePath,
         ]);
     }
 }
-

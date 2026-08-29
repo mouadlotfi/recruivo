@@ -8,14 +8,14 @@ class Authenticate extends Middleware
 {
     protected function redirectTo($request)
     {
-        if (!$request->expectsJson()) {
+        if (! $request->expectsJson()) {
             // For email verification, redirect to a success page or return JSON
             if ($request->is('email/verify*')) {
                 return url('/email/verified');
             }
-            
+
             // For other web requests, redirect to frontend login
-            return config('app.frontend_url', 'http://localhost:3000') . '/login';
+            return config('app.frontend_url', 'http://localhost:3000').'/login';
         }
 
         return null;

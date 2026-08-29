@@ -22,6 +22,7 @@ class ChangePasswordRequest extends FormRequest
     {
         $user = $this->user();
         $username = $user && $user->email ? explode('@', $user->email)[0] : null;
+
         return [
             'current_password' => 'required|string',
             'password' => ['required', 'string', 'confirmed', new StrongPassword($username)],

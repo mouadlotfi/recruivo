@@ -55,4 +55,3 @@ class JobPolicy
         return $user->hasRole('Admin');
     }
 }
-
