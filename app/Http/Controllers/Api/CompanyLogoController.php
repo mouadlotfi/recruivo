@@ -15,25 +15,25 @@ class CompanyLogoController extends Controller
     public function show(Request $request, string $slug)
     {
         $company = Company::where('slug', $slug)->first();
-        
-        if (!$company) {
+
+        if (! $company) {
             return response()->json([
-                'message' => 'Company not found'
+                'message' => 'Company not found',
             ], 404);
         }
-        
-        if (!$company->logo_path) {
+
+        if (! $company->logo_path) {
             return response()->json([
-                'message' => 'No logo found for this company'
+                'message' => 'No logo found for this company',
             ], 404);
         }
-        
-        if (!Storage::disk('public')->exists($company->logo_path)) {
+
+        if (! Storage::disk('public')->exists($company->logo_path)) {
             return response()->json([
-                'message' => 'Logo file not found'
+                'message' => 'Logo file not found',
             ], 404);
         }
-        
+
         $response = Storage::disk('public')
             ->response($company->logo_path);
         $response->headers->set(

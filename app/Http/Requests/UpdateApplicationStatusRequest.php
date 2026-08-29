@@ -41,7 +41,7 @@ class UpdateApplicationStatusRequest extends FormRequest
             if (in_array($currentStatus, [...self::FINAL_STATUSES, ApplicationStatus::Withdrawn->value])) {
                 $rules['status'][] = function ($attribute, $value, $fail) use ($currentStatus) {
                     if ($value !== $currentStatus) {
-                        $fail('Once an application is ' . $currentStatus . ', you cannot change the decision.');
+                        $fail('Once an application is '.$currentStatus.', you cannot change the decision.');
                     }
                 };
             }
@@ -57,7 +57,7 @@ class UpdateApplicationStatusRequest extends FormRequest
                     };
                 }
                 // If not changing to accepted/rejected, don't allow adding notes
-                else if (!in_array($newStatus, self::FINAL_STATUSES)) {
+                elseif (! in_array($newStatus, self::FINAL_STATUSES)) {
                     $rules['notes'][] = function ($attribute, $value, $fail) {
                         $fail('Notes can only be added when accepting or rejecting an application.');
                     };

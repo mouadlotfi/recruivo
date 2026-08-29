@@ -24,7 +24,7 @@ return [
     'failed' => 'Ces identifiants ne correspondent pas à nos enregistrements.',
     'password_mismatch' => 'Le mot de passe est incorrect.',
     'throttle' => 'Trop de tentatives de connexion. Veuillez réessayer dans :seconds secondes.',
-    
+
     // Login page
     'login_title' => 'Connectez-vous à Recruivo',
     'login_subtitle' => 'Accédez à vos rôles enregistrés, alertes d\'emploi personnalisées et informations sur les entreprises en un seul endroit.',
@@ -35,10 +35,10 @@ return [
     'create_account' => 'Créer un compte',
     'email_verified' => 'E-mail vérifié avec succès ! Vous pouvez maintenant vous connecter à votre compte.',
     'account_created' => 'Compte créé avec succès ! Vous pouvez maintenant vous connecter à votre compte.',
-    
+
     // Register page
     'register_title' => 'Créez votre compte',
-    
+
     // Error Messages
     'email_not_verified' => 'Veuillez vérifier votre adresse e-mail avant de vous connecter.',
     'email_not_verified_api' => 'Votre adresse e-mail n\'est pas vérifiée.',
@@ -79,7 +79,7 @@ return [
     'linkedin_url_placeholder' => 'https://linkedin.com/company/votre-entreprise',
     'personal_email' => 'E-mail personnel',
     'email_help_text' => 'Ceci sera utilisé pour la connexion et la vérification du compte',
-    
+
     // Profile page
     'profile_information' => 'Informations du profil',
     'profile_information_desc' => 'Mettez à jour les informations de profil et l\'adresse e-mail de votre compte.',
@@ -95,7 +95,7 @@ return [
     'delete_account_desc' => 'Supprimer définitivement votre compte.',
     'delete_account_warning' => 'Une fois votre compte supprimé, toutes ses ressources et données seront définitivement supprimées. Avant de supprimer votre compte, veuillez télécharger toutes les données ou informations que vous souhaitez conserver.',
     'confirm_deletion' => 'Êtes-vous sûr de vouloir supprimer votre compte ? Une fois votre compte supprimé, toutes ses ressources et données seront définitivement supprimées. Veuillez entrer votre mot de passe pour confirmer que vous souhaitez supprimer définitivement votre compte.',
-    
+
     // Password reset
     'forgot_password_title' => 'Mot de passe oublié ?',
     'forgot_password_desc' => 'Pas de problème. Indiquez-nous simplement votre adresse e-mail et nous vous enverrons un lien de réinitialisation de mot de passe qui vous permettra d\'en choisir un nouveau.',
@@ -107,7 +107,7 @@ return [
     'confirm_password_placeholder' => 'Confirmez votre nouveau mot de passe',
     'reset_password_button' => 'Réinitialiser le mot de passe',
     'back_to_login' => 'Retour à la connexion',
-    
+
     // Email verification
     'verify_email_title' => 'Vérifiez votre adresse e-mail',
     'verify_email_short' => 'Vérifiez votre e-mail',

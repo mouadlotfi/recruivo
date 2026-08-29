@@ -72,7 +72,7 @@ class PostController extends Controller
             ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(slug, '$.{$locale}')) = ?", [$slug])
             ->first();
 
-        if (!$post) {
+        if (! $post) {
             abort(404);
         }
 
@@ -127,4 +127,3 @@ class PostController extends Controller
         ];
     }
 }
-

@@ -3,11 +3,9 @@
 namespace Tests\Feature\Api;
 
 use App\Models\User;
-
 use App\Notifications\EmailChangeVerificationNotification;
 use App\Notifications\PasswordChangedNotification;
 use App\Notifications\SignupConfirmationNotification;
-use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
@@ -101,7 +99,7 @@ class AccountNotificationsTest extends TestCase
         Sanctum::actingAs($user);
 
         $oldEmail = $user->email;
-        $newEmail = 'updated-' . $user->id . '@example.com';
+        $newEmail = 'updated-'.$user->id.'@example.com';
 
         $response = $this->putJson('/api/profile', [
             'email' => $newEmail,
@@ -119,10 +117,8 @@ class AccountNotificationsTest extends TestCase
 
         Notification::assertSentOnDemand(
             EmailChangeVerificationNotification::class,
-            fn (EmailChangeVerificationNotification $notification, array $channels, $notifiable) =>
-                in_array('mail', $channels, true)
+            fn (EmailChangeVerificationNotification $notification, array $channels, $notifiable) => in_array('mail', $channels, true)
                 && ($notifiable->routes['mail'] ?? null) === $newEmail
         );
     }
 }
-

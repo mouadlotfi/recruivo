@@ -14,8 +14,7 @@ class AccountDeletedNotification extends Notification implements ShouldQueue
     public function __construct(
         protected string $name,
         protected bool $initiatedByUser
-    ) {
-    }
+    ) {}
 
     public function via($notifiable): array
     {
@@ -26,12 +25,12 @@ class AccountDeletedNotification extends Notification implements ShouldQueue
     {
         $mailMessage = (new MailMessage)
             ->subject('Your Recruivo account has been deleted')
-            ->greeting('Hi ' . $this->name)
+            ->greeting('Hi '.$this->name)
             ->line($this->initiatedByUser
                 ? 'This email confirms that your Recruivo account has been deleted.'
                 : 'This email is to let you know that an administrator has removed your Recruivo account.');
 
-        if (!$this->initiatedByUser) {
+        if (! $this->initiatedByUser) {
             $mailMessage->line('If you believe this was a mistake, please contact support to review the action.');
         }
 

@@ -5,6 +5,7 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
+      APP_IS_DEMO: "false"
     volumes:
       - ./storage:/var/www/html/storage
       - bootstrap_cache:/var/www/html/bootstrap/cache
@@ -19,6 +20,10 @@ services:
   queue:
     env_file:
       - ${APP_ENV_FILE:-.env.production.example}
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_IS_DEMO: "false"
     volumes:
       - ./storage:/var/www/html/storage
       - bootstrap_cache:/var/www/html/bootstrap/cache
@@ -33,6 +38,10 @@ services:
   scheduler:
     env_file:
       - ${APP_ENV_FILE:-.env.production.example}
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_IS_DEMO: "false"
     volumes:
       - ./storage:/var/www/html/storage
       - bootstrap_cache:/var/www/html/bootstrap/cache
@@ -50,3 +59,4 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
+      APP_IS_DEMO: "false"

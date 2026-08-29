@@ -299,8 +299,8 @@ class SmartSearchTest extends TestCase
         $this->assertStringContainsString('errorMessage.value = label(\'search_error\')', $autocomplete);
 
         // Both states surface localized text in the listbox.
-        $this->assertStringContainsString("v-if=\"isLoading\"", $autocomplete);
-        $this->assertStringContainsString("v-else-if=\"errorMessage\"", $autocomplete);
+        $this->assertStringContainsString('v-if="isLoading"', $autocomplete);
+        $this->assertStringContainsString('v-else-if="errorMessage"', $autocomplete);
         $this->assertStringContainsString("label('loading')", $autocomplete);
 
         // Aborts never surface as an error; only the newest request clears

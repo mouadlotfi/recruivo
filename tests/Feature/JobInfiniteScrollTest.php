@@ -26,7 +26,7 @@ class JobInfiniteScrollTest extends TestCase
                 ->where('jobs.data.0.title', 'Role 01')
                 ->where('jobs.meta.total', 13)
                 ->where('jobs.meta.last_page', 2)
-                ->where('jobs.meta.next_page_url', config('app.url') . '/en/jobs?page=2')
+                ->where('jobs.meta.next_page_url', config('app.url').'/en/jobs?page=2')
                 ->where('pagination.total', 13)
                 ->where('pagination.last_page', 2)
             );

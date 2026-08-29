@@ -58,7 +58,7 @@ return [
     'title' => 'Profile Settings',
     'profile_settings' => 'Profile Settings',
     'company_profile' => 'Company Profile',
-    
+
     // Profile Information
     'profile_information' => 'Profile Information',
     'preview_as_recruiter' => 'Preview recruiter view',
@@ -99,7 +99,7 @@ return [
     'portfolio_url' => 'Portfolio URL',
     'github_url' => 'GitHub URL',
     'personal_website_url' => 'Personal Website URL',
-    
+
     // Company Fields
     'company_name' => 'Company Name',
     'tagline' => 'Tagline',
@@ -116,7 +116,7 @@ return [
     'mission' => 'Mission',
     'culture' => 'Culture',
     'update_profile' => 'Update Profile',
-    
+
     // Change Email
     'change_email_title' => 'Change Email Address',
     'change_email_address' => 'Change Email Address',
@@ -129,21 +129,21 @@ return [
     'email_verification_notice' => 'You will receive a verification email at the new address.',
     'verification_email_sent' => 'You will receive a verification email at the new address.',
     'request_email_change' => 'Request Email Change',
-    
+
     // Change Password
     'change_password' => 'Change Password',
     'current_password' => 'Current Password',
     'new_password' => 'New Password',
     'confirm_new_password' => 'Confirm New Password',
     'change_password_button' => 'Change Password',
-    
+
     // Delete Account
     'delete_account' => 'Delete Account',
     'delete_account_warning' => 'Once your account is deleted, all of its resources and data will be permanently deleted.',
     'delete_account_button' => 'Delete Account',
     'delete_account_confirm' => 'Are you sure you want to delete your account? This action cannot be undone.',
     'delete_account_confirmation' => 'Are you sure you want to delete your account? This action cannot be undone.',
-    
+
     // Flash Messages
     'profile_updated' => 'Profile updated successfully!',
     'password_changed' => 'Password changed successfully!',

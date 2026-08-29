@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Post>
+ * @extends Factory<Post>
  */
 class PostFactory extends Factory
 {
@@ -56,8 +56,6 @@ class PostFactory extends Factory
 
     /**
      * Indicate that the post is published.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
      */
     public function published(): Factory
     {
@@ -69,8 +67,6 @@ class PostFactory extends Factory
 
     /**
      * Indicate that the post is a draft.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
      */
     public function draft(): Factory
     {
@@ -80,4 +76,3 @@ class PostFactory extends Factory
         ]);
     }
 }
-

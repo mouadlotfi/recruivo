@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -46,15 +47,15 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::validate($credentials)) {
+        if (! Auth::validate($credentials)) {
             return back()->withErrors([
                 'email' => __('auth.invalid_credentials'),
             ])->withInput();
         }
 
-        $user = \App\Models\User::where('email', $credentials['email'])->firstOrFail();
+        $user = User::where('email', $credentials['email'])->firstOrFail();
 
-        if (!$user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail()) {
             return back()->withErrors([
                 'email' => __('auth.email_not_verified'),
             ])->withInput();
@@ -64,10 +65,10 @@ class LoginController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
-            if (!$user->last_login_at) {
+            if (! $user->last_login_at) {
                 $request->session()->put('first_login', true);
             }
-            
+
             $user->update(['last_login_at' => now()]);
             if ($user->hasRole('Admin')) {
                 return redirect()->intended(localized_route('admin.dashboard'));
@@ -93,4 +94,3 @@ class LoginController extends Controller
         return redirect(localized_route('home'));
     }
 }
-

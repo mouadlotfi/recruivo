@@ -37,7 +37,7 @@ class CompanyController extends Controller
         $company->load(['jobs' => fn ($query) => $query
             ->published()
             ->withCount('applications')
-            ->latest('published_at')
+            ->latest('published_at'),
         ]);
 
         return new CompanyDetailResource($company);

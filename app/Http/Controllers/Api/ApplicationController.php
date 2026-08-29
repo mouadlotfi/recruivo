@@ -43,7 +43,7 @@ class ApplicationController extends Controller
         }
 
         $resumePath = null;
-        
+
         if ($request->input('use_existing_resume') === 'true') {
             $resumePath = $user->candidateProfile?->resume_path;
         } elseif ($request->hasFile('resume')) {
@@ -52,7 +52,7 @@ class ApplicationController extends Controller
             $resumePath = $user->candidateProfile?->resume_path;
         }
 
-        if (!$resumePath) {
+        if (! $resumePath) {
             return response()->json([
                 'message' => 'A resume is required to submit an application.',
                 'errors' => [
@@ -70,7 +70,7 @@ class ApplicationController extends Controller
             ]
         );
 
-        if (!$application->wasRecentlyCreated) {
+        if (! $application->wasRecentlyCreated) {
             if ($request->hasFile('resume')) {
                 Storage::disk('private')->delete($resumePath);
             }

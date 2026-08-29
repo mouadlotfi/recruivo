@@ -77,4 +77,3 @@ return [
 
     'supported' => ['en', 'fr'],
 ];
-

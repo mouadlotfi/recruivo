@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Post extends Model
 {
-    use HasFactory, SoftDeletes, HasTranslations;
+    use HasFactory, HasTranslations, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -58,8 +59,6 @@ class Post extends Model
 
     /**
      * Get the post's localized slug for the current locale.
-     *
-     * @return string
      */
     public function getLocalizedSlugAttribute(): string
     {
@@ -68,8 +67,6 @@ class Post extends Model
 
     /**
      * Get the URL for the post in the current locale.
-     *
-     * @return string
      */
     public function getUrlAttribute(): string
     {
@@ -91,25 +88,24 @@ class Post extends Model
     /**
      * Scope a query to only include published posts.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopePublished($query)
     {
         return $query->where('is_published', true)
-                    ->whereNotNull('published_at')
-                    ->where('published_at', '<=', now());
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
     /**
      * Scope a query to order by latest published.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeLatest($query)
     {
         return $query->orderBy('published_at', 'desc');
     }
 }
-

@@ -8,7 +8,7 @@ return [
     'location_max' => 'The location may not be greater than :max characters.',
     'phone_max' => 'The phone number may not be greater than :max characters.',
     'profile_summary_max' => 'The profile summary may not be greater than :max characters.',
-    
+
     // Company validation
     'company_name_max' => 'The company name may not be greater than :max characters.',
     'company_name_required' => 'Please tell us the company name so candidates can recognise your brand.',
@@ -19,7 +19,7 @@ return [
     'founded_year_invalid' => 'The founded year must be a valid year.',
     'founded_year_min' => 'The founded year must be after :min.',
     'founded_year_future' => 'The founded year cannot be in the future.',
-    
+
     // Application validation
     'notes_required_status' => 'Please include a note when accepting or rejecting an application.',
     'status_invalid' => 'Status must be either pending, shortlisted, interview, accepted, or rejected.',
@@ -32,7 +32,7 @@ return [
     'status_withdrawn_not_allowed' => 'Withdrawn can only be set by the candidate.',
     'closes_at_after_or_equal' => 'The closing date must be today or later.',
     'closes_at_date' => 'Please provide a valid closing date.',
-    
+
     // Password validation
     'current_password_required' => 'Current password is required.',
     'password_required' => 'New password is required.',

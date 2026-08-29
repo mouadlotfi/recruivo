@@ -10,7 +10,7 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (!$request->user() || !$request->user()->hasAnyRole($roles)) {
+        if (! $request->user() || ! $request->user()->hasAnyRole($roles)) {
             abort(403);
         }
 

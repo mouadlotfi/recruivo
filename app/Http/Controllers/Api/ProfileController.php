@@ -4,26 +4,24 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\Concerns\FormatsAuthenticatedUsers;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Models\CandidateProfile;
-use App\Notifications\PasswordChangedNotification;
 use App\Notifications\EmailChangeVerificationNotification;
-use App\Services\UserAccountDeletionService;
+use App\Notifications\PasswordChangedNotification;
 use App\Services\DemoAccountGuard;
+use App\Services\UserAccountDeletionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
     use FormatsAuthenticatedUsers;
 
-    public function __construct(protected UserAccountDeletionService $userAccountDeletionService)
-    {
-    }
+    public function __construct(protected UserAccountDeletionService $userAccountDeletionService) {}
 
     /**
      * Update the user's profile information.
@@ -88,8 +86,8 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
         $demoAccountGuard->ensureProfileIsMutable($user);
-        
-        if (!Hash::check($request->current_password, $user->password)) {
+
+        if (! Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'message' => 'The current password is incorrect.',
                 'errors' => [
@@ -97,14 +95,15 @@ class ProfileController extends Controller
                 ],
             ], 422);
         }
-        
+
         $user->update([
-            'password' => Hash::make($request->password)
+            'password' => Hash::make($request->password),
         ]);
-        
+
         $user->notify(new PasswordChangedNotification($user));
+
         return response()->json([
-            'message' => 'Password changed successfully'
+            'message' => 'Password changed successfully',
         ]);
     }
 
@@ -115,7 +114,7 @@ class ProfileController extends Controller
         $this->userAccountDeletionService->deleteUserAccount($user, true);
 
         return response()->json([
-            'message' => 'Account deleted successfully'
+            'message' => 'Account deleted successfully',
         ]);
     }
 }

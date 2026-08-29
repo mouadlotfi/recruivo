@@ -62,6 +62,12 @@ const sidebarOpen = ref(false)
                         <span class="font-display text-lg font-semibold tracking-tight text-stone-900 dark:text-white">
                             Recruivo
                         </span>
+                        <span
+                            v-if="page.props.isDemoEnvironment"
+                            class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
+                        >
+                            DEMO
+                        </span>
                     </Link>
                 </div>
 

@@ -32,7 +32,7 @@ class JobController extends Controller
 
         return response()->json([
             'message' => 'Job created successfully.',
-            'data' => new JobResource($job)
+            'data' => new JobResource($job),
         ], 201);
     }
 
@@ -41,7 +41,7 @@ class JobController extends Controller
         $this->authorizeJob($job);
 
         return response()->json([
-            'data' => new JobResource($job->load('company'))
+            'data' => new JobResource($job->load('company')),
         ]);
     }
 
@@ -53,7 +53,7 @@ class JobController extends Controller
 
         return response()->json([
             'message' => 'Job updated successfully.',
-            'data' => new JobResource($job)
+            'data' => new JobResource($job),
         ]);
     }
 
@@ -63,7 +63,7 @@ class JobController extends Controller
         $job->delete();
 
         return response()->json([
-            'message' => 'Job deleted successfully.'
+            'message' => 'Job deleted successfully.',
         ]);
     }
 
@@ -81,7 +81,7 @@ class JobController extends Controller
 
         return response()->json([
             'message' => 'Job status updated successfully.',
-            'data' => new JobResource($job)
+            'data' => new JobResource($job),
         ]);
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ItCategory;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -33,7 +34,7 @@ class UpdateProfileRequest extends FormRequest
     {
         return [
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|max:255|unique:users,email,' . $this->user()->id,
+            'email' => 'sometimes|email|max:255|unique:users,email,'.$this->user()->id,
             'location' => 'sometimes|nullable|string|max:255',
             'phone' => 'sometimes|nullable|string|max:20',
             'profile_summary' => 'sometimes|nullable|string|max:1000',
@@ -66,7 +67,7 @@ class UpdateProfileRequest extends FormRequest
             'educations.*.is_current' => ['required', 'boolean'],
             'educations.*.description' => ['nullable', 'string', 'max:3000'],
             'preferred_categories' => ['nullable', 'array', 'distinct'],
-            'preferred_categories.*' => ['string', 'in:' . implode(',', \App\Enums\ItCategory::values())],
+            'preferred_categories.*' => ['string', 'in:'.implode(',', ItCategory::values())],
             'resume' => 'sometimes|nullable|file|mimes:pdf,doc,docx|max:5120',
             'company.name' => 'sometimes|string|max:255',
             'company.tagline' => 'sometimes|nullable|string|max:255',
@@ -99,7 +100,7 @@ class UpdateProfileRequest extends FormRequest
             'experiences_json' => 'experiences',
             'educations_json' => 'educations',
         ] as $jsonField => $collectionField) {
-            if (!$this->exists($jsonField)) {
+            if (! $this->exists($jsonField)) {
                 continue;
             }
 
@@ -129,10 +130,10 @@ class UpdateProfileRequest extends FormRequest
                         $validator->errors()->add("experiences.{$index}.{$field}", __('profile.year_cannot_be_future'));
                     }
                 }
-                if (!$current && blank($experience['end_date'] ?? null)) {
+                if (! $current && blank($experience['end_date'] ?? null)) {
                     $validator->errors()->add("experiences.{$index}.end_date", __('validation.required'));
                 }
-                if (!$current && filled($experience['start_date'] ?? null) && filled($experience['end_date'] ?? null)
+                if (! $current && filled($experience['start_date'] ?? null) && filled($experience['end_date'] ?? null)
                     && $experience['end_date'] < $experience['start_date']) {
                     $validator->errors()->add("experiences.{$index}.end_date", __('profile.end_date_after_start'));
                 }
@@ -144,10 +145,10 @@ class UpdateProfileRequest extends FormRequest
                 if ($startYear > (int) date('Y')) {
                     $validator->errors()->add("educations.{$index}.start_date", __('profile.year_cannot_be_future'));
                 }
-                if (!$current && blank($education['end_date'] ?? null)) {
+                if (! $current && blank($education['end_date'] ?? null)) {
                     $validator->errors()->add("educations.{$index}.end_date", __('validation.required'));
                 }
-                if (!$current && filled($education['start_date'] ?? null) && filled($education['end_date'] ?? null)
+                if (! $current && filled($education['start_date'] ?? null) && filled($education['end_date'] ?? null)
                     && $education['end_date'] < $education['start_date']) {
                     $validator->errors()->add("educations.{$index}.end_date", __('profile.end_date_after_start'));
                 }

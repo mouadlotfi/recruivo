@@ -16,6 +16,7 @@ declare module '@inertiajs/core' {
             auth: {
                 user: User | null
             }
+            isDemoEnvironment?: boolean
             locale: string
             supportedLocales: string[]
             translations: Record<string, Record<string, string>>

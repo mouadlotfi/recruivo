@@ -11,7 +11,7 @@ class SearchController extends Controller
     public function suggestions(Request $request, SmartSearchService $searchService)
     {
         $query = $searchService->normalize($request->input('q', ''));
-        
+
         if (strlen($query) < 1) {
             return response()->json([
                 'query' => '',
@@ -28,7 +28,7 @@ class SearchController extends Controller
                     'id' => $job->id,
                     'type' => 'job',
                     'title' => $job->title,
-                    'subtitle' => $job->company->name . ' • ' . $job->location,
+                    'subtitle' => $job->company->name.' • '.$job->location,
                     'url' => localized_route('jobs.show', ['job' => $job->id], $locale),
                     'logo' => $job->company->logo_url,
                 ];
@@ -40,7 +40,7 @@ class SearchController extends Controller
                     'id' => $company->id,
                     'type' => 'company',
                     'title' => $company->name,
-                    'subtitle' => $company->location . ($company->tagline ? ' • ' . $company->tagline : ''),
+                    'subtitle' => $company->location.($company->tagline ? ' • '.$company->tagline : ''),
                     'url' => localized_route('companies.show', ['slug' => $company->slug], $locale),
                     'logo' => $company->logo_url,
                 ];

@@ -37,63 +37,116 @@ class JobSeeder extends Seeder
 
     public function run(DemoContentService $content): void
     {
-        $this->command->info('Syncing IT jobs...');
+        $this->command->info('Syncing IT jobs with realistic compensation, remote types, and schedules...');
 
         $companies = Company::query()->orderBy('id')->get();
 
         if ($companies->isEmpty()) {
             $this->command->warn('No companies found. Please run CompanySeeder first.');
+
             return;
         }
+
+        $jobCountsByCompany = [
+            'aetheris-dynamics' => 7,
+            'bitforge-software' => 5,
+            'cipherwave-security' => 4,
+            'datavortex-systems' => 6,
+            'echologic-ai' => 5,
+            'fluxcore-technologies' => 4,
+            'gigabyte-foundry' => 5,
+            'hyperion-networks' => 5,
+            'ionsphere-labs' => 3,
+            'krypton-solutions' => 4,
+            'lumina-software-house' => 4,
+            'nexusnode-tech' => 3,
+            'omnistack-engineering' => 6,
+            'pixelcraft-digital' => 3,
+            'quantumleap-it' => 5,
+        ];
+
+        $remoteTypes = ['remote', 'hybrid', 'onsite'];
 
         foreach ($companies as $company) {
             $profileKey = array_key_exists($company->slug, self::JOB_PROFILES)
                 ? $company->slug
                 : Str::slug($company->name);
             $profile = self::JOB_PROFILES[$profileKey] ?? self::DEFAULT_PROFILE;
-            $jobs = $company->jobs()->orderBy('id')->get();
-
-            foreach ($jobs as $index => $job) {
-                $job->update([
-                    'title' => $this->vacancyTitle($profile['titles'], $index),
-                    'category' => $profile['category'],
-                    'location' => $profile['locations'][$index % count($profile['locations'])],
-                ]);
-                $job->load('company');
-                $job->update(['description' => $content->jobDescription($job)]);
-            }
-
-            if ($jobs->isNotEmpty()) {
-                continue;
-            }
-
             $recruiters = $company->recruiters()->get();
 
             if ($recruiters->isEmpty()) {
                 continue;
             }
 
-            for ($i = 0; $i < rand(3, 7); $i++) {
-                $job = Job::factory()->create([
+            $targetCount = $jobCountsByCompany[$company->slug] ?? 4;
+            $existingJobs = $company->jobs()->orderBy('id')->get();
+
+            for ($i = 0; $i < $targetCount; $i++) {
+                $job = $existingJobs->get($i) ?? new Job;
+
+                $title = $this->vacancyTitle($profile['titles'], $i);
+                $location = $profile['locations'][$i % count($profile['locations'])];
+                $remoteType = $remoteTypes[$i % count($remoteTypes)];
+
+                // Realistic compensation based on seniority
+                $salaryRange = $this->salaryRangeForTitle($title);
+
+                // Status: majority published, 1 draft per company at most
+                $isDraft = ($i === $targetCount - 1 && $targetCount >= 5);
+                $status = $isDraft ? JobStatus::Draft->value : JobStatus::Published->value;
+
+                // Published date staggered over past 3 months
+                $publishedAt = $isDraft ? null : now()->subDays(($i * 12) + rand(1, 8));
+
+                // Closes_at: closing soon for one job, expired for another, null for rest
+                $closesAt = null;
+                if (! $isDraft) {
+                    if ($i === 1) {
+                        // Closing soon (in 3 to 6 days)
+                        $closesAt = now()->addDays(rand(3, 6));
+                    } elseif ($i === $targetCount - 2 && $targetCount >= 5) {
+                        // Expired (closed 5 days ago)
+                        $closesAt = now()->subDays(rand(4, 12));
+                    }
+                }
+
+                $job->fill([
                     'company_id' => $company->id,
                     'recruiter_id' => $recruiters->random()->id,
-                    'title' => $this->vacancyTitle($profile['titles'], $i),
+                    'title' => $title,
                     'category' => $profile['category'],
-                    'location' => $profile['locations'][$i % count($profile['locations'])],
-                    'status' => fake()->randomElement([
-                        JobStatus::Published->value,
-                        JobStatus::Published->value,
-                        JobStatus::Published->value,
-                        JobStatus::Draft->value,
-                    ]),
-                    'published_at' => fake()->dateTimeBetween('-3 months', 'now'),
+                    'location' => $location,
+                    'remote_type' => $remoteType,
+                    'salary_min' => $salaryRange['min'],
+                    'salary_max' => $salaryRange['max'],
+                    'status' => $status,
+                    'published_at' => $publishedAt,
+                    'closes_at' => $closesAt,
                 ]);
-                $job->load('company');
-                $job->update(['description' => $content->jobDescription($job)]);
+                $job->setRelation('company', $company);
+                $job->description = $content->jobDescription($job);
+                $job->save();
             }
         }
 
-        $this->command->info('All seeded jobs now use IT categories and roles.');
+        $totalJobs = Job::count();
+        $publishedCount = Job::published()->count();
+        $this->command->info("All seeded jobs synced: {$totalJobs} total ({$publishedCount} active published).");
+    }
+
+    private function salaryRangeForTitle(string $title): array
+    {
+        if (str_starts_with($title, 'Principal')) {
+            return ['min' => 165000, 'max' => 220000];
+        }
+        if (str_starts_with($title, 'Lead')) {
+            return ['min' => 145000, 'max' => 185000];
+        }
+        if (str_starts_with($title, 'Senior')) {
+            return ['min' => 115000, 'max' => 155000];
+        }
+
+        return ['min' => 75000, 'max' => 105000];
     }
 
     private function vacancyTitle(array $titles, int $index): string

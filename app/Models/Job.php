@@ -61,19 +61,19 @@ class Job extends Model
     {
         return $this->status === JobStatus::Published
             && $this->published_at !== null
-            && !$this->isExpired();
+            && ! $this->isExpired();
     }
 
     public function isClosingSoon(): bool
     {
-        return !$this->isExpired()
+        return ! $this->isExpired()
             && $this->closes_at !== null
             && $this->closes_at->lte(today()->addDays(7));
     }
 
     public function scopeOrderByPreference(Builder $query, ?array $preferredCategories): Builder
     {
-        if (!$preferredCategories) {
+        if (! $preferredCategories) {
             return $query->latest('published_at');
         }
 
@@ -97,7 +97,7 @@ class Job extends Model
 
     public function scopeWithSavedStateFor(Builder $query, ?User $user): Builder
     {
-        if (!$user?->hasRole('Candidate')) {
+        if (! $user?->hasRole('Candidate')) {
             return $query;
         }
 

@@ -84,7 +84,7 @@ class FrontendArchitectureTest extends TestCase
         $this->assertMatchesRegularExpression('/<x-inertia::app\s*\/?>|<x-inertia:app\s*\/?>/', $root);
 
         $this->assertStringContainsString('@vite', $root);
-        $this->assertStringContainsString("resources/js/app.ts", $root);
+        $this->assertStringContainsString('resources/js/app.ts', $root);
         $this->assertStringNotContainsString('resources/js/app.js', $root, 'The root must not reference legacy app.js.');
         $this->assertStringNotContainsString('resources/css/app.css', $root, 'CSS ships through app.ts, not a Vite entry.');
         $this->assertStringNotContainsString('@inertiaHead', $root, 'Use <x-inertia::head> instead of the legacy directive.');

@@ -11,21 +11,18 @@ class SetLocale
 {
     /**
      * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function handle(Request $request, Closure $next): Response
     {
         $locale = $request->route('locale');
         $supportedLocales = config('locales.supported', ['en', 'fr']);
-        
+
         if ($locale && in_array($locale, $supportedLocales)) {
             App::setLocale($locale);
         } else {
             App::setLocale(config('locales.default', config('app.locale')));
         }
+
         return $next($request);
     }
 }

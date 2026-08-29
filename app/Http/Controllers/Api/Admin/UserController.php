@@ -12,9 +12,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class UserController extends Controller
 {
-    public function __construct(protected UserAccountDeletionService $userAccountDeletionService)
-    {
-    }
+    public function __construct(protected UserAccountDeletionService $userAccountDeletionService) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -48,14 +46,14 @@ class UserController extends Controller
     {
         if ($request->user()->is($user)) {
             return response()->json([
-                'message' => 'You cannot delete your own account from the admin panel.'
+                'message' => 'You cannot delete your own account from the admin panel.',
             ], 422);
         }
 
         $this->userAccountDeletionService->deleteUserAccount($user, false);
 
         return response()->json([
-            'message' => 'User deleted successfully.'
+            'message' => 'User deleted successfully.',
         ]);
     }
 }

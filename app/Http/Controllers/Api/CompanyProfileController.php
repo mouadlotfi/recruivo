@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateCompanyProfileRequest;
 use App\Models\Company;
 use App\Services\DemoAccountGuard;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -18,13 +17,13 @@ class CompanyProfileController extends Controller
     public function show()
     {
         $user = Auth::user();
-        
-        if (!$user->hasRole('Recruiter') || !$user->company_id) {
+
+        if (! $user->hasRole('Recruiter') || ! $user->company_id) {
             return response()->json([
-                'message' => 'Only recruiters can access company profiles'
+                'message' => 'Only recruiters can access company profiles',
             ], 403);
         }
-        
+
         $company = Company::findOrFail($user->company_id);
 
         return response()->json([
@@ -39,29 +38,28 @@ class CompanyProfileController extends Controller
     {
         $user = Auth::user();
         $demoAccountGuard->ensureProfileIsMutable($user);
-        
-        if (!$user->hasRole('Recruiter') || !$user->company_id) {
+
+        if (! $user->hasRole('Recruiter') || ! $user->company_id) {
             return response()->json([
-                'message' => 'Only recruiters can update company profiles'
+                'message' => 'Only recruiters can update company profiles',
             ], 403);
         }
-        
+
         $company = Company::findOrFail($user->company_id);
         $data = $request->validated();
-        
+
         if ($request->hasFile('logo')) {
             if ($company->logo_path) {
                 Storage::disk('public')->delete($company->logo_path);
             }
             $data['logo_path'] = $request->file('logo')->store('company-logos', 'public');
         }
-        
+
         $company->update($data);
-        
+
         return response()->json([
             'message' => 'Company profile updated successfully',
-            'data' => $company->fresh()->makeHidden('email')
+            'data' => $company->fresh()->makeHidden('email'),
         ]);
     }
-
 }

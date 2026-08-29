@@ -43,6 +43,13 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                                 </svg>
                             </span>
                             <span class="font-semibold tracking-tight text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">Recruivo</span>
+                            <span
+                                v-if="page.props.isDemoEnvironment"
+                                class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
+                                :title="t('demo_environment_notice')"
+                            >
+                                {{ t('demo_environment_badge') }}
+                            </span>
                         </Link>
                         <Navigation />
                     </div>

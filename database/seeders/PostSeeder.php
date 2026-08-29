@@ -23,36 +23,36 @@ class PostSeeder extends Seeder
         })->get();
 
         $recruiters = User::where('is_recruiter', true)->take(5)->get();
-        
+
         $authors = $admins->concat($recruiters);
 
         if ($authors->isEmpty()) {
             $this->command->warn('No admin or recruiter users found. Please run UserSeeder first.');
+
             return;
         }
 
-        // Create 20 published posts
+        // Create 8 published posts
         Post::factory()
-            ->count(20)
+            ->count(8)
             ->published()
             ->create([
-                'user_id' => fn() => $authors->random()->id,
+                'user_id' => fn () => $authors->random()->id,
             ]);
 
-        // Create 5 draft posts
+        // Create 2 draft posts
         Post::factory()
-            ->count(5)
+            ->count(2)
             ->draft()
             ->create([
-                'user_id' => fn() => $authors->random()->id,
+                'user_id' => fn () => $authors->random()->id,
             ]);
 
         $totalPosts = Post::count();
         $publishedPosts = Post::where('is_published', true)->count();
         $draftPosts = Post::where('is_published', false)->count();
 
-        $this->command->info("Posts created successfully!");
+        $this->command->info('Posts created successfully!');
         $this->command->info("Total: {$totalPosts} (Published: {$publishedPosts}, Draft: {$draftPosts})");
     }
 }
-

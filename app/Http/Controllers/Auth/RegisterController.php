@@ -76,9 +76,9 @@ class RegisterController extends Controller
 
         // Sent directly to prevent duplicate dispatch from Registered event listeners.
         $user->sendEmailVerificationNotification();
+
         return redirect()
             ->to(localized_route('verification.notice'))
             ->with('registered', true);
     }
 }
-

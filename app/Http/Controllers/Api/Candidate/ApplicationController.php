@@ -15,12 +15,12 @@ class ApplicationController extends Controller
     public function index(Request $request)
     {
         $candidate = Auth::user();
-        
+
         $applications = $candidate->applications()
             ->with(['job.company'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
-        
+
         return ApplicationResource::collection($applications);
     }
 }

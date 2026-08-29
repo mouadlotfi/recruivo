@@ -15,7 +15,7 @@ class DashboardController extends Controller
         $user = $request->user();
         $company = $user->company;
 
-        if (!$company) {
+        if (! $company) {
             return redirect(localized_route('profile.edit'))->with('error', __('recruiter.company_required'));
         }
 
@@ -85,4 +85,3 @@ class DashboardController extends Controller
         ]);
     }
 }
-

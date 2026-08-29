@@ -50,4 +50,3 @@ class LoginTest extends TestCase
         $response->assertJsonPath('message', 'These credentials do not match our records.');
     }
 }
-

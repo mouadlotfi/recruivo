@@ -10,14 +10,14 @@ class JobDescriptionFormatterTest extends TestCase
     public function test_it_turns_the_seed_format_into_structured_html(): void
     {
         $input = "We're looking for a Laravel Engineer.\r\n"
-            . "Responsibilities\r\n"
-            . "\r\n"
-            . "    Build and maintain web applications using Laravel.\r\n"
-            . "    Develop RESTful APIs.\r\n"
-            . "\r\n"
-            . "Requirements\r\n"
-            . "\r\n"
-            . "    Proven experience with PHP.\r\n";
+            ."Responsibilities\r\n"
+            ."\r\n"
+            ."    Build and maintain web applications using Laravel.\r\n"
+            ."    Develop RESTful APIs.\r\n"
+            ."\r\n"
+            ."Requirements\r\n"
+            ."\r\n"
+            ."    Proven experience with PHP.\r\n";
 
         $html = JobDescriptionFormatter::format($input);
 
@@ -38,5 +38,4 @@ class JobDescriptionFormatterTest extends TestCase
         $this->assertStringContainsString('&lt;script&gt;', $html);
         $this->assertStringNotContainsString('<script>', $html);
     }
-
 }

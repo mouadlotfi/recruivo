@@ -27,7 +27,7 @@ class UpdateCompanyProfileRequest extends FormRequest
             'linkedin_url' => 'sometimes|nullable|url|max:255',
 
             'size' => 'sometimes|nullable|string|max:50',
-            'founded_year' => 'sometimes|nullable|integer|min:1800|max:' . date('Y'),
+            'founded_year' => 'sometimes|nullable|integer|min:1800|max:'.date('Y'),
             'mission' => 'sometimes|nullable|string',
             'culture' => 'sometimes|nullable|string',
             'logo' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',

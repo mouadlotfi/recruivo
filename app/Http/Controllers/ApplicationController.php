@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ApplicationStatus;
 use App\Models\Job;
+use App\Notifications\NewApplicationNotification;
 use App\Services\DemoAccountGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -46,7 +47,7 @@ class ApplicationController extends Controller
             $resumePath = $request->file('resume')->store('application-resumes', 'private');
         }
 
-        if ($validated['resume_source'] === 'profile' && !$resumePath) {
+        if ($validated['resume_source'] === 'profile' && ! $resumePath) {
             return back()->withErrors(['resume_source' => __('jobs.profile_resume_missing')])->withInput();
         }
 
@@ -60,7 +61,7 @@ class ApplicationController extends Controller
             ]
         );
 
-        if (!$application->wasRecentlyCreated) {
+        if (! $application->wasRecentlyCreated) {
             if ($request->hasFile('resume')) {
                 Storage::disk('private')->delete($resumePath);
             }
@@ -80,10 +81,9 @@ class ApplicationController extends Controller
             ->filter()
             ->unique('id')
             ->each(function ($recruiter) use ($application) {
-                $recruiter->notify(new \App\Notifications\NewApplicationNotification($application));
+                $recruiter->notify(new NewApplicationNotification($application));
             });
 
         return redirect(localized_route('jobs.show', $job))->with('success', __('jobs.application_submitted'));
     }
 }
-

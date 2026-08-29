@@ -51,7 +51,7 @@ class Application extends Model
         });
 
         static::updated(function (Application $application) {
-            if (!$application->wasChanged('status')) {
+            if (! $application->wasChanged('status')) {
                 return;
             }
 
@@ -95,7 +95,7 @@ class Application extends Model
             }
         }
 
-        if (array_key_exists('notes', $attributes) && filled($attributes['notes']) && !$this->notes) {
+        if (array_key_exists('notes', $attributes) && filled($attributes['notes']) && ! $this->notes) {
             $updateData['notes_added'] = true;
             $updateData['notes_added_at'] = now();
         }

@@ -4,12 +4,9 @@ namespace App\Http\Controllers\Api\Recruiter;
 
 use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
-use App\Models\Job;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class DashboardController extends Controller
 {
@@ -37,7 +34,7 @@ class DashboardController extends Controller
             'data' => [
                 'jobs' => $jobs,
                 'metrics' => $metrics,
-            ]
+            ],
         ]);
     }
 }

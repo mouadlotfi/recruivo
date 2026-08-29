@@ -24,6 +24,7 @@ class JobDescriptionFormatter
 
             if ($line === '') {
                 $i++;
+
                 continue;
             }
 
@@ -34,7 +35,7 @@ class JobDescriptionFormatter
             }
             $hasIndentedNext = $next < $count && preg_match('/^\s+/', $lines[$next]);
 
-            if (!preg_match('/^\s+/', $lines[$i]) && $hasIndentedNext) {
+            if (! preg_match('/^\s+/', $lines[$i]) && $hasIndentedNext) {
                 $html .= '<h3>'.e($line).'</h3>';
                 $items = [];
                 $i = $next;
@@ -43,6 +44,7 @@ class JobDescriptionFormatter
                     $i++;
                 }
                 $html .= '<ul>'.implode('', array_map(fn ($item) => '<li>'.e($item).'</li>', $items)).'</ul>';
+
                 continue;
             }
 

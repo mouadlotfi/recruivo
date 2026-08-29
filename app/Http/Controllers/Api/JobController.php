@@ -78,7 +78,7 @@ class JobController extends Controller
         $job->load('company');
 
         $user = $request->user('sanctum');
-        $includeSimilarJobs = !($user?->hasRole('Admin') || $user?->hasRole('Recruiter'));
+        $includeSimilarJobs = ! ($user?->hasRole('Admin') || $user?->hasRole('Recruiter'));
 
         $similarJobs = $includeSimilarJobs
             ? Job::published()

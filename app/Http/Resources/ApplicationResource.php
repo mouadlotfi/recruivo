@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\ApplicationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,7 +12,7 @@ class ApplicationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'status' => $this->status instanceof \App\Enums\ApplicationStatus ? $this->status->value : $this->status,
+            'status' => $this->status instanceof ApplicationStatus ? $this->status->value : $this->status,
             'original_status' => $this->original_status,
             'resume_path' => $this->resume_path,
             'cover_letter' => $this->cover_letter,
@@ -33,13 +34,12 @@ class ApplicationResource extends JsonResource
                 'phone' => $this->candidate->phone,
             ],
             'job' => new JobResource($this->whenLoaded('job') ?? $this->job),
-            'status_history' => $this->whenLoaded('statusEvents', fn () =>
-                $this->statusEvents->map(fn ($event) => [
-                    'from_status' => $event->from_status,
-                    'to_status' => $event->to_status,
-                    'changed_at' => $event->created_at?->toIso8601String(),
-                    'changed_by' => $event->changedBy?->name,
-                ])
+            'status_history' => $this->whenLoaded('statusEvents', fn () => $this->statusEvents->map(fn ($event) => [
+                'from_status' => $event->from_status,
+                'to_status' => $event->to_status,
+                'changed_at' => $event->created_at?->toIso8601String(),
+                'changed_by' => $event->changedBy?->name,
+            ])
             ),
         ];
     }

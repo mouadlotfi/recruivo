@@ -24,7 +24,7 @@ return [
     'failed' => 'These credentials do not match our records.',
     'password_mismatch' => 'The provided password is incorrect.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
-    
+
     // Login page
     'login_title' => 'Log in to Recruivo',
     'login_subtitle' => 'Access your saved roles, tailored job alerts, and company insights in one place.',
@@ -35,10 +35,10 @@ return [
     'create_account' => 'Create an account',
     'email_verified' => 'Email verified successfully! You can now log in to your account.',
     'account_created' => 'Account created successfully! You can now log in to your account.',
-    
+
     // Register page
     'register_title' => 'Create Your Account',
-    
+
     // Error Messages
     'email_not_verified' => 'Please verify your email address before logging in.',
     'email_not_verified_api' => 'Your email address is not verified.',
@@ -79,7 +79,7 @@ return [
     'linkedin_url_placeholder' => 'https://linkedin.com/company/your-company',
     'personal_email' => 'Personal Email',
     'email_help_text' => 'This will be used for login and account verification',
-    
+
     // Profile page
     'profile_information' => 'Profile Information',
     'profile_information_desc' => 'Update your account\'s profile information and email address.',
@@ -95,7 +95,7 @@ return [
     'delete_account_desc' => 'Permanently delete your account.',
     'delete_account_warning' => 'Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.',
     'confirm_deletion' => 'Are you sure you want to delete your account? Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.',
-    
+
     // Password reset
     'forgot_password_title' => 'Forgot your password?',
     'forgot_password_desc' => 'No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.',
@@ -107,7 +107,7 @@ return [
     'confirm_password_placeholder' => 'Confirm your new password',
     'reset_password_button' => 'Reset Password',
     'back_to_login' => 'Back to login',
-    
+
     // Email verification
     'verify_email_title' => 'Verify your email address',
     'verify_email_short' => 'Verify your email',
@@ -117,4 +117,3 @@ return [
     'resend_verification' => 'Resend Verification Email',
     'log_out' => 'Log Out',
 ];
-

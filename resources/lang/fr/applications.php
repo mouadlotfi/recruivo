@@ -4,12 +4,12 @@ return [
     'my_applications' => 'Mes candidatures',
     'subtitle' => 'Suivez le statut de vos candidatures',
     'browse_jobs' => 'Parcourir les emplois',
-    
+
     // Empty State
     'no_applications_yet' => 'Aucune candidature pour le moment',
     'start_applying' => 'Commencez à postuler pour voir vos candidatures ici',
     'browse_available_jobs' => 'Parcourir les emplois disponibles',
-    
+
     // Status
     'pending_review' => "En cours d'examen",
     'accepted' => 'Acceptée',
@@ -31,7 +31,7 @@ return [
     'withdraw_application' => 'Retirer la candidature',
     'withdraw_confirm' => 'Êtes-vous sûr de vouloir retirer cette candidature ? Cette action ne peut pas être annulée.',
     'withdrawn_success' => 'Candidature retirée.',
-    
+
     // Application Details
     'applied' => 'Postulé :time',
     'your_cover_letter' => 'Votre lettre de motivation',
@@ -45,4 +45,3 @@ return [
     'salary' => 'Salaire :',
     'view_job' => 'Voir l\'offre',
 ];
-

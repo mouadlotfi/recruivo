@@ -59,6 +59,12 @@ const linkClasses = (href: string) => [
                 <span class="font-display tracking-tight text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
                     Recruivo
                 </span>
+                <span
+                    v-if="page.props.isDemoEnvironment"
+                    class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
+                >
+                    DEMO
+                </span>
             </Link>
             <button type="button" class="lg:hidden text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200" @click="emit('close-mobile')">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

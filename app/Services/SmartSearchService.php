@@ -27,10 +27,10 @@ class SmartSearchService
 
     /**
      * @param  string|null  $remoteType  Optional remote-type filter pushed into
-     *                                  the SQL query so we don't materialize jobs
-     *                                  merely to discard them in PHP.
-     * @param  string|null  $location    Optional location substring filter,
-     *                                  applied at the database level.
+     *                                   the SQL query so we don't materialize jobs
+     *                                   merely to discard them in PHP.
+     * @param  string|null  $location  Optional location substring filter,
+     *                                 applied at the database level.
      */
     public function jobs(string $query, ?string $remoteType = null, ?string $location = null): Collection
     {
@@ -51,7 +51,7 @@ class SmartSearchService
 
     /**
      * @param  string|null  $location  Optional location substring filter,
-     *                                applied at the database level.
+     *                                 applied at the database level.
      */
     public function companies(string $query, ?string $location = null): Collection
     {
@@ -139,8 +139,7 @@ class SmartSearchService
             $words = preg_split('/[^\pL\pN]+/u', $value, -1, PREG_SPLIT_NO_EMPTY);
             foreach ($terms as $term) {
                 $alternatives = collect([$term])->merge(self::SYNONYMS[$term] ?? []);
-                $termMatched = $alternatives->contains(fn ($candidate) =>
-                    str_contains($value, $candidate) ||
+                $termMatched = $alternatives->contains(fn ($candidate) => str_contains($value, $candidate) ||
                     collect($words)->contains(fn ($word) => $this->isCloseMatch($candidate, $word))
                 );
 

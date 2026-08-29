@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             // Add a field to track if this is a recruiter account
             $table->boolean('is_recruiter')->default(false)->after('company_id');
-            
+
             // Make personal fields nullable since recruiters won't have them
             $table->string('name')->nullable()->change();
             $table->string('phone')->nullable()->change();
@@ -31,7 +31,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('is_recruiter');
-            
+
             // Revert personal fields to required
             $table->string('name')->nullable(false)->change();
             $table->string('phone')->nullable(false)->change();

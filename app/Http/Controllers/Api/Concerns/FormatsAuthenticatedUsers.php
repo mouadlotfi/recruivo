@@ -12,7 +12,6 @@ trait FormatsAuthenticatedUsers
 
         $personalEmail = $user->email;
 
-
         $response = [
             'id' => $user->id,
             'name' => $user->isRecruiter() ? $user->display_name : $user->name,

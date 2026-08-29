@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\JobStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
@@ -19,7 +20,7 @@ class JobResource extends JsonResource
             'remote_type' => $this->remote_type,
             'salary_min' => $this->salary_min,
             'salary_max' => $this->salary_max,
-            'status' => $this->status instanceof \App\Enums\JobStatus ? $this->status->value : $this->status,
+            'status' => $this->status instanceof JobStatus ? $this->status->value : $this->status,
             'published_at' => optional($this->published_at)->toIso8601String(),
             'closes_at' => $this->closes_at?->toDateString(),
             'is_expired' => $this->isExpired(),
