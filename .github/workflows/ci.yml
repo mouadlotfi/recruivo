@@ -225,6 +225,7 @@ jobs:
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_PRODUCTION_WEBHOOK }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
           COOLIFY_HOST: http://100.100.217.81:8000
+          APP_UUID: ${{ secrets.COOLIFY_PRODUCTION_APP_UUID || '3ioftpjgpbfag6p5uzoahwlw' }}
         run: |
           set -euo pipefail
 
@@ -363,6 +364,7 @@ jobs:
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_DEMO_WEBHOOK }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
           COOLIFY_HOST: http://100.100.217.81:8000
+          APP_UUID: ${{ secrets.COOLIFY_DEMO_APP_UUID || 'g2g8akaxgwhgaitmfp9mwepd' }}
         run: |
           set -euo pipefail
 
