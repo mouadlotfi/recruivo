@@ -8,6 +8,8 @@ return [
     'close' => 'Close',
     'expand' => 'Expand',
     'done' => 'Done',
+    'demo_environment_badge' => 'DEMO',
+    'demo_environment_notice' => 'Demonstration environment with fictional data. Periodic resets occur automatically.',
     'demo_account' => 'Demo account',
     'demo_account_cannot_be_deleted' => 'Demo accounts are protected and cannot be deleted.',
     'demo_account_protected_description' => 'This shared demo account is protected so it remains available for visitors.',

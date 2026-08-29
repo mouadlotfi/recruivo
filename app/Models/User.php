@@ -15,7 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmailContract
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, MustVerifyEmail;
+    use HasApiTokens, HasFactory, HasRoles, MustVerifyEmail, Notifiable;
 
     protected $fillable = [
         'company_id',
@@ -95,11 +95,11 @@ class User extends Authenticatable implements MustVerifyEmailContract
      */
     public function getProfilePictureUrlAttribute(): ?string
     {
-        if (!$this->profile_picture_path) {
+        if (! $this->profile_picture_path) {
             return null;
         }
 
-        return asset('storage/' . $this->profile_picture_path);
+        return asset('storage/'.$this->profile_picture_path);
     }
 
     /**
@@ -107,7 +107,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
      */
     public function getResumeUrlAttribute(): ?string
     {
-        if (!$this->candidateProfile?->resume_path) {
+        if (! $this->candidateProfile?->resume_path) {
             return null;
         }
 
@@ -120,7 +120,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function getEmailVerificationUrl(): string
     {
         $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
-        
+
         $url = URL::temporarySignedRoute(
             'verification.verify',
             now()->addMinutes(config('auth.verification.expire', 60)),
@@ -130,17 +130,17 @@ class User extends Authenticatable implements MustVerifyEmailContract
                 'hash' => sha1($this->getEmailForVerification()),
             ]
         );
-        
+
         $parsedUrl = parse_url($url);
         $path = $parsedUrl['path'] ?? '';
         $query = $parsedUrl['query'] ?? '';
         parse_str($query, $params);
-        
+
         $pathParts = explode('/', trim($path, '/'));
         $id = $pathParts[2] ?? '';
         $hash = $pathParts[3] ?? '';
-        
-        return $frontendUrl . '/email-verify?' . http_build_query([
+
+        return $frontendUrl.'/email-verify?'.http_build_query([
             'id' => $id,
             'hash' => $hash,
             'expires' => $params['expires'] ?? '',
@@ -159,7 +159,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
             'id' => $this->getKey(),
             'hash' => sha1($this->pending_email ?? $this->email),
         ]);
-        
+
         return $url;
     }
 
@@ -203,7 +203,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
      */
     public function isCandidate(): bool
     {
-        return !$this->isRecruiter() && $this->hasRole('Candidate');
+        return ! $this->isRecruiter() && $this->hasRole('Candidate');
     }
 
     /**
@@ -215,7 +215,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
         if ($this->isRecruiter() && $this->company) {
             return $this->company->name;
         }
-        
+
         return $this->name ?? 'Unknown User';
     }
 

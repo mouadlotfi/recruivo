@@ -1,0 +1,112 @@
+# =============================================================================
+# Recruivo — DEMO environment Docker Compose overlay
+# =============================================================================
+# Isolates demo data from production:
+#   - APP_ENV=demo, APP_DEBUG=false
+#   - Dedicated demo MySQL volume and DB name
+#   - Dedicated demo Redis volume
+#   - Dedicated demo storage path/volume
+#   - Safe mail transport (log / sandbox)
+#
+# Run demo with:
+#   docker compose -f compose.yml -f compose.demo.yml up -d --build
+# =============================================================================
+
+name: recruivo-demo
+
+services:
+  nginx:
+    ports:
+      - "${DEMO_APP_PORT:-8001}:80"
+    volumes:
+      - demo_storage:/var/www/html/storage:ro
+
+  app:
+    env_file:
+      - ${APP_ENV_FILE:-.env.demo}
+    environment:
+      APP_ENV: demo
+      APP_DEBUG: "false"
+      APP_IS_DEMO: "true"
+      MAIL_MAILER: ${MAIL_MAILER:-log}
+    volumes:
+      - demo_storage:/var/www/html/storage
+      - demo_bootstrap_cache:/var/www/html/bootstrap/cache
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+
+  queue:
+    env_file:
+      - ${APP_ENV_FILE:-.env.demo}
+    environment:
+      APP_ENV: demo
+      APP_DEBUG: "false"
+      APP_IS_DEMO: "true"
+      MAIL_MAILER: ${MAIL_MAILER:-log}
+    volumes:
+      - demo_storage:/var/www/html/storage
+      - demo_bootstrap_cache:/var/www/html/bootstrap/cache
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+
+  scheduler:
+    env_file:
+      - ${APP_ENV_FILE:-.env.demo}
+    environment:
+      APP_ENV: demo
+      APP_DEBUG: "false"
+      APP_IS_DEMO: "true"
+      DEMO_SCHEDULED_RESET: "true"
+    volumes:
+      - demo_storage:/var/www/html/storage
+      - demo_bootstrap_cache:/var/www/html/bootstrap/cache
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+
+  bootstrap:
+    env_file:
+      - ${APP_ENV_FILE:-.env.demo}
+    environment:
+      APP_ENV: demo
+      APP_DEBUG: "false"
+      APP_IS_DEMO: "true"
+    volumes:
+      - demo_storage:/var/www/html/storage
+      - demo_bootstrap_cache:/var/www/html/bootstrap/cache
+
+  mysql:
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-recruivo_demo_db}
+      MYSQL_USER: ${DB_USERNAME:-recruivo_demo}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-demo_secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-demo_secret}
+    volumes:
+      - demo_mysql_data:/var/lib/mysql
+
+  redis:
+    volumes:
+      - demo_redis_data:/data
+
+volumes:
+  demo_mysql_data:
+    name: ${DEMO_MYSQL_VOLUME_NAME:-recruivo_demo_mysql_data}
+  demo_redis_data:
+    name: ${DEMO_REDIS_VOLUME_NAME:-recruivo_demo_redis_data}
+  demo_storage:
+    name: ${DEMO_STORAGE_VOLUME_NAME:-recruivo_demo_storage}
+  demo_bootstrap_cache:

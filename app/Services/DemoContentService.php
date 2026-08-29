@@ -83,7 +83,30 @@ class DemoContentService
             default => 'on-site',
         };
 
-        return "{$company} is hiring a {$job->title} to join its {$job->category} team in {$job->location}. This is a {$workType} role for someone who enjoys solving practical problems and improving systems that people rely on.\n\nYou will own meaningful work from planning through delivery, collaborate with product and engineering partners, review changes, and help keep technical decisions clear and maintainable. You will also contribute to testing, documentation, and the steady improvement of team workflows.\n\nWe are looking for relevant hands-on experience, sound technical judgment, clear communication, and a willingness to learn. You do not need to match every tool listed in the role; we value evidence that you can understand a problem, make sensible tradeoffs, and deliver dependable results.";
+        $intro = "{$company} is hiring a {$job->title} to join its {$job->category} team in {$job->location}. This is a {$workType} role for someone who values clear communication, sound technical judgment, and delivering reliable systems that scale.";
+
+        $responsibilities = "Responsibilities\n\n"
+            ."    Build and maintain core systems for {$job->category} initiatives.\n"
+            ."    Collaborate with cross-functional engineering and product teammates on architecture and delivery.\n"
+            ."    Write clear, well-tested code and participate actively in constructive peer reviews.\n"
+            ."    Improve observability, reliability, and deployment automation for production services.\n"
+            .'    Document technical decisions and share operational learnings with the team.';
+
+        $requirements = "Requirements\n\n"
+            ."    Proven experience in {$job->category} or related software engineering domains.\n"
+            ."    Solid grasp of software architecture, data modeling, and automated testing principles.\n"
+            ."    Practical problem-solving mindset and ability to reason through engineering tradeoffs.\n"
+            ."    Clear written and verbal communication in English.\n"
+            .'    Commitment to dependable delivery, maintainable systems, and continuous learning.';
+
+        $benefits = "What We Offer\n\n"
+            ."    Competitive base salary and comprehensive health coverage.\n"
+            ."    Flexible {$workType} work setup with modern equipment and workspace allowance.\n"
+            ."    Annual learning budget for conferences, technical certifications, and books.\n"
+            ."    Transparent career progression paths and collaborative, low-ego culture.\n"
+            .'    Generous paid time off and scheduled company wellness days.';
+
+        return "{$intro}\n\n{$responsibilities}\n\n{$requirements}\n\n{$benefits}";
     }
 
     public function userDetails(User $user): array
@@ -110,11 +133,12 @@ class DemoContentService
         $title = $application->job?->title ?? 'this role';
         $company = $application->job?->company?->name ?? 'your team';
 
-        $details = [
-            'cover_letter' => "I am interested in the {$title} position at {$company}. My experience aligns with the role’s focus, and I would welcome the opportunity to discuss how I can contribute to the team. Thank you for reviewing my application.",
-        ];
+        $details = [];
+        if (empty($application->cover_letter)) {
+            $details['cover_letter'] = "I am interested in the {$title} position at {$company}. My experience aligns with the role’s focus, and I would welcome the opportunity to discuss how I can contribute to the team. Thank you for reviewing my application.";
+        }
 
-        if ($application->notes !== null) {
+        if ($application->notes !== null && empty($application->notes)) {
             $details['notes'] = match ($application->status?->value ?? $application->status) {
                 'accepted' => 'Strong match for the role. The candidate demonstrated relevant experience and communicated their approach clearly.',
                 'rejected' => 'The application was reviewed carefully, but another candidate’s experience was a closer match for the current requirements.',

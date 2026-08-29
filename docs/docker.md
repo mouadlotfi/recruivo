@@ -118,6 +118,23 @@ docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml logs -f 
 A code edit is reflected through the source mount. A dependency or PHP extension edit requires the development rebuild. Set `VITE_HMR_HOST` to the host's LAN address when the browser is not on the Docker host.
 
 Development publishes MySQL and Redis ports for local tools. Production does not publish either port.
+## Public Demo environment
+
+The demo environment runs from the same production Docker image but uses `compose.demo.yml` with separate data volumes, safe email logging, and `APP_ENV=demo`:
+
+```bash
+cp .env.demo.example .env.demo
+docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml up -d --build
+```
+
+Seed or reset the demo canonical dataset:
+
+```bash
+docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml exec app php artisan demo:reset --force
+```
+
+The demo overlay binds to port `${DEMO_APP_PORT:-8001}`, configures `MAIL_MAILER=log`, isolates MySQL (`demo_mysql_data`), Redis (`demo_redis_data`), and storage (`demo_storage`), and enables automated nightly resets via the scheduler.
+
 
 ## Production build and deployment
 

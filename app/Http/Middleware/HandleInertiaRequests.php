@@ -67,6 +67,8 @@ class HandleInertiaRequests extends Middleware
         'mark_all_as_read' => 'common.mark_all_as_read',
         'no_notifications' => 'common.no_notifications',
         'unread_notifications' => 'common.unread_notifications',
+        'demo_environment_badge' => 'common.demo_environment_badge',
+        'demo_environment_notice' => 'common.demo_environment_notice',
     ];
 
     /**
@@ -89,6 +91,7 @@ class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
+            'isDemoEnvironment' => app()->environment('demo') || (bool) config('app.is_demo'),
             'locale' => app()->getLocale(),
             'supportedLocales' => config('locales.supported', ['en', 'fr']),
             'auth' => [

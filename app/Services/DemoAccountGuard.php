@@ -9,7 +9,7 @@ class DemoAccountGuard
 {
     public function ensureProfileIsMutable(User $user): void
     {
-        if (!$user->is_demo) {
+        if (! $user->is_demo) {
             return;
         }
 
@@ -20,7 +20,7 @@ class DemoAccountGuard
 
     public function ensureCanApply(User $user): void
     {
-        if (!$user->is_demo) {
+        if (! $user->is_demo) {
             return;
         }
 
@@ -31,7 +31,7 @@ class DemoAccountGuard
 
     public function ensureCandidateActionsAreMutable(User $user): void
     {
-        if (!$user->is_demo) {
+        if (! $user->is_demo) {
             return;
         }
 

@@ -27,23 +27,26 @@ class MigrateResumesToPrivateStorage extends Command
         foreach ($paths as $path) {
             if (Storage::disk('private')->exists($path)) {
                 Storage::disk('public')->delete($path);
+
                 continue;
             }
 
-            if (!Storage::disk('public')->exists($path)) {
+            if (! Storage::disk('public')->exists($path)) {
                 $this->warn("Resume not found: {$path}");
                 $missing++;
+
                 continue;
             }
 
             $stream = Storage::disk('public')->readStream($path);
 
-            if ($stream === false || !Storage::disk('private')->writeStream($path, $stream)) {
+            if ($stream === false || ! Storage::disk('private')->writeStream($path, $stream)) {
                 if (is_resource($stream)) {
                     fclose($stream);
                 }
 
                 $this->error("Could not migrate resume: {$path}");
+
                 return self::FAILURE;
             }
 

@@ -1,115 +1,178 @@
 # Recruivo — Job Board & Candidate Management
 
-Recruivo is a full‑featured job board and candidate management platform built with Laravel 12. It includes role‑based access (Admin, Recruiter, Candidate), email verification, job postings, applications, and an admin area.
+Recruivo is a full‑featured recruitment platform and candidate management marketplace built with Laravel 13, Inertia.js 3, Vue 3, TypeScript, and Tailwind CSS. It supports role‑based access (Admin, Recruiter, Candidate), rich application review pipelines, interview scheduling, note templates, multi-language localization (English, French), and dark mode.
 
-Application runs locally or via Docker (PHP 8.2 + Apache, MySQL 8, Redis 7). This README covers features, setup, Docker deployment, demo accounts, and common commands.
+The application serves two distinct purposes from **one unified codebase**:
+1. **Production Platform**: Real recruitment operations, real users, transactional SMTP email, isolated persistent storage, and deliberate schema migrations.
+2. **Public Demo Environment**: Fully interactive demonstration platform with a rich, realistic canonical dataset, demo badges, read-only demo accounts, safe email logging, isolated infrastructure, and automated nightly resets.
 
-## Features
+---
 
-- Role-based access with `spatie/laravel-permission` (Admin, Recruiter, Candidate)
-- Recruiters: create, publish/unpublish, and manage jobs; review applications, download resumes
-- Candidates: browse/search jobs, apply, manage profile and resume
-- Admin: basic user management dashboard
-- Email verification flow
-- Modern asset pipeline with Vite and Tailwind CSS
-- Multi-language support (English, French)
-- Dark mode support
+## Environment Architecture
 
-## Tech Stack
+```text
+                           ONE RECRUIVO CODEBASE
+                                     |
+               +---------------------+---------------------+
+               |                                           |
+             DEMO                                      PRODUCTION
+               |                                           |
+         APP_ENV=demo                               APP_ENV=production
+         APP_DEBUG=false                            APP_DEBUG=false
+         APP_IS_DEMO=true                           APP_IS_DEMO=false
+               |                                           |
+         Isolated DB (demo_db)                      Production DB
+         Isolated Redis                             Production Redis
+         Isolated Demo Storage                      Production Storage
+         Safe Email (log/sandbox)                   Real SMTP Email
+         Canonical Seeded Dataset                   Real User Data
+         Periodic Reset (`demo:reset`)              Deliberate Migrations Only
+```
 
-- PHP 8.2, Laravel 12
-- MySQL 8, Redis 7
-- Node.js 20, Vite, Tailwind CSS
-- Packages: Sanctum, Spatie Permission, Translatable
+### Complete Isolation Guarantees
+- **No Shared Databases**: Demo operates on its own database volume and schema.
+- **No Shared Redis**: Demo cache, queues, and sessions run in separate Redis storage.
+- **No Shared Uploads**: Candidate resumes and recruiter uploads in demo are isolated from production storage.
+- **Email Safety**: Demo emails are captured in logs or sandbox sinks, never dispatched to real recipients.
+- **Secret Isolation**: Independent `APP_KEY` and credentials per environment.
+- **Production Guard**: Destructive demo commands (`php artisan demo:reset`) strictly refuse to execute in `APP_ENV=production`.
+
+---
+
+## Canonical Seeded Dataset
+
+The application uses one canonical seed pipeline (`php artisan migrate --seed` or `php artisan db:seed`) providing:
+
+- **15 Canonical Tech Companies**: Preserving original company identities and brand logos (`Aetheris Dynamics`, `BitForge Software`, `CipherWave Security`, `DataVortex Systems`, `EchoLogic AI`, `FluxCore Technologies`, `GigaByte Foundry`, `Hyperion Networks`, `IonSphere Labs`, `Krypton Solutions`, `Lumina Software House`, `NexusNode Tech`, `OmniStack Engineering`, `PixelCraft Digital`, `QuantumLeap IT`).
+- **Diverse Job Catalog**: Varied IT categories (`Software Development`, `Cloud Computing`, `Cybersecurity`, `Data Analytics`, `AI/ML`, `DevOps`, `IoT`, `Quantum Computing`), realistic salary tiers ($65k–$220k), employment types (remote, hybrid, onsite), active jobs, closing-soon listings, and drafts.
+- **Realistic Candidate Profiles**: 50+ candidates with structured work histories, education, multilingual proficiencies, profile links, preferred categories, and sample resumes on private storage.
+- **Active Application Pipelines**: Candidates distributed across recruitment stages (Pending, Shortlisted, Interview, Accepted, Rejected, Withdrawn) with recruiter notes, interview schedules (remote links, onsite rooms), and timeline audit events.
+- **Recruiter Productivity Tools**: Recruiter note templates for phone screens, technical reviews, and offer discussions.
+- **Candidate Activity**: Saved jobs, status update notifications, and profile completion tracking.
+
+---
+
+## Demo Accounts
+
+The following demo accounts are available in development and demo environments:
+
+| Role | Email | Password | Details |
+|------|-------|----------|---------|
+| **Admin** | `admin@recruivo.work` | `password` | System overview, job moderation, user administration |
+| **Recruiter** | `recruiter@recruivo.work` | `password` | Aetheris Dynamics hiring pipeline, applicants, note templates |
+| **Candidate** | `candidate@recruivo.work` | `password` | Senior Full-Stack Engineer profile, active applications, saved jobs |
+
+*Demo accounts are protected by model and controller guards against deletion and credential tampering.*
 
 ---
 
 ## Quick Start (Local Development)
 
-Prerequisites: PHP 8.2+, Composer, Node.js 18/20+, MySQL 8, Redis (optional)
+### Prerequisites
+- Docker & Docker Compose **or** PHP 8.3+, Composer, Node.js 20+, Bun, MySQL 8, Redis 7
 
-1) Install dependencies
-```bash
-composer install
-npm install
-```
+### Local Setup with Docker (Recommended)
 
-2) Configure environment
-```bash
-cp .env.example .env
-php artisan key:generate
-```
-Update `.env` with your local DB credentials. For email verification to work, configure your SMTP credentials:
-```env
-MAIL_MAILER=smtp
-MAIL_HOST=your-smtp-host
-MAIL_PORT=587
-MAIL_USERNAME=your-email@example.com
-MAIL_PASSWORD=your-password
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=noreply@recruivo.work
-MAIL_FROM_NAME="${APP_NAME}"
-```
+1. Configure development environment:
+   ```bash
+   cp .env.docker.example .env.docker
+   ```
 
-3) Database and storage
-```bash
-php artisan migrate --seed
-php artisan storage:link
-```
+2. Start the development stack:
+   ```bash
+   docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up -d --build
+   ```
 
-4) Run the app
-```bash
-php artisan serve
-```
-Vite (choose one):
-```bash
-npm run dev   # Development with HMR
-npm run build # Production build
-```
+3. Run migrations and canonical seed:
+   ```bash
+   docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml exec app php artisan migrate --seed
+   ```
 
-Open: `http://localhost:8000/`
+4. Access the application:
+   - Web App: `http://localhost:8000`
+   - Vite HMR: `http://localhost:5173`
 
 ---
 
-## Docker Setup
+## Demo Environment Operations
 
-The Docker architecture and data-preservation procedures are documented in [docs/docker.md](docs/docker.md).
+### Running Demo with Docker
 
-Create `.env.docker` only if it does not already exist, then set `APP_KEY`:
+1. Create demo environment file:
+   ```bash
+   cp .env.demo.example .env.demo
+   # Review and customize .env.demo as needed
+   ```
 
-    test -f .env.docker || cp .env.docker.example .env.docker
+2. Launch isolated demo stack:
+   ```bash
+   docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml up -d --build
+   ```
 
-Development:
+3. Seed canonical demo data:
+   ```bash
+   docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml exec app php artisan migrate:fresh --seed --force
+   ```
 
-    docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up -d
+### Demo Reset Command
 
-Production build and start:
+To restore the demo environment to its clean canonical seeded state at any time:
 
-    docker compose --env-file .env.production -f compose.yml -f compose.prod.yml build
-    docker compose --env-file .env.production --profile production -f compose.yml -f compose.prod.yml up -d
+```bash
+php artisan demo:reset --force
+```
 
-Production migrations are a separate, deliberate step. Run a database backup first, then:
+Or within Docker:
+```bash
+docker compose --env-file .env.demo -f compose.yml -f compose.demo.yml exec app php artisan demo:reset --force
+```
 
-    docker compose --env-file .env.production -f compose.yml -f compose.prod.yml run --rm --no-deps app php artisan migrate --force
-
-Persistent data is not stored in the application image. The existing MySQL volume `recruivo_mysql_august_verified`, `./storage`, and `./data/redis` must not be deleted or pruned during normal Docker cleanup.
-
-## Demo Accounts (Seeded)
-
-Use these to explore the app:
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@recruivo.work` | `password` |
-| Recruiter | `recruiter@recruivo.work` | `password` |
-| Candidate | `candidate@recruivo.work` | `password` |
+*The demo reset command automatically clears application caches, re-runs fresh canonical migrations and seeders, re-syncs brand assets and sample resumes, and flushes cache stores. It is hard-blocked from running in production.*
 
 ---
 
-## Testing
+## Production Deployment
 
+Production architecture and deployment procedures are documented in detail in [docs/docker.md](docs/docker.md).
+
+### Summary Checklist:
+1. Copy template and supply real secrets:
+   ```bash
+   cp .env.production.example .env.production
+   # Populate APP_KEY, secure DB credentials, real SMTP settings, and production domain
+   ```
+2. Build production image:
+   ```bash
+   docker compose --env-file .env.production -f compose.yml -f compose.prod.yml build
+   ```
+3. Start database and cache services:
+   ```bash
+   docker compose --env-file .env.production -f compose.yml -f compose.prod.yml up -d mysql redis
+   ```
+4. Run deliberate production migrations (never fresh/seed):
+   ```bash
+   docker compose --env-file .env.production -f compose.yml -f compose.prod.yml run --rm --no-deps app php artisan migrate --force
+   ```
+5. Start all production application services:
+   ```bash
+   docker compose --env-file .env.production --profile production -f compose.yml -f compose.prod.yml up -d --force-recreate
+   ```
+
+---
+
+## Testing & Quality Assurance
+
+Run the test suite:
 ```bash
-php artisan test
+# Via Docker
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml run --rm app php artisan test --compact
+
+# Code styling
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml run --rm app vendor/bin/pint --format agent
+
+# Frontend type checking and bundle build
+bun run typecheck
+bun run build
 ```
 
 ---
