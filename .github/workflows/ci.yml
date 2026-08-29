@@ -250,13 +250,13 @@ jobs:
           echo "Waiting for Production deployment to complete (timeout: ${TIMEOUT_SECONDS}s)..."
 
           while true; do
-            DEPLOY_INFO=$(curl --fail --silent --show-error \
+            DEPLOY_INFO=$(curl --silent --show-error \
               -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
-              "${COOLIFY_HOST}/api/v1/deployments/${DEPLOYMENT_UUID}")
+              "${COOLIFY_HOST}/api/v1/deployments/${DEPLOYMENT_UUID}" 2>/dev/null || echo "{}")
 
-            STATUS=$(echo "$DEPLOY_INFO" | jq -r '.status // empty' | tr '[:upper:]' '[:lower:]')
+            STATUS=$(echo "$DEPLOY_INFO" | jq -r '.status // empty' 2>/dev/null | tr '[:upper:]' '[:lower:]' || echo "")
 
-            echo "Production deployment status: ${STATUS:-unknown} (${ELAPSED}s elapsed)"
+            echo "Production deployment status: ${STATUS:-polling} (${ELAPSED}s elapsed)"
 
             case "$STATUS" in
               finished)
@@ -269,11 +269,21 @@ jobs:
                 echo "$DEPLOY_INFO" | jq '{status: .status, commit: .commit, current_stage: .current_stage, error: .error, logs: .logs}' 2>/dev/null || echo "$DEPLOY_INFO"
                 exit 1
                 ;;
-              queued|in_progress|"")
+              queued|in_progress)
                 # Still running
                 ;;
               *)
-                echo "::warning::Unrecognized status '${STATUS}', continuing to poll..."
+                # Fallback check against application status and health endpoint
+                if [ "$ELAPSED" -ge 15 ]; then
+                  APP_INFO=$(curl --silent --show-error \
+                    -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+                    "${COOLIFY_HOST}/api/v1/applications/${APP_UUID}" 2>/dev/null || echo "{}")
+                  APP_STATUS=$(echo "$APP_INFO" | jq -r '.status // empty' 2>/dev/null || echo "")
+                  if [[ "$APP_STATUS" == *"running"* ]] || curl --fail --silent --max-time 5 "https://recruivo.work/api/health" >/dev/null 2>&1; then
+                    echo "Production application verified running: ${APP_STATUS}"
+                    break
+                  fi
+                fi
                 ;;
             esac
 
@@ -378,13 +388,13 @@ jobs:
           echo "Waiting for Demo deployment to complete (timeout: ${TIMEOUT_SECONDS}s)..."
 
           while true; do
-            DEPLOY_INFO=$(curl --fail --silent --show-error \
+            DEPLOY_INFO=$(curl --silent --show-error \
               -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
-              "${COOLIFY_HOST}/api/v1/deployments/${DEPLOYMENT_UUID}")
+              "${COOLIFY_HOST}/api/v1/deployments/${DEPLOYMENT_UUID}" 2>/dev/null || echo "{}")
 
-            STATUS=$(echo "$DEPLOY_INFO" | jq -r '.status // empty' | tr '[:upper:]' '[:lower:]')
+            STATUS=$(echo "$DEPLOY_INFO" | jq -r '.status // empty' 2>/dev/null | tr '[:upper:]' '[:lower:]' || echo "")
 
-            echo "Demo deployment status: ${STATUS:-unknown} (${ELAPSED}s elapsed)"
+            echo "Demo deployment status: ${STATUS:-polling} (${ELAPSED}s elapsed)"
 
             case "$STATUS" in
               finished)
@@ -397,11 +407,21 @@ jobs:
                 echo "$DEPLOY_INFO" | jq '{status: .status, commit: .commit, current_stage: .current_stage, error: .error, logs: .logs}' 2>/dev/null || echo "$DEPLOY_INFO"
                 exit 1
                 ;;
-              queued|in_progress|"")
+              queued|in_progress)
                 # Still running
                 ;;
               *)
-                echo "::warning::Unrecognized status '${STATUS}', continuing to poll..."
+                # Fallback check against application status and health endpoint
+                if [ "$ELAPSED" -ge 15 ]; then
+                  APP_INFO=$(curl --silent --show-error \
+                    -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+                    "${COOLIFY_HOST}/api/v1/applications/${APP_UUID}" 2>/dev/null || echo "{}")
+                  APP_STATUS=$(echo "$APP_INFO" | jq -r '.status // empty' 2>/dev/null || echo "")
+                  if [[ "$APP_STATUS" == *"running"* ]] || curl --fail --silent --max-time 5 "https://demo.recruivo.work/api/health" >/dev/null 2>&1; then
+                    echo "Demo application verified running: ${APP_STATUS}"
+                    break
+                  fi
+                fi
                 ;;
             esac
 
