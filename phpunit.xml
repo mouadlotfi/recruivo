@@ -23,6 +23,7 @@
     <php>
         <ini name="error_reporting" value="-1"/>
         <ini name="memory_limit" value="512M"/>
+        <server name="APP_KEY" value="base64:7f9E2k8nZ3vB5cX7mA9pQ1wE3rT5yU7iO9pA1sD3fG5=" force="true"/>
         <server name="APP_ENV" value="testing" force="true"/>
         <server name="BCRYPT_ROUNDS" value="4" force="true"/>
         <server name="CACHE_STORE" value="array" force="true"/>
