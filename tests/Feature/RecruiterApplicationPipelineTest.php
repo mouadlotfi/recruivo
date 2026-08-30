@@ -92,8 +92,8 @@ class RecruiterApplicationPipelineTest extends TestCase
         $page = $response->viewData('page');
         if (is_array($page)) {
             fwrite(STDERR, "\nDIAG recentApplications=".json_encode($page['props']['recentApplications'] ?? 'NO_KEY')
-                ." stats=".json_encode($page['props']['stats'] ?? 'NO_KEY')
-                ." auth=".json_encode($page['props']['auth']['user']['id'] ?? 'NO_USER')."\n");
+                .' stats='.json_encode($page['props']['stats'] ?? 'NO_KEY')
+                .' auth='.json_encode($page['props']['auth']['user']['id'] ?? 'NO_USER')."\n");
         }
 
         $response->assertOk()
