@@ -302,11 +302,19 @@ jobs:
           set -euo pipefail
           echo "Verifying Production health check..."
           HEALTH_URL="https://recruivo.work/api/health"
-          RESPONSE=$(curl --fail --silent --show-error --max-time 30 "${HEALTH_URL}")
-          echo "Health response: ${RESPONSE}"
-          STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
+          STATUS=""
+          for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
+            RESPONSE=$(curl --silent --show-error --max-time 30 "${HEALTH_URL}" || true)
+            STATUS=$(echo "$RESPONSE" | jq -r '.status // empty' 2>/dev/null || echo "")
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Health response: ${RESPONSE}"
+              break
+            fi
+            echo "Production health check attempt ${ATTEMPT}/10: status=${STATUS:-unreachable}, retrying in 10s..."
+            sleep 10
+          done
           if [ "$STATUS" != "healthy" ]; then
-            echo "::error::Production health check reported non-healthy status: ${STATUS}"
+            echo "::error::Production health check reported non-healthy status: ${STATUS:-unreachable}"
             exit 1
           fi
           echo "Production is healthy and fully operational."
@@ -441,11 +449,19 @@ jobs:
           set -euo pipefail
           echo "Verifying Demo health check..."
           HEALTH_URL="https://demo.recruivo.work/api/health"
-          RESPONSE=$(curl --fail --silent --show-error --max-time 30 "${HEALTH_URL}")
-          echo "Health response: ${RESPONSE}"
-          STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
+          STATUS=""
+          for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
+            RESPONSE=$(curl --silent --show-error --max-time 30 "${HEALTH_URL}" || true)
+            STATUS=$(echo "$RESPONSE" | jq -r '.status // empty' 2>/dev/null || echo "")
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Health response: ${RESPONSE}"
+              break
+            fi
+            echo "Demo health check attempt ${ATTEMPT}/10: status=${STATUS:-unreachable}, retrying in 10s..."
+            sleep 10
+          done
           if [ "$STATUS" != "healthy" ]; then
-            echo "::error::Demo health check reported non-healthy status: ${STATUS}"
+            echo "::error::Demo health check reported non-healthy status: ${STATUS:-unreachable}"
             exit 1
           fi
           echo "Demo is healthy and fully operational."
