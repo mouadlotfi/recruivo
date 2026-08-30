@@ -129,6 +129,10 @@ services:
   scheduler:
     <<: *laravel-service
     command: ["php", "artisan", "schedule:work", "--no-interaction"]
+  migrate:
+    <<: *laravel-service
+    command: ["php", "artisan", "migrate", "--force", "--no-interaction"]
+    restart: "no"
 
 volumes:
   mysql_data:
