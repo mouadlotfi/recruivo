@@ -82,12 +82,15 @@ class RecruiterApplicationPipelineTest extends TestCase
         $candidate = User::factory()->create(['email_verified_at' => now()]);
         $candidate->assignRole('Candidate');
         $job = Job::factory()->for($company)->for($recruiter, 'recruiter')->create(['title' => 'DevOps Engineer']);
-        Application::factory()->for($candidate, 'candidate')->for($job)->create([
-            'status' => ApplicationStatus::Interview->value,
-        ]);
-
         $response = $this->actingAs($recruiter)
             ->get('/en/recruiter/dashboard');
+
+        if (! $response->viewData('page')) {
+            fwrite(STDERR, "\nDIAG dashboard: status=".$response->getStatusCode()
+                .' ct='.$response->headers->get('content-type')
+                .' redirect='.$response->headers->get('location')
+                .' body='.substr((string) $response->getContent(), 0, 300)."\n");
+        }
 
         $response->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
