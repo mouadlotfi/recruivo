@@ -326,7 +326,7 @@ jobs:
     needs: [deploy-production]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     environment:
-      name: demo
+      name: production
       url: https://demo.recruivo.work
     steps:
       - name: Checkout code
