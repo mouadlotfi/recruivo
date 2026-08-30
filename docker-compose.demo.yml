@@ -39,9 +39,12 @@ services:
       - "${DEMO_APP_PORT:-8086}:80"
     volumes:
       - demo_storage:/var/www/html/storage:ro
-    networks:
-      - public
-      - private
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.recruivo-demo-http.rule=Host(`demo.recruivo.work`) && PathPrefix(`/`)"
+      - "traefik.http.routers.recruivo-demo-http.entryPoints=http"
+      - "traefik.http.routers.recruivo-demo-http.service=recruivo-demo-nginx"
+      - "traefik.http.services.recruivo-demo-nginx.loadbalancer.server.port=80"
     depends_on:
       app:
         condition: service_healthy
@@ -118,3 +121,6 @@ networks:
   private:
     name: ${COMPOSE_PROJECT_NAME:-recruivo_demo}_private
     internal: true
+  coolify:
+    external: true
+    name: coolify

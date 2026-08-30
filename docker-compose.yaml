@@ -62,9 +62,12 @@ services:
       - "${APP_PORT:-8085}:80"
     volumes:
       - app_storage:/var/www/html/storage:ro
-    networks:
-      - public
-      - private
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.recruivo-http.rule=Host(`recruivo.work`) && PathPrefix(`/`)"
+      - "traefik.http.routers.recruivo-http.entryPoints=http"
+      - "traefik.http.routers.recruivo-http.service=recruivo-nginx"
+      - "traefik.http.services.recruivo-nginx.loadbalancer.server.port=80"
     depends_on:
       app:
         condition: service_healthy
@@ -141,3 +144,6 @@ networks:
   private:
     name: ${COMPOSE_PROJECT_NAME:-recruivo}_private
     internal: true
+  coolify:
+    external: true
+    name: coolify
