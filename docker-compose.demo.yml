@@ -1,7 +1,10 @@
 name: recruivo-demo
 
 x-laravel-service: &laravel-service
-  image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo}:${APP_TAG:-production}
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: production
   init: true
   restart: unless-stopped
   working_dir: /var/www/html
@@ -26,7 +29,10 @@ x-laravel-service: &laravel-service
 
 services:
   nginx:
-    image: ${NGINX_IMAGE:-ghcr.io/mouadlotfi/recruivo-nginx}:${APP_TAG:-production}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx
     init: true
     restart: unless-stopped
     ports:
