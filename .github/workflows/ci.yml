@@ -191,6 +191,7 @@ jobs:
           audience: ${{ secrets.TS_AUDIENCE }}
           tags: tag:ci
           ping: 100.100.217.81
+          ephemeral: true
 
       - name: Verify Coolify connectivity
         run: curl --fail --silent --max-time 10 http://100.100.217.81:8000
@@ -338,6 +339,7 @@ jobs:
           audience: ${{ secrets.TS_AUDIENCE }}
           tags: tag:ci
           ping: 100.100.217.81
+          ephemeral: true
 
       - name: Verify Coolify connectivity
         run: curl --fail --silent --max-time 10 http://100.100.217.81:8000
