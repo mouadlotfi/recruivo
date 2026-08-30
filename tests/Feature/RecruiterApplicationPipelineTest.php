@@ -77,7 +77,7 @@ class RecruiterApplicationPipelineTest extends TestCase
     public function test_recruiter_dashboard_shows_interview_badge_with_violet_color(): void
     {
         $company = Company::factory()->create();
-        $recruiter = User::factory()->for($company)->create(['email_verified_at' => now()]);
+        $recruiter = User::factory()->for($company)->create(['email_verified_at' => now(), 'is_recruiter' => true]);
         $recruiter->assignRole('Recruiter');
         $candidate = User::factory()->create(['email_verified_at' => now()]);
         $candidate->assignRole('Candidate');
@@ -102,7 +102,7 @@ class RecruiterApplicationPipelineTest extends TestCase
     private function makePipeline(): array
     {
         $company = Company::factory()->create();
-        $recruiter = User::factory()->for($company)->create(['email_verified_at' => now()]);
+        $recruiter = User::factory()->for($company)->create(['email_verified_at' => now(), 'is_recruiter' => true]);
         $recruiter->assignRole('Recruiter');
 
         $shortlistedCandidate = User::factory()->create(['name' => 'Shortlisted Candidate', 'email_verified_at' => now()]);
