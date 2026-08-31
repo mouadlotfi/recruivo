@@ -12,6 +12,7 @@ x-laravel-service: &laravel-service
   environment:
     DB_HOST: ${DB_HOST:-mysql}
     REDIS_HOST: ${REDIS_HOST:-redis}
+    REDIS_PASSWORD: ${REDIS_PASSWORD:-null}
   volumes:
     - app_storage:/var/www/html/storage
   depends_on:
@@ -59,11 +60,13 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    command: ["sh", "-c", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then exec redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes --appendfsync everysec; else exec redis-server --protected-mode no --appendonly yes --appendfsync everysec; fi"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping >/dev/null 2>&1 || exit 1; else redis-cli ping >/dev/null 2>&1 || exit 1; fi"]
       interval: 10s
       timeout: 5s
       retries: 5
