@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Cloudflare Tunnel terminates TLS and forwards to the container with
+        // X-Forwarded-* headers. Trust it so HTTPS detection, URL generation,
+        // and client-IP rate limiting work correctly behind the tunnel.
+        $middleware->trustProxies(at: '*');
+
         $middleware->redirectGuestsTo(fn (Request $request) => route('login', [
             'locale' => $request->route('locale') ?? config('locales.default', 'en'),
         ]));

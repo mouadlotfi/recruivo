@@ -68,3 +68,4 @@ auth.json
 /data/*
 !/data/.gitignore
 dogfood-output/
+composer.phar
