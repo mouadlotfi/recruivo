@@ -18,10 +18,6 @@ services:
 
   queue:
     image: ${APP_IMAGE:-recruivo:development}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
     volumes:
       - .:/var/www/html
       - vendor_data:/var/www/html/vendor
@@ -29,10 +25,6 @@ services:
 
   scheduler:
     image: ${APP_IMAGE:-recruivo:development}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
     volumes:
       - .:/var/www/html
       - vendor_data:/var/www/html/vendor
