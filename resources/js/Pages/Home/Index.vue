@@ -205,16 +205,16 @@ const skipPreferences = () => {
                     </p>
                     <div class="flex flex-wrap items-center justify-center gap-4 pt-4">
                         <Link
-                            :href="localeUrl('/register')"
+                            :href="localeUrl('/jobs')"
                             class="inline-flex items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500"
                         >
-                            {{ labels.get_started }}
+                            {{ labels.browse_jobs }}
                         </Link>
                         <Link
-                            :href="localeUrl('/jobs')"
+                            :href="localeUrl('/register')"
                             class="inline-flex items-center justify-center rounded-full border-2 border-amber-600 px-6 py-3 text-base font-semibold text-amber-600 transition hover:bg-amber-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-500/10"
                         >
-                            {{ labels.browse_jobs }}
+                            {{ labels.get_started }}
                         </Link>
                     </div>
                 </template>
@@ -273,10 +273,77 @@ const skipPreferences = () => {
                 </div>
             </section>
 
+            <!-- Value Props (Guest Only) -->
+            <section v-if="!user" class="space-y-8 pt-4">
+                <div class="text-center">
+                    <h2 class="font-display text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl dark:text-white">
+                        {{ labels.why_recruivo_title }}
+                    </h2>
+                </div>
+                <div class="grid gap-6 sm:grid-cols-3">
+                    <div class="rounded-2xl border border-stone-200/60 bg-white/60 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/40">
+                        <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-stone-900 dark:text-white">{{ labels.benefit_1_title }}</h3>
+                        <p class="mt-2 text-sm text-stone-600 dark:text-stone-400">{{ labels.benefit_1_desc }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-stone-200/60 bg-white/60 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/40">
+                        <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-stone-900 dark:text-white">{{ labels.benefit_2_title }}</h3>
+                        <p class="mt-2 text-sm text-stone-600 dark:text-stone-400">{{ labels.benefit_2_desc }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-stone-200/60 bg-white/60 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/40">
+                        <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-stone-900 dark:text-white">{{ labels.benefit_3_title }}</h3>
+                        <p class="mt-2 text-sm text-stone-600 dark:text-stone-400">{{ labels.benefit_3_desc }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How It Works (Guest Only) -->
+            <section v-if="!user" class="space-y-8 pt-4">
+                <div class="text-center">
+                    <h2 class="font-display text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl dark:text-white">
+                        {{ labels.how_it_works_title }}
+                    </h2>
+                </div>
+                <div class="grid gap-6 sm:grid-cols-3">
+                    <div class="relative rounded-2xl border border-stone-200/60 bg-white/60 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/40">
+                        <span class="text-3xl font-extrabold text-amber-500/30 dark:text-amber-400/20">01</span>
+                        <h3 class="mt-2 text-lg font-semibold text-stone-900 dark:text-white">{{ labels.step_1_title }}</h3>
+                        <p class="mt-2 text-sm text-stone-600 dark:text-stone-400">{{ labels.step_1_desc }}</p>
+                    </div>
+                    <div class="relative rounded-2xl border border-stone-200/60 bg-white/60 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/40">
+                        <span class="text-3xl font-extrabold text-amber-500/30 dark:text-amber-400/20">02</span>
+                        <h3 class="mt-2 text-lg font-semibold text-stone-900 dark:text-white">{{ labels.step_2_title }}</h3>
+                        <p class="mt-2 text-sm text-stone-600 dark:text-stone-400">{{ labels.step_2_desc }}</p>
+                    </div>
+                    <div class="relative rounded-2xl border border-stone-200/60 bg-white/60 p-6 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/40">
+                        <span class="text-3xl font-extrabold text-amber-500/30 dark:text-amber-400/20">03</span>
+                        <h3 class="mt-2 text-lg font-semibold text-stone-900 dark:text-white">{{ labels.step_3_title }}</h3>
+                        <p class="mt-2 text-sm text-stone-600 dark:text-stone-400">{{ labels.step_3_desc }}</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- Jobs Section -->
             <section class="space-y-6">
                 <h2 v-if="props.hasPreferences" class="text-xl font-semibold text-stone-900 dark:text-white">
                     {{ labels.recommended_for_you }}
+                </h2>
+                <h2 v-else-if="!user" class="text-xl font-semibold text-stone-900 dark:text-white">
+                    {{ labels.latest_openings }}
                 </h2>
 
                 <div v-if="items.length">
@@ -309,6 +376,27 @@ const skipPreferences = () => {
                             {{ labels.show_all_opportunities }}
                         </Link>
                     </div>
+                </div>
+            </section>
+
+            <!-- Final CTA (Guest Only) -->
+            <section
+                v-if="!user"
+                class="rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-8 text-center sm:p-12"
+            >
+                <h2 class="font-display text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl dark:text-white">
+                    {{ labels.final_cta_title }}
+                </h2>
+                <p class="mx-auto mt-3 max-w-xl text-base text-stone-600 dark:text-stone-400">
+                    {{ labels.final_cta_desc }}
+                </p>
+                <div class="mt-6 flex justify-center">
+                    <Link
+                        :href="localeUrl('/jobs')"
+                        class="inline-flex items-center justify-center rounded-full bg-amber-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500"
+                    >
+                        {{ labels.final_cta_button }}
+                    </Link>
                 </div>
             </section>
         </div>
