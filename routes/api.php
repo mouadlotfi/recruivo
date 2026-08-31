@@ -38,7 +38,7 @@ Route::get('/health', function () {
         Cache::store()->get('health_check');
         $checks['checks']['cache'] = 'ok';
     } catch (Throwable $e) {
-        $checks['checks']['cache'] = 'failed';
+        $checks['checks']['cache'] = 'failed: '.$e->getMessage();
         $checks['status'] = 'unhealthy';
     }
 
