@@ -28,6 +28,10 @@ on:
         description: GitHub environment URL
         required: true
         type: string
+      data-endpoint:
+        description: Optional API endpoint returning {"meta":{"total":N}}; polled until N > 0 (demo seed verification)
+        required: false
+        type: string
     secrets:
       COOLIFY_TOKEN:
         description: Coolify API Bearer token
@@ -153,6 +157,7 @@ jobs:
       - name: Verify application health
         env:
           HEALTH_URL: ${{ inputs.health-url }}
+          DATA_ENDPOINT: ${{ inputs.data-endpoint }}
           ENV_NAME: ${{ inputs.environment-name }}
           ENV_URL: ${{ inputs.environment-url }}
           APP_TAG: ${{ inputs.app-tag }}
@@ -176,6 +181,26 @@ jobs:
           if [ "$STATUS" != "healthy" ]; then
             echo "::error::Health check failed across all endpoints: ${HEALTH_URL}"
             exit 1
+          fi
+
+          # Optional data verification: wait until the endpoint reports data
+          # (e.g. demo canonical dataset while demo:reset finishes seeding).
+          if [ -n "${DATA_ENDPOINT:-}" ]; then
+            echo "Waiting for data at ${DATA_ENDPOINT}..."
+            for ATTEMPT in {1..120}; do
+              DATA_RESP=$(curl --silent --show-error --max-time 10 "${DATA_ENDPOINT}" 2>/dev/null || echo '{}')
+              TOTAL=$(echo "$DATA_RESP" | jq -r '.meta.total // 0' 2>/dev/null || echo 0)
+              if [ "${TOTAL}" -gt 0 ]; then
+                echo "Data verification succeeded: total=${TOTAL}"
+                break
+              fi
+              if [ $ATTEMPT -eq 120 ]; then
+                echo "::error::Timed out waiting for data at ${DATA_ENDPOINT}"
+                exit 1
+              fi
+              echo "Data check attempt ${ATTEMPT}/120: total=${TOTAL}, retrying in 5s..."
+              sleep 5
+            done
           fi
 
           cat <<EOF >> "$GITHUB_STEP_SUMMARY"
