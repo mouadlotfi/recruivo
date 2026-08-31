@@ -1,0 +1,40 @@
+{
+	frankenphp
+	order php_server before file_server
+}
+
+:80 {
+	root * /var/www/html/public
+	encode zstd br gzip
+
+	# Security headers
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=()"
+	}
+
+	# Static asset caching
+	@cache_assets {
+		path /build/* /storage/* *.css *.js *.jpg *.jpeg *.gif *.png *.svg *.ico *.webp *.woff *.woff2 *.ttf *.map
+	}
+	header @cache_assets Cache-Control "public, max-age=31536000, immutable"
+
+	# Block sensitive and hidden files
+	@blocked {
+		path /.*
+		not path /.well-known/*
+	}
+	error @blocked 404
+
+	@sensitive {
+		path /composer.* /package*.json /vite.config.* /.env*
+	}
+	error @sensitive 404
+
+	# PHP server directive
+	php_server {
+		try_files {path} /index.php
+	}
+}

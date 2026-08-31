@@ -75,17 +75,16 @@ The following demo accounts are available in development and demo environments:
 
 1. Configure development environment:
    ```bash
-   cp .env.docker.example .env.docker
+   cp .env.example .env
    ```
-
 2. Start the development stack:
    ```bash
-   docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up -d --build
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
    ```
 
 3. Run migrations and canonical seed:
    ```bash
-   docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml exec app php artisan migrate --seed
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan migrate --seed
    ```
 
 4. Access the application:
@@ -100,18 +99,18 @@ The following demo accounts are available in development and demo environments:
 
 1. Create demo environment file:
    ```bash
-   cp .env.demo.example .env.demo
-   # Review and customize .env.demo as needed
+   cp .env.example .env.demo
+   # Set APP_ENV=demo, APP_IS_DEMO=true, DEMO_SCHEDULED_RESET=true
    ```
 
 2. Launch isolated demo stack:
    ```bash
-   docker compose --env-file .env.demo --profile demo -f compose.yml -f compose.demo.yml up -d --build
+   docker compose --env-file .env.demo up -d --build
    ```
 
 3. Seed canonical demo data:
    ```bash
-   docker compose --env-file .env.demo --profile demo -f compose.yml -f compose.demo.yml exec app php artisan migrate:fresh --seed --force
+   docker compose --env-file .env.demo exec app php artisan migrate:fresh --seed --force
    ```
 
 ### Demo Reset Command
@@ -124,7 +123,7 @@ php artisan demo:reset --force
 
 Or within Docker:
 ```bash
-docker compose --env-file .env.demo --profile demo -f compose.yml -f compose.demo.yml exec app php artisan demo:reset --force
+docker compose --env-file .env.demo exec app php artisan demo:reset --force
 ```
 
 *The demo reset command automatically clears application caches, re-runs fresh canonical migrations and seeders, re-syncs brand assets and sample resumes, and flushes cache stores. It is hard-blocked from running in production.*
@@ -138,24 +137,16 @@ Production architecture and deployment procedures are documented in detail in [d
 ### Summary Checklist:
 1. Copy template and supply real secrets:
    ```bash
-   cp .env.production.example .env.production
-   # Populate APP_KEY, secure DB credentials, real SMTP settings, and production domain
+   cp .env.example .env.production
+   # Set APP_ENV=production, real secrets, and production domain
    ```
-2. Build production image:
+2. Build and start production stack:
    ```bash
-   docker compose --env-file .env.production -f compose.yml -f compose.prod.yml build
+   docker compose --env-file .env.production up -d --build
    ```
-3. Start database and cache services:
+3. Run deliberate production migrations (never fresh/seed):
    ```bash
-   docker compose --env-file .env.production -f compose.yml -f compose.prod.yml up -d mysql redis
-   ```
-4. Run deliberate production migrations (never fresh/seed):
-   ```bash
-   docker compose --env-file .env.production -f compose.yml -f compose.prod.yml run --rm --no-deps app php artisan migrate --force
-   ```
-5. Start all production application services:
-   ```bash
-   docker compose --env-file .env.production --profile production -f compose.yml -f compose.prod.yml up -d --force-recreate
+   docker compose --env-file .env.production run --rm --no-deps app php artisan migrate --force
    ```
 
 ---
@@ -214,10 +205,10 @@ Recruivo uses an automated, reproducible deployment pipeline modeled after the S
 Run the test suite locally:
 ```bash
 # Via Docker
-docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml run --rm app php artisan test --compact
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm app php artisan test --compact
 
 # Code styling
-docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml run --rm app vendor/bin/pint --format agent
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm app vendor/bin/pint --format agent
 
 # Frontend type checking and bundle build
 bun run typecheck

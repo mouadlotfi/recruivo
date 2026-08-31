@@ -29,11 +29,8 @@
 
 # Environment files
 /.env
-/.env.backup
-/.env.production
-/.env.demo
-/.env.staging
-/.env.docker
+/.env.*
+!/.env.example
 .phpunit.result.cache
 
 # IDE & tooling

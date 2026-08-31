@@ -1,1 +1,81 @@
-compose.yml
+# Coolify and production compose.
+# Parameterized via environment variables.
+
+name: ${COMPOSE_PROJECT_NAME:-recruivo}
+
+x-laravel-service: &laravel-service
+  image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-latest}}
+  restart: unless-stopped
+  working_dir: /var/www/html
+  env_file:
+    - ${APP_ENV_FILE:-.env}
+  environment:
+    DB_HOST: ${DB_HOST:-mysql}
+    REDIS_HOST: ${REDIS_HOST:-redis}
+  volumes:
+    - app_storage:/var/www/html/storage
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *laravel-service
+    ports:
+      - "${APP_PORT:-${DEMO_APP_PORT:-8000}}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-recruivo_db}
+      MYSQL_USER: ${DB_USERNAME:-recruivo}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-${DB_PASSWORD:-secret}}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 3m
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  queue:
+    <<: *laravel-service
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600", "--memory=128", "--timeout=${QUEUE_WORKER_TIMEOUT:-60}", "--no-interaction"]
+
+  scheduler:
+    <<: *laravel-service
+    command: ["php", "artisan", "schedule:work", "--no-interaction"]
+
+  migrate:
+    <<: *laravel-service
+    command: ${MIGRATE_COMMAND:-php artisan migrate --force --no-interaction}
+    restart: "no"
+
+volumes:
+  mysql_data:
+  redis_data:
+  app_storage:
+

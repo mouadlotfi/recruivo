@@ -5,7 +5,6 @@ vendor/
 # Never send secrets or local environment files to the build context.
 .env*
 !.env.example
-!.env.docker.example
 
 # Generated files and mutable runtime data.
 storage/*
