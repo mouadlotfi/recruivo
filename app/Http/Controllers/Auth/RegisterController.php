@@ -29,6 +29,7 @@ class RegisterController extends Controller
                 'email' => __('auth.email'),
                 'email_placeholder' => __('auth.email_placeholder'),
                 'phone' => __('auth.phone_number_optional'),
+                'phone_placeholder' => __('auth.phone_placeholder'),
                 'password' => __('auth.password'),
                 'password_placeholder' => __('auth.password_create_placeholder'),
                 'password_confirmation' => __('auth.confirm_password_label'),

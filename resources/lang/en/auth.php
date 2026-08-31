@@ -57,6 +57,7 @@ return [
     'already_member' => 'Already a member?',
     'sign_in' => 'Sign in',
     'phone_number_optional' => 'Phone number (Optional)',
+    'phone_placeholder' => '+1 555 123 4567',
     'password_create_placeholder' => 'Create a password',
     'password_confirm_placeholder' => 'Confirm your password',
     'confirm_password_label' => 'Confirm password',

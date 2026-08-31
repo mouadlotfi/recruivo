@@ -57,6 +57,7 @@ return [
     'already_member' => 'Déjà membre ?',
     'sign_in' => 'Se connecter',
     'phone_number_optional' => 'Numéro de téléphone (Optionnel)',
+    'phone_placeholder' => '+33 6 12 34 56 78',
     'password_create_placeholder' => 'Créer un mot de passe',
     'password_confirm_placeholder' => 'Confirmez votre mot de passe',
     'confirm_password_label' => 'Confirmer le mot de passe',
