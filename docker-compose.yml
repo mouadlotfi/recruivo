@@ -12,7 +12,6 @@ x-laravel-service: &laravel-service
   environment:
     DB_HOST: ${DB_HOST:-mysql}
     REDIS_HOST: ${REDIS_HOST:-redis}
-    REDIS_PASSWORD: ${REDIS_PASSWORD:-null}
   volumes:
     - app_storage:/var/www/html/storage
   depends_on:
@@ -36,10 +35,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
-    networks:
-      - default
-      - coolify
-
   mysql:
     image: mysql:8.0
     restart: unless-stopped
@@ -88,9 +83,4 @@ volumes:
   mysql_data:
   redis_data:
   app_storage:
-
-networks:
-  coolify:
-    name: ${COOLIFY_NETWORK:-coolify}
-    external: true
 
