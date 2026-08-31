@@ -9,6 +9,7 @@ import MobileNav from '../Components/Layout/MobileNav.vue'
 import NotificationCenter from '../Components/Layout/NotificationCenter.vue'
 import UserDropdown from '../Components/Layout/UserDropdown.vue'
 import ThemeToggle from '../Components/Layout/ThemeToggle.vue'
+import LanguageToggle from '../Components/Layout/LanguageToggle.vue'
 import ScrollToTop from '../Components/Layout/ScrollToTop.vue'
 import FlashMessages from '../Components/Layout/FlashMessages.vue'
 
@@ -66,6 +67,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                             <Link :href="localeUrl('/login')" class="hidden h-9 items-center justify-center whitespace-nowrap rounded-full border border-stone-200/80 px-4 text-sm font-semibold text-stone-600 transition hover:border-amber-300 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 sm:inline-flex dark:border-stone-700 dark:text-stone-200 dark:hover:border-amber-400 dark:hover:text-amber-300">{{ t('log_in') }}</Link>
                             <Link :href="localeUrl('/register')" class="hidden h-9 items-center justify-center whitespace-nowrap rounded-full bg-amber-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:inline-flex dark:hover:bg-amber-500/90 dark:focus-visible:ring-offset-stone-950">{{ t('sign_up') }}</Link>
                         </template>
+                        <LanguageToggle />
                         <ThemeToggle />
                     </div>
                 </div>

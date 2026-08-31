@@ -9,6 +9,7 @@ import MobileNav from '../Components/Layout/MobileNav.vue'
 import UserDropdown from '../Components/Layout/UserDropdown.vue'
 import NotificationCenter from '../Components/Layout/NotificationCenter.vue'
 import ThemeToggle from '../Components/Layout/ThemeToggle.vue'
+import LanguageToggle from '../Components/Layout/LanguageToggle.vue'
 import ScrollToTop from '../Components/Layout/ScrollToTop.vue'
 import FlashMessages from '../Components/Layout/FlashMessages.vue'
 
@@ -112,6 +113,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                         </Link>
                     </template>
 
+                    <LanguageToggle />
                     <ThemeToggle />
                 </div>
             </div>

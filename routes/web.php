@@ -23,23 +23,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Redirect root to the browser-preferred locale (or default)
+// Redirect root to the cookie-stored preferred locale (or browser-preferred/default)
 Route::get('/', function (Request $request) {
-    $preferred = $request->getPreferredLanguage(config('locales.supported', ['en', 'fr']));
-
-    return redirect('/'.($preferred ?: config('locales.default', 'en')));
-});
-
-// Catch any route without locale prefix and redirect to /en version
-Route::fallback(function () {
-    $path = request()->path();
-
-    // Only redirect if the path doesn't already start with a locale
-    if (! preg_match('/^(en|fr)\//', $path)) {
-        return redirect('/en/'.$path);
+    $supported = config('locales.supported', ['en', 'fr']);
+    $cookieLocale = $request->cookie('locale');
+    if ($cookieLocale && in_array($cookieLocale, $supported, true)) {
+        return redirect('/'.$cookieLocale);
     }
 
-    abort(404);
+    $preferred = $request->getPreferredLanguage($supported);
+
+    return redirect('/'.($preferred ?: config('locales.default', 'en')));
 });
 
 // Locale switching route (redirects to same page in new locale)
@@ -198,4 +192,14 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(SetLocale::c
     Route::middleware(['auth', 'role:Candidate'])->prefix('candidate')->name('candidate.')->group(function () {
         Route::post('/preferences', [ProfileController::class, 'saveQuickPreferences'])->name('preferences.quick');
     });
+});
+// Catch any route without locale prefix and redirect to /en version
+Route::fallback(function () {
+    $path = request()->path();
+
+    if (! preg_match('/^(en|fr)($|\/)/', $path)) {
+        return redirect('/en/'.ltrim($path, '/'));
+    }
+
+    abort(404);
 });

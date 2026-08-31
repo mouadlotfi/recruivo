@@ -14,15 +14,22 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->route('locale');
+        $locale = $request->route('locale') ?? $request->segment(1);
         $supportedLocales = config('locales.supported', ['en', 'fr']);
 
-        if ($locale && in_array($locale, $supportedLocales)) {
+        if ($locale && in_array($locale, $supportedLocales, true)) {
             App::setLocale($locale);
         } else {
-            App::setLocale(config('locales.default', config('app.locale')));
+            $locale = config('locales.default', config('app.locale'));
+            App::setLocale($locale);
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        if ($locale) {
+            $response->headers->setCookie(cookie('locale', $locale, 60 * 24 * 365, '/', null, false, false));
+        }
+
+        return $response;
     }
 }

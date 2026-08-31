@@ -5,6 +5,7 @@ import type { PageProps } from '../../types'
 import AdminSidebar from './AdminSidebar.vue'
 import UserDropdown from '../Layout/UserDropdown.vue'
 import ThemeToggle from '../Layout/ThemeToggle.vue'
+import LanguageToggle from '../Layout/LanguageToggle.vue'
 import FlashMessages from '../Layout/FlashMessages.vue'
 
 const props = defineProps<{
@@ -72,6 +73,7 @@ const sidebarOpen = ref(false)
                 </div>
 
                 <div class="flex items-center gap-3 sm:gap-4">
+                    <LanguageToggle />
                     <ThemeToggle />
                     <UserDropdown />
                 </div>
