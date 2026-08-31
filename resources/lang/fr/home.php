@@ -7,7 +7,7 @@ return [
 
     // Guest Hero
     'hero_title_guest' => 'Trouvez le poste IT qui vous correspond vraiment',
-    'hero_description_guest' => 'Des offres en ingénierie, cloud, sécurité et données, publiées par des entreprises qui recrutent. Filtrez par télétravail ou lieu, découvrez les nouveautés de la semaine et postulez en quelques minutes.',
+    'hero_description_guest' => 'Trouvez des opportunités tech à fort impact adaptées à vos compétences et vos préférences.',
     'get_started' => 'Créer un compte gratuit',
     'browse_jobs' => 'Parcourir les offres',
 

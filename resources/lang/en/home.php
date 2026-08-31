@@ -7,7 +7,7 @@ return [
 
     // Guest Hero
     'hero_title_guest' => 'Find the IT role you actually want',
-    'hero_description_guest' => 'Engineering, cloud, security, and data jobs from companies hiring now. Filter by remote or location, see what\'s new this week, and apply in minutes.',
+    'hero_description_guest' => 'Find high-impact tech opportunities tailored to your skillset and preferences.',
     'get_started' => 'Create a free account',
     'browse_jobs' => 'Browse open roles',
 

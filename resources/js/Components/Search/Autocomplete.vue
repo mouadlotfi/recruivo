@@ -348,44 +348,55 @@ onBeforeUnmount(() => {
 <template>
     <form class="relative w-full" @submit.prevent="submitCurrent">
         <label :for="inputId" class="sr-only">{{ label('search_placeholder') }}</label>
-        <input
-            :id="inputId"
-            ref="input"
-            type="search"
-            role="combobox"
-            aria-autocomplete="list"
-            :aria-expanded="listboxOpen"
-            :aria-controls="listboxId"
-            :aria-activedescendant="activeDescendant"
-            :value="modelValue"
-            :placeholder="label('search_placeholder')"
-            autocomplete="off"
-            class="search-input w-full rounded-2xl border border-stone-200 bg-white py-3.5 pl-12 pr-36 text-base text-stone-900 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-200/60 dark:border-stone-700 dark:bg-stone-950 dark:text-white dark:focus:border-amber-500 dark:focus:ring-amber-500/15 sm:py-4 sm:text-lg"
-            @input="onInput"
-            @keydown="onKeydown"
-            @focus="onFocus"
-            @blur="onBlur"
-        >
-        <svg class="pointer-events-none absolute inset-y-0 left-4 my-auto h-5 w-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+        <div class="relative">
+            <input
+                :id="inputId"
+                ref="input"
+                type="search"
+                role="combobox"
+                aria-autocomplete="list"
+                :aria-expanded="listboxOpen"
+                :aria-controls="listboxId"
+                :aria-activedescendant="activeDescendant"
+                :value="modelValue"
+                :placeholder="label('search_placeholder')"
+                autocomplete="off"
+                class="search-input w-full rounded-2xl border border-stone-200/90 bg-stone-50/80 py-3.5 pl-12 pr-36 text-base text-stone-900 shadow-sm transition placeholder:text-stone-400 focus:border-amber-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-500/15 dark:border-stone-700/80 dark:bg-stone-950/80 dark:text-white dark:placeholder:text-stone-500 dark:focus:border-amber-400 dark:focus:bg-stone-950 dark:focus:ring-amber-400/15 sm:py-4 sm:text-lg"
+                @input="onInput"
+                @keydown="onKeydown"
+                @focus="onFocus"
+                @blur="onBlur"
+            >
+            <div class="pointer-events-none absolute inset-y-0 left-4 flex items-center">
+                <svg class="h-5 w-5 text-amber-600/70 transition-colors group-focus-within:text-amber-600 dark:text-amber-400/70" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+            </div>
 
-        <div data-search-actions class="absolute inset-y-0 right-2 my-auto flex items-center gap-1">
-            <button
-                v-if="modelValue"
-                type="button"
-                data-search-clear
-                class="h-10 w-10 shrink-0 items-center justify-center text-stone-400 transition-colors hover:text-stone-700 focus:outline-none focus-visible:rounded-full focus-visible:ring-2 focus-visible:ring-amber-400 dark:text-stone-500 dark:hover:text-stone-200"
-                :aria-label="label('clear_search')"
-                @mousedown.prevent
-                @click="clearSearch"
-            >
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <button
-                type="submit"
-                class="inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-lg bg-amber-600 px-3 text-sm font-semibold text-white transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 dark:hover:bg-amber-500/90"
-            >
-                {{ label('search') }}
-            </button>
+            <div data-search-actions class="absolute inset-y-0 right-2 my-auto flex items-center gap-1">
+                <button
+                    v-if="modelValue"
+                    type="button"
+                    data-search-clear
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-stone-400 transition-colors hover:text-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:text-stone-500 dark:hover:text-stone-200"
+                    :aria-label="label('clear_search')"
+                    @mousedown.prevent
+                    @click="clearSearch"
+                >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <button
+                    type="submit"
+                    class="inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-amber-600 px-3.5 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 sm:text-sm dark:bg-amber-600 dark:hover:bg-amber-500"
+                >
+                    <span>{{ label('search') }}</span>
+                    <svg class="hidden h-3.5 w-3.5 opacity-75 sm:inline-block" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <p :id="announceId" class="sr-only" aria-live="polite" v-text="announcement"></p>
@@ -394,87 +405,138 @@ onBeforeUnmount(() => {
             v-if="listboxOpen"
             :id="listboxId"
             role="listbox"
-            class="absolute inset-x-0 top-full z-50 mt-2 max-h-80 w-full overflow-y-auto rounded-2xl border border-stone-200 bg-white p-2 shadow-xl dark:border-stone-700 dark:bg-stone-900"
+            class="absolute inset-x-0 top-full z-50 mt-2 max-h-80 w-full overflow-y-auto rounded-2xl border border-stone-200/90 bg-white/95 p-2 shadow-2xl backdrop-blur-2xl dark:border-stone-800/90 dark:bg-stone-900/95 dark:shadow-[0_20px_50px_rgba(0,0,0,0.7)]"
         >
             <template v-if="props.modelValue.trim()">
                 <div
                     v-if="isLoading"
-                    class="rounded-lg px-3 py-2.5 text-sm text-stone-500 dark:text-stone-400"
+                    class="flex items-center gap-2.5 rounded-xl px-3 py-3 text-sm text-stone-500 dark:text-stone-400"
                     role="status"
                 >
-                    {{ label('loading') }}
+                    <svg class="h-4 w-4 animate-spin text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>{{ label('loading') }}</span>
                 </div>
                 <div
                     v-else-if="errorMessage"
-                    class="rounded-lg px-3 py-2.5 text-sm text-red-600 dark:text-red-400"
+                    class="rounded-xl bg-red-50/80 px-3 py-2.5 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400"
                     role="status"
                 >
                     {{ errorMessage }}
                 </div>
                 <template v-else>
                     <template v-for="(section, sectionIndex) in suggestions" :key="`${section.type}-${sectionIndex}`">
-                        <p
+                        <div
                             v-if="section.label"
-                            class="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400"
+                            class="flex items-center justify-between px-3 pb-1.5 pt-2.5"
                         >
-                            {{ section.label }}
-                        </p>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                                {{ section.label }}
+                            </span>
+                            <span class="rounded-full bg-stone-100 px-1.5 py-0.2 text-[10px] font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                                {{ section.items.length }}
+                            </span>
+                        </div>
                         <div
                             v-for="(item, itemIndex) in section.items"
                             :key="`${sectionIndex}-${itemIndex}`"
                             role="option"
                             :id="`${listboxId}-option-${sectionIndex}-${itemIndex}`"
                             :aria-selected="activeIndex === flatIndexFor(sectionIndex, itemIndex)"
-                            class="cursor-pointer rounded-lg px-3 py-2.5 text-left text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800"
-                            :class="activeIndex === flatIndexFor(sectionIndex, itemIndex) && 'bg-amber-50 dark:bg-amber-500/10'"
+                            class="group flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition"
+                            :class="activeIndex === flatIndexFor(sectionIndex, itemIndex)
+                                ? 'bg-amber-500/10 text-stone-900 ring-1 ring-inset ring-amber-500/20 dark:bg-amber-400/10 dark:text-white dark:ring-amber-400/20'
+                                : 'text-stone-700 hover:bg-stone-100/80 dark:text-stone-200 dark:hover:bg-stone-800/80'"
                             @mousedown.prevent
                             @click="visitOption(item)"
                         >
-                            <span class="block font-medium">{{ item.title }}</span>
-                            <span v-if="item.subtitle" class="block text-xs text-stone-500 dark:text-stone-400">{{ item.subtitle }}</span>
+                            <div class="flex min-w-0 items-center gap-3">
+                                <div
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold"
+                                    :class="section.type === 'jobs' || section.type === 'job'
+                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                                        : 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300'"
+                                >
+                                    <svg v-if="section.type === 'jobs' || section.type === 'job'" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A2.18 2.18 0 0 1 3 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 0 1 3.413-.387m7.5 0V5.25A2.25 2.25 0 0 0 13.5 3h-3a2.25 2.25 0 0 0-2.25 2.25v.894m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                    </svg>
+                                    <svg v-else class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                                    </svg>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <span class="block truncate font-medium text-stone-900 dark:text-white">{{ item.title }}</span>
+                                    <span v-if="item.subtitle" class="block truncate text-xs text-stone-500 dark:text-stone-400">{{ item.subtitle }}</span>
+                                </div>
+                            </div>
+                            <svg class="h-4 w-4 shrink-0 text-stone-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-stone-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                            </svg>
                         </div>
                     </template>
 
-                    <div v-if="!suggestions.length" class="rounded-lg px-3 py-2.5 text-sm text-stone-500 dark:text-stone-400">
-                        {{ label('no_search_suggestions') }}
+                    <div v-if="!suggestions.length" class="flex flex-col items-center justify-center py-6 text-center text-sm text-stone-500 dark:text-stone-400">
+                        <svg class="mb-2 h-8 w-8 text-stone-300 dark:text-stone-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                        <p>{{ label('no_search_suggestions') }}</p>
                     </div>
                 </template>
 
-                <div class="mt-1 border-t border-stone-100 pt-1 dark:border-stone-800">
+                <div class="mt-2 border-t border-stone-100 pt-2 dark:border-stone-800">
                     <button
                         type="button"
-                        class="w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-amber-700 transition hover:bg-amber-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:text-amber-300 dark:hover:bg-amber-500/10"
+                        class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-amber-700 transition hover:bg-amber-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:text-amber-300 dark:hover:bg-amber-500/10"
                         @mousedown.prevent
                         @click="submitCurrent"
                     >
-                        {{ label('search_all_results') }}
+                        <span>{{ label('search_all_results') }}</span>
+                        <svg class="h-4 w-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
                     </button>
                 </div>
             </template>
             <template v-else>
-                <p class="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
-                    {{ label('recent_searches') }}
-                </p>
+                <div class="flex items-center justify-between px-3 pb-1.5 pt-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                        {{ label('recent_searches') }}
+                    </span>
+                    <span class="rounded-full bg-stone-100 px-1.5 py-0.2 text-[10px] font-semibold text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                        {{ recentSearches.length }}
+                    </span>
+                </div>
                 <div
                     v-for="(term, index) in recentSearches"
                     :key="`recent-${index}`"
                     role="option"
                     :id="`${listboxId}-recent-${index}`"
                     :aria-selected="activeIndex === index"
-                    class="group flex w-full cursor-pointer items-center rounded-lg text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-800"
-                    :class="activeIndex === index && 'bg-amber-50 dark:bg-amber-500/10'"
+                    class="group flex w-full cursor-pointer items-center justify-between rounded-xl text-sm transition"
+                    :class="activeIndex === index
+                        ? 'bg-amber-500/10 text-stone-900 ring-1 ring-inset ring-amber-500/20 dark:bg-amber-400/10 dark:text-white dark:ring-amber-400/20'
+                        : 'text-stone-700 hover:bg-stone-100/80 dark:text-stone-200 dark:hover:bg-stone-800/80'"
                     @mousedown.prevent
                     @click="chooseRecent(unescapeHtml(term))"
                 >
-                    <span class="pointer-events-none flex-1 truncate px-3 py-2.5">{{ unescapeHtml(term) }}</span>
+                    <div class="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2">
+                        <svg class="h-4 w-4 shrink-0 text-stone-400 group-hover:text-amber-600 dark:text-stone-500 dark:group-hover:text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <span class="truncate font-medium">{{ unescapeHtml(term) }}</span>
+                    </div>
                     <button
                         type="button"
                         data-remove-recent-search
-                        class="mr-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-stone-400 transition-colors hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:text-stone-500 dark:hover:text-red-400"
+                        class="mr-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-stone-400 transition-colors hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:text-stone-500 dark:hover:text-red-400"
                         :aria-label="`${label('remove_recent_search')}: ${unescapeHtml(term)}`"
                         @click.stop="removeRecentSearch(term)"
                     >
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
             </template>

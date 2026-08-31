@@ -76,7 +76,7 @@ return [
     'showing_results' => 'Affichage :count résultat(s)',
     'for' => 'pour',
     'pagination_showing' => 'Affichage de :from à :to sur :total résultats',
-    'footer_text' => '© :year Recruivo. Conçu pour le recrutement IT — ingénierie, cloud, sécurité et données.',
+    'footer_text' => '© :year Recruivo. La plateforme moderne de recrutement tech.',
     'previous' => 'Précédent',
     'next' => 'Suivant',
     'all' => 'Tout',
