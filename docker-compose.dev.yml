@@ -58,3 +58,7 @@ services:
 volumes:
   vendor_data:
   node_modules:
+
+networks:
+  coolify:
+    external: false

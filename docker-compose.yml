@@ -35,6 +35,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    networks:
+      - default
+      - coolify
 
   mysql:
     image: mysql:8.0
@@ -82,4 +85,9 @@ volumes:
   mysql_data:
   redis_data:
   app_storage:
+
+networks:
+  coolify:
+    name: ${COOLIFY_NETWORK:-coolify}
+    external: true
 
