@@ -1,5 +1,5 @@
 ARG PHP_VERSION=8.4
-ARG NODE_VERSION=20
+ARG NODE_VERSION=22
 ARG FRANKENPHP_VERSION=1.4
 
 FROM node:${NODE_VERSION}-bookworm-slim AS node-builder
@@ -58,6 +58,7 @@ ENV APP_ENV=production \
     APP_DEBUG=0
 
 COPY --from=composer-prod /var/www/html /var/www/html
+RUN php artisan package:discover --ansi
 COPY --from=node-builder /var/www/html/public/build /var/www/html/public/build
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-app.ini
@@ -83,7 +84,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -f http://127.0.0.1/api/health >/dev/null 2>&1 || exit 1
 
-EXPOSE 80 443 443/udp
+EXPOSE 80
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]

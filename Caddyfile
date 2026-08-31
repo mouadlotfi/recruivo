@@ -15,11 +15,16 @@
 		Permissions-Policy "geolocation=(), microphone=()"
 	}
 
-	# Static asset caching
+	# Static asset caching: hashed build assets are immutable, storage files are not
 	@cache_assets {
-		path /build/* /storage/* *.css *.js *.jpg *.jpeg *.gif *.png *.svg *.ico *.webp *.woff *.woff2 *.ttf *.map
+		path /build/* *.css *.js *.jpg *.jpeg *.gif *.png *.svg *.ico *.webp *.woff *.woff2 *.ttf *.map
 	}
 	header @cache_assets Cache-Control "public, max-age=31536000, immutable"
+
+	@cache_storage {
+		path /storage/*
+	}
+	header @cache_storage Cache-Control "public, max-age=3600"
 
 	# Block sensitive and hidden files
 	@blocked {
