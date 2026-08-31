@@ -28,9 +28,9 @@ services:
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-production}
     ports:
-      # Cloudflare Tunnel is the only ingress; bind to loopback so the app is
-      # not exposed on all host interfaces.
-      - "127.0.0.1:${APP_PORT:-${DEMO_APP_PORT:-8000}}:80"
+      # In production, Cloudflare Tunnel is the only ingress (binds to 127.0.0.1).
+      # In local development, APP_BIND_IP can be set to 0.0.0.0 for LAN access.
+      - "${APP_BIND_IP:-127.0.0.1}:${APP_PORT:-${DEMO_APP_PORT:-8000}}:80"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://127.0.0.1/api/health >/dev/null || exit 1"]
       interval: 15s
