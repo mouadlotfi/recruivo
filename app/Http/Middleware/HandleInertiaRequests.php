@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -66,7 +67,15 @@ class HandleInertiaRequests extends Middleware
         'primary_navigation' => 'common.primary_navigation',
         'mark_all_as_read' => 'common.mark_all_as_read',
         'no_notifications' => 'common.no_notifications',
+        'no_notifications_description' => 'common.no_notifications_description',
         'unread_notifications' => 'common.unread_notifications',
+        'new_application' => 'common.new_application',
+        'new_application_message' => 'common.new_application_message',
+        'application_accepted' => 'common.application_accepted',
+        'application_rejected' => 'common.application_rejected',
+        'application_shortlisted' => 'common.application_shortlisted',
+        'application_interview' => 'common.application_interview',
+        'application_status_message' => 'common.application_status_message',
         'demo_environment_badge' => 'common.demo_environment_badge',
         'demo_environment_notice' => 'common.demo_environment_notice',
     ];
@@ -89,11 +98,19 @@ class HandleInertiaRequests extends Middleware
         /** @var User|null $user */
         $user = $request->user();
 
+        $supportedLocales = config('locales.supported', ['en', 'fr']);
+        $segmentLocale = $request->segment(1);
+        $locale = $segmentLocale && in_array($segmentLocale, $supportedLocales, true)
+            ? $segmentLocale
+            : app()->getLocale();
+
+        App::setLocale($locale);
+
         return [
             ...parent::share($request),
             'isDemoEnvironment' => app()->environment('demo') || (bool) config('app.is_demo'),
-            'locale' => app()->getLocale(),
-            'supportedLocales' => config('locales.supported', ['en', 'fr']),
+            'locale' => $locale,
+            'supportedLocales' => $supportedLocales,
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,
@@ -112,6 +129,15 @@ class HandleInertiaRequests extends Middleware
             'notificationCount' => fn () => $user
                 ? $user->unreadNotifications()->count()
                 : 0,
+            'notifications' => fn () => $user
+                ? $user->unreadNotifications()->latest()->take(10)->get()->map(fn ($n) => [
+                    'id' => $n->id,
+                    'type' => class_basename($n->type),
+                    'data' => $n->data,
+                    'read_at' => $n->read_at?->toISOString(),
+                    'created_at' => $n->created_at?->diffForHumans(),
+                ])->all()
+                : [],
             'translations' => $this->shellTranslations(),
         ];
     }

@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { Flash, User } from './types'
+import type { Flash, User, AppNotification } from './types'
 
 /**
  * Global Inertia type augmentation.
@@ -22,6 +22,7 @@ declare module '@inertiajs/core' {
             translations: Record<string, Record<string, string>>
             flash: Flash
             notificationCount: number
+            notifications: AppNotification[]
         }
     }
 }

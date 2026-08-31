@@ -14,6 +14,24 @@ export interface Flash {
     success?: string
     error?: string
 }
+export interface AppNotification {
+    id: string
+    type: string
+    data: {
+        kind?: string
+        job_id?: number
+        application_id?: number
+        candidate_id?: number
+        candidate_name?: string
+        job_title?: string
+        company_name?: string
+        status?: string
+        interview_at?: string
+        [key: string]: unknown
+    }
+    read_at: string | null
+    created_at: string | null
+}
 
 /**
  * The globally shared shell props (auth, locale, supportedLocales,
