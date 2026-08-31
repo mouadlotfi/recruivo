@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       health-url:
-        description: Full URL to verify application health
+        description: Comma-separated list of URLs to verify application health
         required: true
         type: string
       environment-name:
@@ -136,18 +136,18 @@ jobs:
                 ;;
               queued|in_progress|"")
                 ;;
-              *)
-                echo "::warning::Unrecognized status '${STATUS}', continuing to poll..."
-                ;;
-            esac
+            *)
+              echo "::warning::Unrecognized status '${STATUS}', continuing to poll..."
+              ;;
+          esac
 
-            if [ "$ELAPSED" -ge "$TIMEOUT_SECONDS" ]; then
-              echo "::error::Timed out after ${TIMEOUT_SECONDS}s waiting for deployment ${DEPLOYMENT_UUID}"
-              exit 1
-            fi
+          if [ "$ELAPSED" -ge "$TIMEOUT_SECONDS" ]; then
+            echo "::error::Timed out after ${TIMEOUT_SECONDS}s waiting for deployment ${DEPLOYMENT_UUID}"
+            exit 1
+          fi
 
-            sleep "$POLL_INTERVAL"
-            ELAPSED=$((ELAPSED + POLL_INTERVAL))
+          sleep "$POLL_INTERVAL"
+          ELAPSED=$((ELAPSED + POLL_INTERVAL))
           done
 
       - name: Verify application health
@@ -159,24 +159,24 @@ jobs:
           DEPLOYMENT_UUID: ${{ steps.deploy.outputs.deployment_uuid }}
         run: |
           set -euo pipefail
-          echo "Verifying application health at ${HEALTH_URL}..."
+          echo "Verifying application health for ${ENV_NAME}..."
           STATUS=""
-          for ATTEMPT in {1..12}; do
-            RESPONSE=$(curl --silent --show-error --max-time 15 "${HEALTH_URL}" 2>/dev/null || true)
-            STATUS=$(echo "$RESPONSE" | jq -r '.status // empty' 2>/dev/null || echo "")
-            if [ "$STATUS" = "healthy" ]; then
-              echo "Health response: ${RESPONSE}"
-              break
-            fi
-            echo "Health check attempt ${ATTEMPT}/12: status=${STATUS:-unreachable}, retrying in 5s..."
+          for ATTEMPT in {1..15}; do
+            for URL in $(echo "$HEALTH_URL" | tr ',' ' '); do
+              RESPONSE=$(curl --silent --show-error --max-time 10 "$URL" 2>/dev/null || true)
+              STATUS=$(echo "$RESPONSE" | jq -r '.status // empty' 2>/dev/null || echo "")
+              if [ "$STATUS" = "healthy" ]; then
+                echo "Health check succeeded on ${URL}: ${RESPONSE}"
+                break 2
+              fi
+            done
+            echo "Health check attempt ${ATTEMPT}/15: status=${STATUS:-unreachable}, retrying in 5s..."
             sleep 5
           done
           if [ "$STATUS" != "healthy" ]; then
-            echo "::error::Health check reported non-healthy status: ${STATUS:-unreachable}"
+            echo "::error::Health check failed across all endpoints: ${HEALTH_URL}"
             exit 1
           fi
-
-          echo "Application is healthy and operational."
 
           cat <<EOF >> "$GITHUB_STEP_SUMMARY"
           ### 🚀 Deployment Successful: ${ENV_NAME}
@@ -184,7 +184,7 @@ jobs:
           | Metric | Value |
           |---|---|
           | **Application** | [${ENV_URL}](${ENV_URL}) |
-          | **Health Check** | [${HEALTH_URL}](${HEALTH_URL}) ✅ \`healthy\` |
+          | **Health Check** | [${HEALTH_URL%%,*}](${HEALTH_URL%%,*}) ✅ \`healthy\` |
           | **Image Tag** | \`${APP_TAG}\` |
           | **Deployment UUID** | \`${DEPLOYMENT_UUID}\` |
           EOF

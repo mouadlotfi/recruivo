@@ -165,7 +165,7 @@ jobs:
       app-uuid: ${{ vars.COOLIFY_PRODUCTION_APP_UUID || '3ioftpjgpbfag6p5uzoahwlw' }}
       app-tag: sha-${{ github.sha }}
       coolify-host: ${{ vars.COOLIFY_HOST || 'http://100.100.217.81:8000' }}
-      health-url: https://recruivo.work/api/health
+      health-url: https://recruivo.work/api/health,http://100.100.217.81:8085/api/health
       environment-name: production
       environment-url: https://recruivo.work
     secrets:
@@ -186,7 +186,7 @@ jobs:
       app-uuid: ${{ vars.COOLIFY_DEMO_APP_UUID || 'g2g8akaxgwhgaitmfp9mwepd' }}
       app-tag: sha-${{ github.sha }}
       coolify-host: ${{ vars.COOLIFY_HOST || 'http://100.100.217.81:8000' }}
-      health-url: https://demo.recruivo.work/api/health
+      health-url: https://demo.recruivo.work/api/health,http://100.100.217.81:8086/api/health
       environment-name: demo
       environment-url: https://demo.recruivo.work
     secrets:
