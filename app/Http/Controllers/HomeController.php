@@ -147,20 +147,25 @@ class HomeController extends Controller
         return [
             'id' => $job->id,
             'title' => $job->title,
-            'company_name' => $job->company->name,
-            'company_slug' => $job->company->slug,
-            'company_logo' => $job->company->logo,
             'location' => $job->location,
-            'work_arrangement' => $job->work_arrangement,
-            'it_category' => $job->it_category?->value,
+            'remote_type' => $job->remote_type,
+            'category' => $job->category,
             'salary_min' => $job->salary_min,
             'salary_max' => $job->salary_max,
-            'currency' => $job->currency,
-            'closing_soon' => $job->closes_at ? $job->closes_at->isPast() || $job->closes_at->diffInDays(now()) <= 7 : false,
+            'closes_at' => $job->closes_at?->toIso8601String(),
+            'is_closing_soon' => $job->isClosingSoon(),
+            'closes_label' => $job->closes_at
+                ? __('jobs.closes_on', ['date' => $job->closes_at->translatedFormat('M j, Y')])
+                : null,
             'is_saved' => (bool) ($job->is_saved ?? false),
             'has_applied' => (bool) ($job->has_applied ?? false),
-            'published_at' => $job->published_at?->diffForHumans() ?? '',
-            'created_at' => $job->created_at?->diffForHumans() ?? '',
+            'published_at' => $job->published_at?->toIso8601String(),
+            'company' => $job->company ? [
+                'id' => $job->company->id,
+                'name' => $job->company->name,
+                'slug' => $job->company->slug,
+                'logo_url' => $job->company->logo_url,
+            ] : null,
         ];
     }
 }
