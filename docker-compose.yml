@@ -71,16 +71,21 @@ services:
   queue:
     <<: *laravel-service
     command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600", "--memory=128", "--timeout=${QUEUE_WORKER_TIMEOUT:-60}", "--no-interaction"]
+    healthcheck:
+      disable: true
 
   scheduler:
     <<: *laravel-service
     command: ["php", "artisan", "schedule:work", "--no-interaction"]
+    healthcheck:
+      disable: true
 
   migrate:
     <<: *laravel-service
     command: ${MIGRATE_COMMAND:-php artisan migrate --force --no-interaction}
     restart: "no"
-
+    healthcheck:
+      disable: true
 volumes:
   mysql_data:
   redis_data:

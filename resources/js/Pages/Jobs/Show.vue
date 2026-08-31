@@ -300,7 +300,7 @@ const toggleSaved = () => {
                         <div class="mt-4 text-xs text-stone-500 dark:text-stone-400">{{ job.posted_label }}</div>
                         <div
                             v-if="job.is_closing_soon"
-                            class="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"
+                            class="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"
                         >
                             {{ labels.closing_soon }}<template v-if="job.closes_label"> · {{ job.closes_label }}</template>
                         </div>
