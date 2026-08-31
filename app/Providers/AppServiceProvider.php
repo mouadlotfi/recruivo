@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Support\DynamicVite;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Vite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -12,7 +14,10 @@ use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->singleton(Vite::class, DynamicVite::class);
+    }
 
     public function boot(): void
     {
