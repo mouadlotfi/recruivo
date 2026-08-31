@@ -187,7 +187,7 @@ jobs:
       app-tag: sha-${{ github.sha }}
       coolify-host: ${{ vars.COOLIFY_HOST || 'http://100.100.217.81:8000' }}
       health-url: https://demo.recruivo.work/api/health,http://100.100.217.81:8086/api/health
-      environment-name: production
+      environment-name: demo
       environment-url: https://demo.recruivo.work
     secrets:
       COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
