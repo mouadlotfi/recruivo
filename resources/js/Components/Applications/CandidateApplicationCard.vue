@@ -159,10 +159,10 @@ function withdraw(): void {
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-3 sm:ml-6 sm:items-start">
+                <div class="flex flex-col gap-3 sm:ml-6 sm:w-48 sm:shrink-0 sm:items-stretch">
                     <Link
                         :href="jobUrl"
-                        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 sm:w-auto"
+                        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
                     >
                         <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -174,10 +174,10 @@ function withdraw(): void {
                         v-if="canWithdraw"
                         type="button"
                         :disabled="withdrawing"
-                        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10 sm:w-auto"
+                        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
                         @click="withdraw"
                     >
-                            {{ props.labels.withdraw_application }}
+                        {{ props.labels.withdraw_application }}
                     </button>
                 </div>
             </div>
