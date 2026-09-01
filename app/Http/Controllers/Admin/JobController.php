@@ -104,6 +104,7 @@ class JobController extends Controller
             'company' => $job->company ? [
                 'id' => $job->company->id,
                 'name' => $job->company->name,
+                'slug' => $job->company->slug,
             ] : null,
             'recruiter' => $job->recruiter ? [
                 'id' => $job->recruiter->id,

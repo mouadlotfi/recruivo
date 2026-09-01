@@ -40,7 +40,16 @@ class UserController extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'roles' => $user->roles->pluck('name')->values()->all(),
-                'company' => $user->company ? ['name' => $user->company->name] : null,
+                'is_candidate' => $user->hasRole('Candidate'),
+                'candidate_url' => $user->hasRole('Candidate')
+                    ? localized_route('admin.users.candidate', ['user' => $user->id])
+                    : null,
+                'company' => $user->company ? [
+                    'id' => $user->company->id,
+                    'name' => $user->company->name,
+                    'slug' => $user->company->slug,
+                    'url' => localized_route('companies.show', ['slug' => $user->company->slug]),
+                ] : null,
                 'applications_count' => $user->applications_count,
                 'email_verified' => $user->email_verified_at !== null,
                 'is_demo' => (bool) $user->is_demo,
@@ -98,6 +107,9 @@ class UserController extends Controller
                 'loading_more' => __('common.loading_more'),
                 'cancel' => __('common.cancel'),
                 'show_more' => __('common.show_more'),
+                'view_profile' => __('admin.view_profile'),
+                'candidate_profile' => __('admin.candidate_profile'),
+                'view_company' => __('admin.view_company'),
             ],
         ]);
     }
@@ -111,5 +123,51 @@ class UserController extends Controller
         $deletionService->deleteUserAccount($user, false);
 
         return back()->with('success', __('admin.user_deleted'));
+    }
+
+    public function candidateProfile(string $locale, User $user)
+    {
+        abort_unless($user->hasRole('Candidate'), 404);
+
+        return Inertia::render('Profile/Preview', [
+            'applicant' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'profile_summary' => $user->profile_summary,
+                'candidateProfile' => $user->candidateProfile ? [
+                    'headline' => $user->candidateProfile->headline,
+                    'skills' => $user->candidateProfile->skills,
+                    'languages_data' => $user->candidateProfile->languages_data ?? [],
+                    'profile_links' => $user->candidateProfile->profile_links ?? [],
+                    'experiences' => $user->candidateProfile->experiences ?? [],
+                    'educations' => $user->candidateProfile->educations ?? [],
+                ] : null,
+            ],
+            'backUrl' => "/{$locale}/admin/users",
+            'labels' => [
+                'recruiter_preview' => __('admin.candidate_profile'),
+                'back_to_profile_settings' => __('common.back'),
+                'email_address' => __('profile.email_address'),
+                'phone_number' => __('profile.phone_number'),
+                'about' => __('profile.about'),
+                'present' => __('profile.present'),
+                'proficiency_beginner' => __('profile.proficiency_beginner'),
+                'proficiency_elementary' => __('profile.proficiency_elementary'),
+                'proficiency_intermediate' => __('profile.proficiency_intermediate'),
+                'proficiency_professional_working' => __('profile.proficiency_professional_working'),
+                'proficiency_fluent' => __('profile.proficiency_fluent'),
+                'proficiency_native_bilingual' => __('profile.proficiency_native_bilingual'),
+                'about_heading' => __('profile.about'),
+                'contact_information' => __('recruiter.contact_information'),
+                'not_provided' => __('recruiter.not_provided'),
+                'skills' => __('recruiter.skills'),
+                'languages' => __('recruiter.languages'),
+                'links' => __('profile.links'),
+                'experience' => __('recruiter.experience'),
+                'education' => __('recruiter.education'),
+            ],
+        ]);
     }
 }

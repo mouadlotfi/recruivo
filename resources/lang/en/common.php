@@ -29,6 +29,7 @@ return [
     'settings' => 'Settings',
     'primary_navigation' => 'Primary navigation',
     'dashboard' => 'Dashboard',
+    'admin_dashboard' => 'Admin Dashboard',
     'profile' => 'Profile',
     'company_profile' => 'Company Profile',
     'profile_settings' => 'Profile Settings',

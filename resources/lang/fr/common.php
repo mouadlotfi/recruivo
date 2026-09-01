@@ -29,6 +29,7 @@ return [
     'settings' => 'Paramètres',
     'primary_navigation' => 'Navigation principale',
     'dashboard' => 'Tableau de bord',
+    'admin_dashboard' => 'Tableau de bord Admin',
     'profile' => 'Profil',
     'company_profile' => 'Profil de l\'entreprise',
     'profile_settings' => 'Paramètres du profil',

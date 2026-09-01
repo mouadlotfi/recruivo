@@ -11,6 +11,7 @@ const { t } = useTranslation()
 type AuthUser = NonNullable<PageProps['auth']['user']>
 const user = computed(() => page.props.auth.user as AuthUser)
 const isRecruiter = computed(() => user.value.roles.includes('Recruiter'))
+const isAdmin = computed(() => user.value.roles.includes('Admin'))
 const initials = computed(() => (user.value.name?.trim().charAt(0) ?? '?').toUpperCase())
 
 const open = ref(false)
@@ -18,6 +19,7 @@ const root = ref<HTMLElement | null>(null)
 useDismiss(open, root)
 
 const profileUrl = `/${page.props.locale}/profile`
+const adminDashboardUrl = `/${page.props.locale}/admin/dashboard`
 const logoutUrl = `/${page.props.locale}/logout`
 </script>
 
@@ -51,6 +53,18 @@ const logoutUrl = `/${page.props.locale}/logout`
                 <p class="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-200">{{ user.email }}</p>
             </div>
             <Link
+                v-if="isAdmin"
+                :href="adminDashboardUrl"
+                role="menuitem"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-stone-100 dark:text-amber-400 dark:hover:bg-stone-700"
+            >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+                {{ t('admin_dashboard') }}
+            </Link>
+            <Link
+                v-if="!isAdmin"
                 :href="profileUrl"
                 role="menuitem"
                 class="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"

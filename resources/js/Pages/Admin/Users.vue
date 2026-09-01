@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Head, router, usePage } from '@inertiajs/vue3'
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps, Pagination } from '../../types'
 import AdminLayout from '../../Components/Admin/AdminLayout.vue'
 import AdminBreadcrumb from '../../Components/Admin/AdminBreadcrumb.vue'
@@ -11,7 +11,9 @@ type AdminUser = {
     email: string
     phone: string | null
     roles: string[]
-    company: { name: string } | null
+    is_candidate?: boolean
+    candidate_url?: string | null
+    company: { id?: number; name: string; slug?: string; url?: string } | null
     applications_count: number
     email_verified: boolean
     is_demo: boolean
@@ -149,7 +151,14 @@ const deleteUser = () => {
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <h3 class="break-words text-base font-semibold text-stone-900 dark:text-white sm:text-lg">
-                                        {{ user.name }}
+                                        <Link
+                                            v-if="user.candidate_url"
+                                            :href="user.candidate_url"
+                                            class="transition hover:text-amber-600 hover:underline dark:hover:text-amber-400"
+                                        >
+                                            {{ user.name }}
+                                        </Link>
+                                        <span v-else>{{ user.name }}</span>
                                     </h3>
                                     <p class="mt-0.5 break-all text-xs text-stone-600 dark:text-stone-400 sm:text-sm">
                                         {{ user.email }}
@@ -181,7 +190,16 @@ const deleteUser = () => {
                             </div>
                             <div v-if="user.company" class="space-y-0.5">
                                 <span class="text-stone-500 dark:text-stone-400">{{ labels.company }}</span>
-                                <p class="break-words font-medium text-stone-800 dark:text-stone-200">{{ user.company.name }}</p>
+                                <p class="break-words font-medium">
+                                    <Link
+                                        v-if="user.company.slug"
+                                        :href="localeUrl('/companies/' + user.company.slug)"
+                                        class="text-amber-700 transition hover:text-amber-800 hover:underline dark:text-amber-400 dark:hover:text-amber-300"
+                                    >
+                                        {{ user.company.name }}
+                                    </Link>
+                                    <span v-else class="text-stone-800 dark:text-stone-200">{{ user.company.name }}</span>
+                                </p>
                             </div>
                             <div class="space-y-0.5">
                                 <span class="text-stone-500 dark:text-stone-400">{{ labels.applications }}</span>
@@ -206,20 +224,36 @@ const deleteUser = () => {
                             </div>
                         </div>
 
-                        <div class="mt-3.5 flex items-center justify-end border-t border-stone-100 pt-3 dark:border-stone-800/80 sm:mt-4">
+                        <div class="mt-3.5 flex flex-wrap items-center justify-end gap-2 border-t border-stone-100 pt-3 dark:border-stone-800/80 sm:mt-4">
+                            <Link
+                                v-if="user.candidate_url"
+                                :href="user.candidate_url"
+                                class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                            >
+                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                                {{ labels.view_profile }}
+                            </Link>
+                            <Link
+                                v-if="user.company?.slug"
+                                :href="localeUrl('/companies/' + user.company.slug)"
+                                class="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700"
+                            >
+                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>
+                                {{ labels.view_company }}
+                            </Link>
                             <button
                                 v-if="!user.is_admin && !user.is_demo"
                                 type="button"
-                                class="inline-flex items-center justify-center rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 sm:px-4 sm:py-2 sm:text-sm"
+                                class="inline-flex min-h-9 items-center justify-center rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
                                 :title="labels.delete_user"
                                 @click="selectedUser = user"
                             >
-                                <svg class="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <svg class="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                                 </svg>
                                 {{ labels.delete_user }}
                             </button>
-                            <span v-else class="text-xs italic text-stone-500 dark:text-stone-400">{{ labels.protected }}</span>
+                            <span v-else-if="user.is_admin" class="text-xs italic text-stone-500 dark:text-stone-400">{{ labels.protected }}</span>
                         </div>
                     </div>
                 </div>

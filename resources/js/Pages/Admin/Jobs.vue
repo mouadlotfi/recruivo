@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Head, router, usePage } from '@inertiajs/vue3'
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps, Pagination } from '../../types'
 import AdminLayout from '../../Components/Admin/AdminLayout.vue'
 import AdminBreadcrumb from '../../Components/Admin/AdminBreadcrumb.vue'
@@ -8,7 +8,7 @@ import AdminBreadcrumb from '../../Components/Admin/AdminBreadcrumb.vue'
 type AdminJob = {
     id: number
     title: string
-    company: { id: number; name: string } | null
+    company: { id: number; name: string; slug?: string } | null
     recruiter: { id: number; name: string; email: string } | null
     status: string
     status_label: string
@@ -211,10 +211,26 @@ const statusClass = (jobStatus: string) => jobStatus === 'published'
                         <tbody class="divide-y divide-stone-200/70 dark:divide-stone-800">
                             <tr v-for="job in items" :key="job.id" class="align-top text-stone-700 dark:text-stone-300">
                                 <td class="max-w-[16rem] px-4 py-4">
-                                    <p class="font-semibold text-stone-900 dark:text-white">{{ job.title }}</p>
+                                    <p class="font-semibold">
+                                        <Link
+                                            :href="localeUrl('/jobs/' + job.id)"
+                                            class="text-stone-900 transition hover:text-amber-700 hover:underline dark:text-white dark:hover:text-amber-400"
+                                        >
+                                            {{ job.title }}
+                                        </Link>
+                                    </p>
                                     <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">#{{ job.id }}</p>
                                 </td>
-                                <td class="px-4 py-4">{{ job.company?.name ?? '—' }}</td>
+                                <td class="px-4 py-4">
+                                    <Link
+                                        v-if="job.company?.slug"
+                                        :href="localeUrl('/companies/' + job.company.slug)"
+                                        class="font-medium text-amber-700 transition hover:text-amber-800 hover:underline dark:text-amber-400 dark:hover:text-amber-300"
+                                    >
+                                        {{ job.company.name }}
+                                    </Link>
+                                    <span v-else>{{ job.company?.name ?? '—' }}</span>
+                                </td>
                                 <td class="max-w-[14rem] px-4 py-4">
                                     <p>{{ job.recruiter?.name ?? '—' }}</p>
                                     <p v-if="job.recruiter?.email" class="mt-1 truncate text-xs text-stone-500 dark:text-stone-400">{{ job.recruiter.email }}</p>

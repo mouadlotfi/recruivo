@@ -64,6 +64,10 @@ return [
     'recruiter' => 'Recruiter',
     'candidate' => 'Candidate',
 
+    'view_profile' => 'View Profile',
+    'candidate_profile' => 'Candidate Profile',
+    'view_job' => 'View Job',
+    'view_company' => 'View Company',
     // Flash Messages
     'user_deleted' => 'User deleted successfully.',
     'cannot_delete_admin' => 'Cannot delete admin users.',

@@ -64,6 +64,10 @@ return [
     'recruiter' => 'Recruteur',
     'candidate' => 'Candidat',
 
+    'view_profile' => 'Voir le profil',
+    'candidate_profile' => 'Profil candidat',
+    'view_job' => 'Voir l\'offre',
+    'view_company' => 'Voir l\'entreprise',
     // Flash Messages
     'user_deleted' => 'Utilisateur supprimé avec succès.',
     'cannot_delete_admin' => 'Impossible de supprimer les utilisateurs administrateurs.',

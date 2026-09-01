@@ -41,7 +41,7 @@ class InertiaUiContractTest extends TestCase
         $page = File::get(resource_path('js/Pages/Profile/Preview.vue'));
 
         $this->assertStringContainsString('import { Head, Link, usePage } from \'@inertiajs/vue3\'', $page);
-        $this->assertStringContainsString(':href="localeUrl(\'/profile\')"', $page);
+        $this->assertStringContainsString('localeUrl', $page);
         $this->assertStringContainsString('min-h-11', $page);
         $this->assertStringContainsString('focus-visible:ring-2', $page);
         $this->assertMatchesRegularExpression('/flex flex-col gap-4 md:flex-row md:items-start/', $page);
@@ -152,5 +152,20 @@ class InertiaUiContractTest extends TestCase
         $page = File::get(resource_path('js/Pages/Recruiter/Jobs/Show.vue'));
 
         $this->assertStringContainsString('lg:items-start', $page);
+    }
+
+    public function test_admin_navigation_contracts_are_present_on_shell_and_public_detail_pages(): void
+    {
+        $appLayout = File::get(resource_path('js/Layouts/AppLayout.vue'));
+        $userDropdown = File::get(resource_path('js/Components/Layout/UserDropdown.vue'));
+        $jobShow = File::get(resource_path('js/Pages/Jobs/Show.vue'));
+        $companyShow = File::get(resource_path('js/Pages/Companies/Show.vue'));
+        $profilePreview = File::get(resource_path('js/Pages/Profile/Preview.vue'));
+
+        $this->assertStringContainsString('localeUrl(\'/admin/dashboard\')', $appLayout);
+        $this->assertStringContainsString('adminDashboardUrl', $userDropdown);
+        $this->assertStringContainsString('localeUrl(\'/admin/jobs\')', $jobShow);
+        $this->assertStringContainsString('localeUrl(\'/admin/users\')', $companyShow);
+        $this->assertStringContainsString('backHref', $profilePreview);
     }
 }

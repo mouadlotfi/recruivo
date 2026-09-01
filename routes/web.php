@@ -167,6 +167,7 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(SetLocale::c
             Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
             Route::get('/jobs', [App\Http\Controllers\Admin\JobController::class, 'index'])->name('jobs');
             Route::get('/users', [UserController::class, 'index'])->name('users');
+            Route::get('/users/{user}/candidate', [UserController::class, 'candidateProfile'])->name('users.candidate');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         });
 

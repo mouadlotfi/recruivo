@@ -4,16 +4,24 @@ import { Head, Link, usePage } from '@inertiajs/vue3'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import type { PageProps, ProfilePreviewApplicant } from '../../types'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     applicant: ProfilePreviewApplicant
     labels: Record<string, string>
-}>()
+    backUrl?: string
+}>(), {
+    backUrl: '/profile',
+})
 
 const page = usePage<PageProps>()
 const locale = computed(() => page.props.locale)
 const localeUrl = (path: string) => `/${locale.value}${path}`
 const profile = computed(() => props.applicant.candidateProfile)
-
+const backHref = computed(() => {
+    if (!props.backUrl) return localeUrl('/profile')
+    if (props.backUrl.startsWith('http://') || props.backUrl.startsWith('https://')) return props.backUrl
+    if (props.backUrl.startsWith(`/${locale.value}/`) || props.backUrl === `/${locale.value}`) return props.backUrl
+    return localeUrl(props.backUrl.startsWith('/') ? props.backUrl : `/${props.backUrl}`)
+})
 function formatMonthYear(value: string | null | undefined): string {
     if (!value) return ''
     if (/^\d{4}$/.test(value)) return value
@@ -48,7 +56,7 @@ function proficiencyLabel(level: string): string {
                     </div>
                 </div>
                 <Link
-                    :href="localeUrl('/profile')"
+                    :href="backHref"
                     class="inline-flex min-h-11 shrink-0 items-center text-sm font-medium text-amber-600 hover:text-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 dark:text-amber-400 dark:focus-visible:ring-offset-stone-950 md:ml-auto"
                 >← {{ labels.back_to_profile_settings }}</Link>
             </div>

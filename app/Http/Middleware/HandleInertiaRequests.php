@@ -76,6 +76,7 @@ class HandleInertiaRequests extends Middleware
         'application_shortlisted' => 'common.application_shortlisted',
         'application_interview' => 'common.application_interview',
         'application_status_message' => 'common.application_status_message',
+        'admin_dashboard' => 'common.admin_dashboard',
         'demo_environment_badge' => 'common.demo_environment_badge',
         'demo_environment_notice' => 'common.demo_environment_notice',
     ];
