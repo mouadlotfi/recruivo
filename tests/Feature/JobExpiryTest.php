@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\JobStatus;
+use App\Models\Application;
 use App\Models\Company;
 use App\Models\Job;
 use App\Models\User;
@@ -274,6 +275,31 @@ class JobExpiryTest extends TestCase
         $recruiter->assignRole('Recruiter');
 
         return $recruiter;
+    }
+
+    public function test_applicant_can_view_expired_job_they_applied_for(): void
+    {
+        $candidate = User::factory()->create(['email_verified_at' => now()]);
+        $candidate->assignRole('Candidate');
+        $expired = Job::factory()->create([
+            'closes_at' => today()->subDay(),
+            'status' => JobStatus::Published->value,
+            'published_at' => now()->subMonth(),
+        ]);
+
+        $application = Application::factory()
+            ->for($candidate, 'candidate')
+            ->for($expired, 'job')
+            ->create();
+
+        $this->actingAs($candidate)
+            ->get('/en/jobs/'.$expired->id)
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Jobs/Show', false)
+                ->where('canApply', false)
+                ->where('hasApplied', true)
+            );
     }
 
     private function validJobData(array $overrides = []): array
