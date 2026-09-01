@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\ApplicationStatus;
-use App\Enums\JobStatus;
 use App\Models\Application;
 use App\Models\Job;
 use App\Models\User;
@@ -23,7 +22,7 @@ class ApplicationSeeder extends Seeder
     {
         $this->command->info('Creating realistic applications, interview schedules, saved jobs, and notifications...');
 
-        $publishedJobs = Job::where('status', JobStatus::Published->value)->with('company')->get();
+        $publishedJobs = Job::published()->with('company')->get();
 
         if ($publishedJobs->isEmpty()) {
             $this->command->warn('No published jobs found. Please run JobSeeder first.');

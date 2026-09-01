@@ -47,7 +47,7 @@ class ApplicationController extends Controller
         if ($request->input('use_existing_resume') === 'true') {
             $resumePath = $user->candidateProfile?->resume_path;
         } elseif ($request->hasFile('resume')) {
-            $resumePath = $request->file('resume')->store('resumes', 'private');
+            $resumePath = $request->file('resume')->store(config('filesystems.application_resumes'), 'private');
         } else {
             $resumePath = $user->candidateProfile?->resume_path;
         }

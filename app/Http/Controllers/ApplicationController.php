@@ -44,7 +44,7 @@ class ApplicationController extends Controller
             : null;
 
         if ($request->hasFile('resume')) {
-            $resumePath = $request->file('resume')->store('application-resumes', 'private');
+            $resumePath = $request->file('resume')->store(config('filesystems.application_resumes'), 'private');
         }
 
         if ($validated['resume_source'] === 'profile' && ! $resumePath) {

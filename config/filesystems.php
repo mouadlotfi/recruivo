@@ -2,6 +2,19 @@
 
 return [
     'default' => env('FILESYSTEM_DISK', 'local'),
+    /*
+    |--------------------------------------------------------------------------
+    | Application Resume Directory
+    |--------------------------------------------------------------------------
+    |
+    | Sub-directory on the private disk where resumes submitted with a job
+    | application are stored. One source of truth shared by every surface
+    | that accepts an application (the Inertia web flow and the API), so
+    | uploads can't land in different folders depending on entry point.
+    |
+    */
+
+    'application_resumes' => 'application-resumes',
 
     'disks' => [
         'local' => [
