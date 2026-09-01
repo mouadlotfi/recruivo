@@ -23,7 +23,7 @@ const localeUrl = (path: string) => `/${locale.value}${path}`
 
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => user.value !== null)
-
+const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 const companyInitial = computed(() => (props.job.company ? props.job.company.name.charAt(0) : 'J'))
 
 const salaryRange = computed(() => {
@@ -98,15 +98,28 @@ const toggleSaved = () => {
 
     <AppLayout>
         <div class="space-y-8">
-            <Link
-                :href="localeUrl('/jobs')"
-                class="inline-flex items-center gap-2 text-sm font-medium text-stone-600 transition hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400"
-            >
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-                </svg>
-                {{ labels.back_to_jobs }}
-            </Link>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <Link
+                    :href="localeUrl('/jobs')"
+                    class="inline-flex items-center gap-2 text-sm font-medium text-stone-600 transition hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400"
+                >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                    </svg>
+                    {{ labels.back_to_jobs }}
+                </Link>
+
+                <Link
+                    v-if="isAdmin"
+                    :href="localeUrl('/admin/jobs')"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                >
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                    </svg>
+                    {{ labels.back_to_admin_jobs || 'Back to Admin Jobs' }}
+                </Link>
+            </div>
 
             <div class="grid gap-8 lg:grid-cols-3">
                 <div class="lg:col-span-2">

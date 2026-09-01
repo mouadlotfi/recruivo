@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use App\Enums\ItCategory;
 use App\Models\Company;
 use App\Models\Job;
+use App\Support\JobCardSerializer;
 use Illuminate\Database\Eloquent\Builder;
 use Inertia\Inertia;
 
 class HomeController extends Controller
 {
+    public function __construct(
+        private readonly JobCardSerializer $jobCards,
+    ) {}
+
     /**
      * Page strings travel with the home page instead of expanding the shared shell translations.
      *
@@ -113,7 +118,7 @@ class HomeController extends Controller
             && session('show_preferences_picker');
 
         return Inertia::render('Home/Index', [
-            'jobs' => array_map(fn (Job $job) => $this->serializeJobCard($job), $jobs->items()),
+            'jobs' => array_map(fn (Job $job) => $this->jobCards->serialize($job), $jobs->items()),
             'metrics' => [
                 'total_roles' => Job::published()->count(),
                 'remote_roles' => Job::published()->where('remote_type', 'remote')->count(),
@@ -137,35 +142,5 @@ class HomeController extends Controller
             'firstLogin' => (bool) session('first_login'),
             'labels' => $labels,
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function serializeJobCard(Job $job): array
-    {
-        return [
-            'id' => $job->id,
-            'title' => $job->title,
-            'location' => $job->location,
-            'remote_type' => $job->remote_type,
-            'category' => $job->category,
-            'salary_min' => $job->salary_min,
-            'salary_max' => $job->salary_max,
-            'closes_at' => $job->closes_at?->toIso8601String(),
-            'is_closing_soon' => $job->isClosingSoon(),
-            'closes_label' => $job->closes_at
-                ? __('jobs.closes_on', ['date' => $job->closes_at->translatedFormat('M j, Y')])
-                : null,
-            'is_saved' => (bool) ($job->is_saved ?? false),
-            'has_applied' => (bool) ($job->has_applied ?? false),
-            'published_at' => $job->published_at?->toIso8601String(),
-            'company' => $job->company ? [
-                'id' => $job->company->id,
-                'name' => $job->company->name,
-                'slug' => $job->company->slug,
-                'logo_url' => $job->company->logo_url,
-            ] : null,
-        ];
     }
 }

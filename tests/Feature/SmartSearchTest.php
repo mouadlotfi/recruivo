@@ -49,6 +49,54 @@ class SmartSearchTest extends TestCase
             ->assertSee('Laravel Developer');
     }
 
+    public function test_filter_only_search_returns_matching_jobs_without_a_text_query(): void
+    {
+        $company = Company::factory()->create(['name' => 'Acme Labs']);
+        Job::factory()->for($company)->create([
+            'title' => 'Remote Engineer',
+            'remote_type' => 'remote',
+            'status' => JobStatus::Published->value,
+            'published_at' => now(),
+        ]);
+        Job::factory()->for($company)->create([
+            'title' => 'Onsite Designer',
+            'remote_type' => 'onsite',
+            'status' => JobStatus::Published->value,
+            'published_at' => now(),
+        ]);
+
+        $this->get('/en/search?remote_type=remote')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Search/Index', false)
+                ->where('jobsCount', 1)
+                ->where('companiesCount', 0)
+                ->where('jobs.0.title', 'Remote Engineer')
+            );
+    }
+
+    public function test_suggested_correction_only_appears_when_the_whole_search_is_empty(): void
+    {
+        $company = Company::factory()->create(['name' => 'Acme Labs']);
+        Job::factory()->for($company)->create([
+            'title' => 'Laravel Developer',
+            'remote_type' => 'onsite',
+            'status' => JobStatus::Published->value,
+            'published_at' => now(),
+        ]);
+
+        // The typo-tolerant query matches the title, but the remote_type
+        // filter excludes that row — so the search is empty and the
+        // vocabulary scan offers a correction.
+        $this->get('/en/search?search=larvel&remote_type=remote')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Search/Index', false)
+                ->where('jobsCount', 0)
+                ->where('suggestedCorrection', 'laravel')
+            );
+    }
+
     public function test_suggestions_expose_accessible_sections_and_a_search_all_action(): void
     {
         $company = Company::factory()->create(['name' => 'Acme Labs']);

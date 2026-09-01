@@ -22,7 +22,12 @@ class SearchController extends Controller
 
         $locale = app()->getLocale();
 
-        $jobs = $searchService->jobs($query)->take(5)
+        // One ranked search answers the autocomplete; the envelope already
+        // carries both result sets in score order (zero-hit queries also
+        // trigger the "did you mean" vocabulary scan — unused here).
+        $envelope = $searchService->search($query);
+
+        $jobs = $envelope->jobs->take(5)
             ->map(function ($job) use ($locale) {
                 return [
                     'id' => $job->id,
@@ -34,7 +39,7 @@ class SearchController extends Controller
                 ];
             });
 
-        $companies = $searchService->companies($query)->take(5)
+        $companies = $envelope->companies->take(5)
             ->map(function ($company) use ($locale) {
                 return [
                     'id' => $company->id,

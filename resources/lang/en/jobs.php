@@ -51,6 +51,7 @@ return [
 
     // Job Details
     'back_to_jobs' => 'Back to jobs',
+    'back_to_admin_jobs' => 'Back to Admin Jobs',
     'you_have_applied' => 'Application submitted',
     'cover_letter' => 'Cover Letter',
     'write_cover_letter' => 'Write Cover Letter',

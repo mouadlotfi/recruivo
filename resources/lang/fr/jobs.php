@@ -51,6 +51,7 @@ return [
 
     // Job Details
     'back_to_jobs' => 'Retour aux offres',
+    'back_to_admin_jobs' => 'Retour aux offres Admin',
     'you_have_applied' => 'Candidature soumise',
     'cover_letter' => 'Lettre de motivation',
     'write_cover_letter' => 'Rédiger la lettre de motivation',

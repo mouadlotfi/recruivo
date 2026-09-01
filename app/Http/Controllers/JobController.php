@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Job;
+use App\Services\SearchEnvelope;
 use App\Services\SmartSearchService;
+use App\Support\CompanyCardSerializer;
+use App\Support\JobCardSerializer;
 use App\Support\JobDescriptionFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -14,6 +17,11 @@ use Inertia\ScrollMetadata;
 
 class JobController extends Controller
 {
+    public function __construct(
+        private readonly JobCardSerializer $jobCards,
+        private readonly CompanyCardSerializer $companyCards,
+    ) {}
+
     /**
      * Page-string keys for the public jobs index (jobs.*), resolved in the
      * current locale and passed as a flat `labels` prop — page strings
@@ -35,7 +43,7 @@ class JobController extends Controller
      * @var array<int, string>
      */
     private const SHOW_PAGE_LABEL_KEYS = [
-        'back_to_jobs', 'job_details', 'full_description', 'apply_now_button', 'you_have_applied',
+        'back_to_jobs', 'back_to_admin_jobs', 'job_details', 'full_description', 'apply_now_button', 'you_have_applied',
         'cover_letter', 'write_cover_letter', 'cover_letter_placeholder', 'resume_source',
         'use_profile_resume', 'upload_application_resume', 'application_resume',
         'application_resume_help', 'only_candidates_can_apply', 'log_in_to_apply',
@@ -62,6 +70,9 @@ class JobController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->user()?->hasRole('Admin')) {
+            return redirect(localized_route('admin.dashboard'));
+        }
         $query = Job::published()->with('company')->withSavedStateFor(auth()->user());
 
         if ($search = $request->input('search')) {
@@ -141,8 +152,15 @@ class JobController extends Controller
 
     public function show(string $locale, Job $job)
     {
-        abort_unless($job->isPubliclyVisible(), 404);
+        $user = auth()->user();
 
+        $canViewAsApplicantOrOwner = $user && (
+            $user->hasRole('Admin')
+            || ($user->hasRole('Recruiter') && ($user->company_id === $job->company_id || $user->id === $job->recruiter_id))
+            || ($user->hasRole('Candidate') && $user->applications()->where('job_id', $job->id)->exists())
+        );
+
+        abort_unless($job->isPubliclyVisible() || $canViewAsApplicantOrOwner, 404);
         $job->load('company');
 
         $user = auth()->user();
@@ -169,9 +187,9 @@ class JobController extends Controller
                 ->get()
             : collect();
 
-        $canApply = ($user?->hasRole('Candidate') ?? false) && ! $user->is_demo;
+        $canApply = $job->isPubliclyVisible() && ($user?->hasRole('Candidate') ?? false) && ! $user->is_demo;
         $isDemoCandidate = ($user?->hasRole('Candidate') ?? false) && $user->is_demo;
-        $hasApplied = $canApply
+        $hasApplied = ($user?->hasRole('Candidate') ?? false)
             ? $user->applications()->where('job_id', $job->id)->exists()
             : false;
 
@@ -216,40 +234,6 @@ class JobController extends Controller
     }
 
     /**
-     * Flat serialization of a job for cards (index + similar jobs) — no
-     * Eloquent models leak into props. `has_applied`/`is_saved` come from
-     * withExists subqueries (false for guests and non-candidates).
-     *
-     * @return array<string, mixed>
-     */
-    private function serializeJobCard(Job $job): array
-    {
-        return [
-            'id' => $job->id,
-            'title' => $job->title,
-            'location' => $job->location,
-            'remote_type' => $job->remote_type,
-            'category' => $job->category,
-            'salary_min' => $job->salary_min,
-            'salary_max' => $job->salary_max,
-            'closes_at' => $job->closes_at?->toIso8601String(),
-            'is_closing_soon' => $job->isClosingSoon(),
-            'closes_label' => $job->closes_at
-                ? __('jobs.closes_on', ['date' => $job->closes_at->translatedFormat('M j, Y')])
-                : null,
-            'is_saved' => (bool) ($job->is_saved ?? false),
-            'has_applied' => (bool) ($job->has_applied ?? false),
-            'published_at' => $job->published_at?->toIso8601String(),
-            'company' => $job->company ? [
-                'id' => $job->company->id,
-                'name' => $job->company->name,
-                'slug' => $job->company->slug,
-                'logo_url' => $job->company->logo_url,
-            ] : null,
-        ];
-    }
-
-    /**
      * Full serialization for the job detail page. The description travels as
      * `description_html` — output of App\Support\JobDescriptionFormatter,
      * which escapes every user-controlled line, so the Vue page may render
@@ -259,7 +243,7 @@ class JobController extends Controller
      */
     private function serializeJobDetail(Job $job): array
     {
-        $card = $this->serializeJobCard($job);
+        $card = $this->jobCards->serialize($job);
 
         return [
             ...$card,
@@ -290,52 +274,26 @@ class JobController extends Controller
         $location = $request->input('location');
 
         $hasCriteria = (bool) ($searchQuery || $remoteType || $location);
-        $hasTextQuery = (bool) $searchQuery;
 
-        $jobResults = collect();
-        $companyResults = collect();
+        // One call owns querying, ranking, and the "did you mean" correction.
+        // Empty query + no filters → empty envelope (search page empty state);
+        // filters without a text query → DB-filtered, newest first.
+        $envelope = $hasCriteria
+            ? $searchService->search($searchQuery, $remoteType, $location)
+            : new SearchEnvelope(collect(), collect());
 
-        // Show results if there's any search criteria
-        if ($hasCriteria) {
-            // Search jobs. Keyword search ranks by relevance in PHP (the
-            // scoring cannot be expressed in SQL), but remote_type/location
-            // are pushed down into the query so we don't materialize and then
-            // discard rows in PHP.
-            $searchUser = auth()->user();
-            $jobResults = $searchQuery
-                ? $searchService->jobs($searchQuery, $remoteType, $location)
-                : Job::published()
-                    ->with('company')
-                    ->withSavedStateFor($searchUser)
-                    ->when($remoteType, fn ($builder) => $builder->where('remote_type', $remoteType))
-                    ->when($location, fn ($builder) => $builder->where('location', 'like', '%'.$location.'%'))
-                    ->when(
-                        $searchUser?->hasRole('Candidate'),
-                        fn ($builder) => $builder->withExists(['applications as has_applied' => fn ($q) => $q->where('candidate_id', $searchUser->id)])
-                    )
-                    ->latest('published_at')
-                    ->get();
-
-            // Search companies (keyword only — location already filtered in SQL).
-            if ($hasTextQuery) {
-                $companyResults = $searchService->companies($searchQuery, $location)->values();
-            }
-        }
-
-        $jobs = $hasCriteria && in_array($filter, ['all', 'jobs'])
-            ? $this->paginateCollection($jobResults, 12, 'jobs_page', $request)
+        $jobs = in_array($filter, ['all', 'jobs'])
+            ? $this->paginateCollection($envelope->jobs, 12, 'jobs_page', $request)
             : $this->paginateCollection(collect(), 12, 'jobs_page', $request);
 
-        $companies = $hasTextQuery && in_array($filter, ['all', 'companies'])
-            ? $this->paginateCollection($companyResults, 12, 'companies_page', $request)
+        $companies = in_array($filter, ['all', 'companies'])
+            ? $this->paginateCollection($envelope->companies, 12, 'companies_page', $request)
             : $this->paginateCollection(collect(), 12, 'companies_page', $request);
 
-        $jobsCount = $jobResults->count();
-        $companiesCount = $companyResults->count();
+        $jobsCount = $envelope->jobCount();
+        $companiesCount = $envelope->companyCount();
 
-        $suggestedCorrection = $searchQuery
-            ? $searchService->suggestedCorrection($searchQuery, collect($jobs->items()), collect($companies->items()))
-            : null;
+        $suggestedCorrection = $envelope->suggestedCorrection;
 
         $popularSearches = $hasCriteria
             ? collect()
@@ -359,9 +317,9 @@ class JobController extends Controller
             'filter' => $filter,
             'remoteType' => $remoteType,
             'location' => $location,
-            'jobs' => array_map(fn (Job $job) => $this->serializeJobCard($job), $jobs->items()),
+            'jobs' => array_map(fn (Job $job) => $this->jobCards->serialize($job), $jobs->items()),
             'companies' => $companies->getCollection()
-                ->map(fn (Company $company) => $this->serializeSearchCompany($company))
+                ->map(fn (Company $company) => $this->companyCards->serialize($company))
                 ->values()
                 ->all(),
             'jobsCount' => $jobsCount,
@@ -406,31 +364,6 @@ class JobController extends Controller
     }
 
     /**
-     * Flat serialization of a company for the search grid — same shape as
-     * CompanyController::serializeCompanyCard so Components/Companies/
-     * CompanyCard.vue renders it. Search results don't carry latest_jobs;
-     * jobs_count comes from SmartSearchService's withCount('jobs').
-     *
-     * @return array<string, mixed>
-     */
-    private function serializeSearchCompany(Company $company): array
-    {
-        $jobsCount = (int) ($company->jobs_count ?? 0);
-
-        return [
-            'id' => $company->id,
-            'name' => $company->name,
-            'slug' => $company->slug,
-            'tagline' => $company->tagline,
-            'location' => $company->location,
-            'logo_url' => $company->logo_url,
-            'jobs_count' => $jobsCount,
-            'jobs_count_label' => __('companies.total_jobs', ['count' => $jobsCount]),
-            'latest_jobs' => [],
-        ];
-    }
-
-    /**
      * Serialize a paginator into the {data, meta} shape consumed by the
      * client's native InfiniteScroll component — no Eloquent models leak.
      *
@@ -439,7 +372,7 @@ class JobController extends Controller
     private function serializedScroll(LengthAwarePaginator $paginator): array
     {
         return [
-            'data' => array_map(fn (Job $job) => $this->serializeJobCard($job), $paginator->items()),
+            'data' => array_map(fn (Job $job) => $this->jobCards->serialize($job), $paginator->items()),
             'meta' => [
                 'total' => $paginator->total(),
                 'per_page' => $paginator->perPage(),

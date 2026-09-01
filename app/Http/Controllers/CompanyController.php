@@ -4,10 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Job;
+use App\Support\CompanyCardSerializer;
+use App\Support\JobCardSerializer;
 use Inertia\Inertia;
 
 class CompanyController extends Controller
 {
+    public function __construct(
+        private readonly JobCardSerializer $jobCards,
+        private readonly CompanyCardSerializer $companyCards,
+    ) {}
+
     /**
      * Page-string keys for the companies index (companies.*), resolved in the
      * current locale and passed as a flat `labels` prop — page strings
@@ -26,7 +33,7 @@ class CompanyController extends Controller
      * @var array<int, string>
      */
     private const SHOW_PAGE_LABEL_KEYS = [
-        'back_to_companies', 'founded', 'website', 'linkedin', 'our_mission',
+        'back_to_companies', 'back_to_admin_users', 'founded', 'website', 'linkedin', 'our_mission',
         'company_culture', 'no_open_positions',
     ];
 
@@ -43,6 +50,9 @@ class CompanyController extends Controller
 
     public function index()
     {
+        if (request()->user()?->hasRole('Admin')) {
+            return redirect(localized_route('admin.dashboard'));
+        }
         $companies = Company::withCount('jobs')
             ->with(['jobs' => function ($query) {
                 $query->published()
@@ -55,7 +65,13 @@ class CompanyController extends Controller
 
         return Inertia::render('Companies/Index', [
             'companies' => $companies->getCollection()
-                ->map(fn (Company $company) => $this->serializeCompanyCard($company))
+                ->map(fn (Company $company) => $this->companyCards->serialize(
+                    $company,
+                    $company->jobs
+                        ->map(fn (Job $job) => ['id' => $job->id, 'title' => $job->title])
+                        ->values()
+                        ->all(),
+                ))
                 ->all(),
             'pagination' => [
                 'total' => $companies->total(),
@@ -113,32 +129,6 @@ class CompanyController extends Controller
     }
 
     /**
-     * Flat serialization of a company for the index grid — no Eloquent
-     * models leak into props.
-     *
-     * @return array<string, mixed>
-     */
-    private function serializeCompanyCard(Company $company): array
-    {
-        $jobsCount = (int) ($company->jobs_count ?? 0);
-
-        return [
-            'id' => $company->id,
-            'name' => $company->name,
-            'slug' => $company->slug,
-            'tagline' => $company->tagline,
-            'location' => $company->location,
-            'logo_url' => $company->logo_url,
-            'jobs_count' => $jobsCount,
-            'jobs_count_label' => __('companies.total_jobs', ['count' => $jobsCount]),
-            'latest_jobs' => $company->jobs
-                ->map(fn (Job $job) => ['id' => $job->id, 'title' => $job->title])
-                ->values()
-                ->all(),
-        ];
-    }
-
-    /**
      * Full serialization for the company show page; jobs use the same
      * JobSummary shape Components/Jobs/JobCard.vue expects (company included
      * so the card renders).
@@ -161,43 +151,9 @@ class CompanyController extends Controller
             'website_url' => $company->website_url,
             'linkedin_url' => $company->linkedin_url,
             'jobs' => $company->jobs
-                ->map(fn (Job $job) => $this->serializeJobCard($job, $company))
+                ->map(fn (Job $job) => $this->jobCards->serialize($job, $company))
                 ->values()
                 ->all(),
-        ];
-    }
-
-    /**
-     * Flat serialization of a job in the JobSummary shape consumed by
-     * Components/Jobs/JobCard.vue; the company block comes from the loaded
-     * parent so no extra relation query runs.
-     *
-     * @return array<string, mixed>
-     */
-    private function serializeJobCard(Job $job, Company $company): array
-    {
-        return [
-            'id' => $job->id,
-            'title' => $job->title,
-            'location' => $job->location,
-            'remote_type' => $job->remote_type,
-            'category' => $job->category,
-            'salary_min' => $job->salary_min,
-            'salary_max' => $job->salary_max,
-            'closes_at' => $job->closes_at?->toIso8601String(),
-            'is_closing_soon' => $job->isClosingSoon(),
-            'closes_label' => $job->closes_at
-                ? __('jobs.closes_on', ['date' => $job->closes_at->translatedFormat('M j, Y')])
-                : null,
-            'is_saved' => (bool) ($job->is_saved ?? false),
-            'has_applied' => (bool) ($job->has_applied ?? false),
-            'published_at' => $job->published_at?->toIso8601String(),
-            'company' => [
-                'id' => $company->id,
-                'name' => $company->name,
-                'slug' => $company->slug,
-                'logo_url' => $company->logo_url,
-            ],
         ];
     }
 }

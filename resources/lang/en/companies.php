@@ -18,6 +18,7 @@ return [
     'browse_companies' => 'Browse Companies',
     'total_jobs' => ':count job(s)',
     'back_to_companies' => 'Back to companies',
+    'back_to_admin_users' => 'Back to Admin Users',
     'our_mission' => 'Our Mission',
     'company_culture' => 'Company Culture',
     'linkedin' => 'LinkedIn',

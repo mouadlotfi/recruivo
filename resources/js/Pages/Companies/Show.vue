@@ -16,6 +16,8 @@ const localeUrl = (path: string) => `/${locale.value}${path}`
 
 const companiesUrl = computed(() => localeUrl('/companies'))
 const initial = computed(() => props.company.name.charAt(0))
+const user = computed(() => page.props.auth.user)
+const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 </script>
 
 <template>
@@ -23,16 +25,29 @@ const initial = computed(() => props.company.name.charAt(0))
         <Head :title="company.name" />
         <div class="space-y-8">
             <!-- Back Button -->
-            <Link
-                :href="companiesUrl"
-                class="inline-flex items-center gap-2 text-sm font-medium text-stone-600 transition hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400"
-            >
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
-                {{ labels.back_to_companies }}
-            </Link>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <Link
+                    v-if="!isAdmin"
+                    :href="companiesUrl"
+                    class="inline-flex items-center gap-2 text-sm font-medium text-stone-600 transition hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400"
+                >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                    {{ labels.back_to_companies }}
+                </Link>
 
+                <Link
+                    v-if="isAdmin"
+                    :href="localeUrl('/admin/users')"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                >
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                    </svg>
+                    {{ labels.back_to_admin_users || 'Back to Admin Users' }}
+                </Link>
+            </div>
             <!-- Company Header -->
             <div class="rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">
                 <div class="flex items-start gap-6">
