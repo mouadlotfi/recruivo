@@ -153,45 +153,110 @@ jobs:
           cache-from: type=gha,scope=app
           cache-to: type=gha,mode=max,scope=app
 
-  deploy-production:
-    name: Deploy Production
+  deploy:
+    name: Deploy
+    runs-on: [self-hosted, Linux, X64, recruivo]
+    timeout-minutes: 15
     needs: [build-images]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment:
+      name: production
+      url: ${{ vars.APP_URL || 'https://recruivo.work' }}
     permissions:
       contents: read
-      id-token: write
-    uses: ./.github/workflows/deploy-coolify.yml
-    with:
-      app-uuid: ${{ vars.COOLIFY_PRODUCTION_APP_UUID || '3ioftpjgpbfag6p5uzoahwlw' }}
-      app-tag: sha-${{ github.sha }}
-      coolify-host: ${{ vars.COOLIFY_HOST || 'http://100.100.217.81:8000' }}
-      health-url: https://recruivo.work/api/health,http://100.100.217.81:8085/api/health
-      environment-name: production
-      environment-url: https://recruivo.work
-    secrets:
-      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-      COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_PRODUCTION_WEBHOOK || secrets.COOLIFY_WEBHOOK }}
-      TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-      TS_AUDIENCE: ${{ secrets.TS_AUDIENCE }}
+      packages: read
+    env:
+      APP_TAG: sha-${{ github.sha }}
+      APP_ENV_FILE: /mnt/hdd2-data/containers/recruivo/.env
+      APP_PORT: ${{ vars.APP_PORT || '8085' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  deploy-demo:
-    name: Deploy Demo
-    needs: [deploy-production]
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    permissions:
-      contents: read
-      id-token: write
-    uses: ./.github/workflows/deploy-coolify.yml
-    with:
-      app-uuid: ${{ vars.COOLIFY_DEMO_APP_UUID || 'g2g8akaxgwhgaitmfp9mwepd' }}
-      app-tag: sha-${{ github.sha }}
-      coolify-host: ${{ vars.COOLIFY_HOST || 'http://100.100.217.81:8000' }}
-      health-url: https://demo.recruivo.work/api/health,http://100.100.217.81:8086/api/health
-      data-endpoint: https://demo.recruivo.work/api/jobs
-      environment-name: demo
-      environment-url: https://demo.recruivo.work
-    secrets:
-      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-      COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_DEMO_WEBHOOK }}
-      TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-      TS_AUDIENCE: ${{ secrets.TS_AUDIENCE }}
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy and verify with Docker Compose
+        run: |
+          set -euo pipefail
+
+          PROJECT_NAME="recruivo"
+          TARGET_TAG="${APP_TAG}"
+          HEALTH_TIMEOUT=120
+          POLL_INTERVAL=3
+          HTTP_PORT="${APP_PORT##*:}"
+
+          PREV_CID=$(docker compose -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
+          PREV_TAG=""
+          if [ -n "${PREV_CID}" ]; then
+            PREV_IMAGE=$(docker inspect --format '{{.Config.Image}}' "${PREV_CID}" 2>/dev/null || true)
+            PREV_TAG="${PREV_IMAGE##*:}"
+          fi
+
+          echo "Pulling images for tag ${TARGET_TAG}..."
+          if ! APP_TAG="${TARGET_TAG}" docker compose -p "${PROJECT_NAME}" pull; then
+            echo "::error::Failed to pull images for tag ${TARGET_TAG}"
+            exit 1
+          fi
+
+          echo "Updating containers and running migrations..."
+          APP_TAG="${TARGET_TAG}" docker compose -p "${PROJECT_NAME}" up -d --remove-orphans
+
+          echo "Waiting for services to become healthy..."
+          START_TIME=$(date +%s)
+          DEPLOY_OK=false
+
+          while true; do
+            ELAPSED=$(( $(date +%s) - START_TIME ))
+
+            APP_CID=$(docker compose -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
+            APP_HEALTH="starting"
+            if [ -n "${APP_CID}" ]; then
+              APP_HEALTH=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${APP_CID}" 2>/dev/null || echo "error")
+            fi
+
+            echo "Status (${ELAPSED}s): app=${APP_HEALTH}"
+
+            if [ "${APP_HEALTH}" = "unhealthy" ]; then
+              echo "::error::App container reported unhealthy"
+              break
+            fi
+
+            if [ "${APP_HEALTH}" = "healthy" ]; then
+              HTTP_STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:${HTTP_PORT}/api/health" 2>/dev/null || true)
+              if [ "${HTTP_STATUS}" = "200" ]; then
+                echo "Smoke test passed (HTTP 200 from /api/health)"
+                DEPLOY_OK=true
+                break
+              fi
+            fi
+
+            if [ "${ELAPSED}" -ge "${HEALTH_TIMEOUT}" ]; then
+              echo "::error::Timed out after ${HEALTH_TIMEOUT}s waiting for containers to become healthy"
+              break
+            fi
+
+            sleep "${POLL_INTERVAL}"
+          done
+
+          if [ "${DEPLOY_OK}" = "true" ]; then
+            echo "Deployment finished successfully."
+            docker image prune -f >/dev/null 2>&1 || true
+            exit 0
+          fi
+
+          echo "::error::Deployment failed; fetching recent container logs"
+          docker compose -p "${PROJECT_NAME}" logs --tail=50 || true
+
+          if [ -n "${PREV_TAG}" ] && [ "${PREV_TAG}" != "${TARGET_TAG}" ]; then
+            echo "::warning::Rolling back to previous tag: ${PREV_TAG}"
+            APP_TAG="${PREV_TAG}" docker compose -p "${PROJECT_NAME}" up -d --remove-orphans || {
+              echo "::error::Rollback to ${PREV_TAG} failed"
+            }
+          fi
+
+          exit 1

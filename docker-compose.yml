@@ -1,5 +1,4 @@
-# Coolify and production compose.
-# Parameterized via environment variables.
+# Production and local compose (parameterized via environment variables).
 
 name: ${COMPOSE_PROJECT_NAME:-recruivo}
 
@@ -8,7 +7,8 @@ x-laravel-service: &laravel-service
   restart: unless-stopped
   working_dir: /var/www/html
   env_file:
-    - ${APP_ENV_FILE:-.env}
+    - path: ${APP_ENV_FILE:-.env}
+      required: false
   environment:
     DB_HOST: ${DB_HOST:-mysql}
     REDIS_HOST: ${REDIS_HOST:-redis}
@@ -28,9 +28,7 @@ services:
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-production}
     ports:
-      # In production, Cloudflare Tunnel is the only ingress (binds to 127.0.0.1).
-      # In local development, APP_BIND_IP can be set to 0.0.0.0 for LAN access.
-      - "${APP_BIND_IP:-127.0.0.1}:${APP_PORT:-${DEMO_APP_PORT:-8000}}:80"
+      - "${APP_BIND_IP:-0.0.0.0}:${APP_PORT:-8085}:80"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://127.0.0.1/api/health >/dev/null || exit 1"]
       interval: 15s
