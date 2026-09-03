@@ -38,6 +38,9 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    env_file:
+      - path: ${APP_ENV_FILE:-.env}
+        required: false
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-recruivo_db}
       MYSQL_USER: ${DB_USERNAME:-recruivo}
@@ -55,6 +58,9 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    env_file:
+      - path: ${APP_ENV_FILE:-.env}
+        required: false
     command: ["sh", "-c", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then exec redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes --appendfsync everysec; else exec redis-server --protected-mode no --appendonly yes --appendfsync everysec; fi"]
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}

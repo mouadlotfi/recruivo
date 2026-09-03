@@ -167,8 +167,6 @@ jobs:
       packages: read
     env:
       APP_TAG: sha-${{ github.sha }}
-      APP_ENV_FILE: /mnt/hdd2-data/containers/recruivo/.env
-      APP_PORT: ${{ vars.APP_PORT || '8085' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -184,79 +182,104 @@ jobs:
         run: |
           set -euo pipefail
 
-          PROJECT_NAME="recruivo"
-          TARGET_TAG="${APP_TAG}"
-          HEALTH_TIMEOUT=120
-          POLL_INTERVAL=3
-          HTTP_PORT="${APP_PORT##*:}"
+          deploy_stack() {
+            local PROJECT_NAME="$1"
+            local HTTP_PORT="$2"
+            local ENV_FILE="$3"
+            local IS_DEMO="$4"
+            local TARGET_TAG="${APP_TAG}"
+            local HEALTH_TIMEOUT=120
+            local POLL_INTERVAL=3
 
-          PREV_CID=$(docker compose -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
-          PREV_TAG=""
-          if [ -n "${PREV_CID}" ]; then
-            PREV_IMAGE=$(docker inspect --format '{{.Config.Image}}' "${PREV_CID}" 2>/dev/null || true)
-            PREV_TAG="${PREV_IMAGE##*:}"
-          fi
+            echo "Deploying ${PROJECT_NAME} on port ${HTTP_PORT}..."
 
-          echo "Pulling images for tag ${TARGET_TAG}..."
-          if ! APP_TAG="${TARGET_TAG}" docker compose -p "${PROJECT_NAME}" pull; then
-            echo "::error::Failed to pull images for tag ${TARGET_TAG}"
-            exit 1
-          fi
+            export APP_ENV_FILE="${ENV_FILE}"
+            export APP_PORT="${HTTP_PORT}"
 
-          echo "Updating containers and running migrations..."
-          APP_TAG="${TARGET_TAG}" docker compose -p "${PROJECT_NAME}" up -d --remove-orphans
-
-          echo "Waiting for services to become healthy..."
-          START_TIME=$(date +%s)
-          DEPLOY_OK=false
-
-          while true; do
-            ELAPSED=$(( $(date +%s) - START_TIME ))
-
-            APP_CID=$(docker compose -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
-            APP_HEALTH="starting"
-            if [ -n "${APP_CID}" ]; then
-              APP_HEALTH=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${APP_CID}" 2>/dev/null || echo "error")
+            local PREV_CID
+            local PREV_TAG=""
+            PREV_CID=$(docker compose -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
+            if [ -n "${PREV_CID}" ]; then
+              local PREV_IMAGE
+              PREV_IMAGE=$(docker inspect --format '{{.Config.Image}}' "${PREV_CID}" 2>/dev/null || true)
+              PREV_TAG="${PREV_IMAGE##*:}"
             fi
 
-            echo "Status (${ELAPSED}s): app=${APP_HEALTH}"
-
-            if [ "${APP_HEALTH}" = "unhealthy" ]; then
-              echo "::error::App container reported unhealthy"
-              break
+            echo "Pulling images for ${PROJECT_NAME} (tag: ${TARGET_TAG})..."
+            if ! APP_TAG="${TARGET_TAG}" docker compose -p "${PROJECT_NAME}" pull; then
+              echo "::error::Failed to pull images for ${PROJECT_NAME}"
+              exit 1
             fi
 
-            if [ "${APP_HEALTH}" = "healthy" ]; then
-              HTTP_STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:${HTTP_PORT}/api/health" 2>/dev/null || true)
-              if [ "${HTTP_STATUS}" = "200" ]; then
-                echo "Smoke test passed (HTTP 200 from /api/health)"
-                DEPLOY_OK=true
+            echo "Updating ${PROJECT_NAME} containers..."
+            APP_TAG="${TARGET_TAG}" docker compose -p "${PROJECT_NAME}" up -d --remove-orphans
+
+            echo "Waiting for ${PROJECT_NAME} to become healthy..."
+            local START_TIME
+            START_TIME=$(date +%s)
+            local DEPLOY_OK=false
+
+            while true; do
+              local ELAPSED=$(( $(date +%s) - START_TIME ))
+
+              local APP_CID
+              APP_CID=$(docker compose -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
+              local APP_HEALTH="starting"
+              if [ -n "${APP_CID}" ]; then
+                APP_HEALTH=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${APP_CID}" 2>/dev/null || echo "error")
+              fi
+
+              echo "${PROJECT_NAME} (${ELAPSED}s): app=${APP_HEALTH}"
+
+              if [ "${APP_HEALTH}" = "unhealthy" ]; then
+                echo "::error::${PROJECT_NAME} app reported unhealthy"
                 break
               fi
+
+              if [ "${APP_HEALTH}" = "healthy" ]; then
+                local HTTP_STATUS
+                HTTP_STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:${HTTP_PORT}/api/health" 2>/dev/null || true)
+                if [ "${HTTP_STATUS}" = "200" ]; then
+                  echo "${PROJECT_NAME} smoke test passed (HTTP 200 from /api/health)"
+                  DEPLOY_OK=true
+                  break
+                fi
+              fi
+
+              if [ "${ELAPSED}" -ge "${HEALTH_TIMEOUT}" ]; then
+                echo "::error::Timed out after ${HEALTH_TIMEOUT}s waiting for ${PROJECT_NAME}"
+                break
+              fi
+
+              sleep "${POLL_INTERVAL}"
+            done
+
+            if [ "${DEPLOY_OK}" != "true" ]; then
+              echo "::error::Deployment of ${PROJECT_NAME} failed"
+              docker compose -p "${PROJECT_NAME}" logs --tail=50 || true
+              if [ -n "${PREV_TAG}" ] && [ "${PREV_TAG}" != "${TARGET_TAG}" ]; then
+                echo "::warning::Rolling back ${PROJECT_NAME} to ${PREV_TAG}"
+                APP_TAG="${PREV_TAG}" docker compose -p "${PROJECT_NAME}" up -d --remove-orphans || true
+              fi
+              exit 1
             fi
 
-            if [ "${ELAPSED}" -ge "${HEALTH_TIMEOUT}" ]; then
-              echo "::error::Timed out after ${HEALTH_TIMEOUT}s waiting for containers to become healthy"
-              break
+            if [ "${IS_DEMO}" = "true" ]; then
+              echo "Seeding/resetting demo dataset..."
+              docker compose -p "${PROJECT_NAME}" exec -T app php artisan demo:reset --force || {
+                echo "::error::demo:reset failed on ${PROJECT_NAME}"
+                exit 1
+              }
             fi
 
-            sleep "${POLL_INTERVAL}"
-          done
+            echo "${PROJECT_NAME} deployed successfully."
+          }
 
-          if [ "${DEPLOY_OK}" = "true" ]; then
-            echo "Deployment finished successfully."
-            docker image prune -f >/dev/null 2>&1 || true
-            exit 0
-          fi
+          # 1. Deploy Production (port 8085)
+          deploy_stack "recruivo" "${{ vars.APP_PORT || '8085' }}" "/mnt/hdd2-data/containers/recruivo/.env" "false"
 
-          echo "::error::Deployment failed; fetching recent container logs"
-          docker compose -p "${PROJECT_NAME}" logs --tail=50 || true
+          # 2. Deploy Demo (port 8086)
+          deploy_stack "recruivo-demo" "8086" "/mnt/hdd2-data/containers/recruivo-demo/.env" "true"
 
-          if [ -n "${PREV_TAG}" ] && [ "${PREV_TAG}" != "${TARGET_TAG}" ]; then
-            echo "::warning::Rolling back to previous tag: ${PREV_TAG}"
-            APP_TAG="${PREV_TAG}" docker compose -p "${PROJECT_NAME}" up -d --remove-orphans || {
-              echo "::error::Rollback to ${PREV_TAG} failed"
-            }
-          fi
-
-          exit 1
+          docker image prune -f >/dev/null 2>&1 || true
+          echo "All deployments completed successfully."
