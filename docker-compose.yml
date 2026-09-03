@@ -1,5 +1,9 @@
 # Production and local compose (parameterized via environment variables).
 
+
+networks:
+  default:
+    name: recruivo_network
 name: ${COMPOSE_PROJECT_NAME:-recruivo}
 
 x-laravel-service: &laravel-service
@@ -17,8 +21,10 @@ x-laravel-service: &laravel-service
   depends_on:
     mysql:
       condition: service_healthy
+      required: false
     redis:
       condition: service_healthy
+      required: false
 
 services:
   app:
@@ -38,6 +44,11 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    profiles: ["infra"]
+    networks:
+      default:
+        aliases:
+          - mysql
     env_file:
       - path: ${APP_ENV_FILE:-.env}
         required: false
@@ -58,6 +69,11 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    profiles: ["infra"]
+    networks:
+      default:
+        aliases:
+          - redis
     env_file:
       - path: ${APP_ENV_FILE:-.env}
         required: false
