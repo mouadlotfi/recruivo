@@ -205,7 +205,7 @@ class JobController extends Controller
         return Inertia::render('Jobs/Show', [
             'job' => $this->serializeJobDetail($job),
             'similarJobs' => $similarJobs
-                ->map(fn (Job $similarJob) => $this->serializeJobCard($similarJob))
+                ->map(fn (Job $similarJob) => $this->jobCards->serialize($similarJob))
                 ->values()
                 ->all(),
             'canApply' => $canApply,
