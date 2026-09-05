@@ -47,7 +47,10 @@ jobs:
           restore-keys: ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: composer install --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Audit Composer dependencies
+        run: composer audit
 
       - name: Create storage and build directories
         run: |
@@ -57,8 +60,11 @@ jobs:
       - name: Lint (Pint)
         run: vendor/bin/pint --test
 
+      - name: Static analysis (Larastan)
+        run: vendor/bin/phpstan analyse --memory-limit=512M --no-progress
+
       - name: Run tests (PHPUnit)
-        run: php artisan test --compact
+        run: php artisan test --parallel --compact
         env:
           APP_ENV: testing
           APP_KEY: base64:7f9E2k8nZ3vB5cX7mA9pQ1wE3rT5yU7iO9pA1sD3fG5=

@@ -1,0 +1,979 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Strict comparison using \=\=\= between resource\|null and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Console/Commands/MigrateResumesToPrivateStorage.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/JobController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\:\:\$recruiter\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/JobController.php
+
+		-
+			message: '#^Instanceof between App\\Enums\\JobStatus and App\\Enums\\JobStatus will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Admin/JobController.php
+
+		-
+			message: '#^Relation ''applications'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Admin/JobController.php
+
+		-
+			message: '#^Relation ''company'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Admin/JobController.php
+
+		-
+			message: '#^Relation ''recruiter'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Admin/JobController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Admin/JobController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$applications_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/UserController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\User\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/UserController.php
+
+		-
+			message: '#^Relation ''company'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Admin/UserController.php
+
+		-
+			message: '#^Relation ''company'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Admin/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$candidate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Job\>\:\:\$recruiter\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/ApplicationController.php
+
+		-
+			message: '#^Relation ''candidate'' is not found in App\\Models\\Application model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ApplicationController.php
+
+		-
+			message: '#^Relation ''job'' is not found in App\\Models\\Application model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/ApplicationController.php
+
+		-
+			message: '#^Relation ''recruiter'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ApplicationController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>recruiters" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Api/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/AuthController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<TRelatedModel of Illuminate\\Database\\Eloquent\\Model\>\:\:published\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Api/JobController.php
+
+		-
+			message: '#^Relation ''company'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/JobController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$candidate\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/Recruiter/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/Recruiter/ApplicationController.php
+
+		-
+			message: '#^Relation ''job'' is not found in App\\Models\\Application model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Recruiter/DashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, int\<0, max\>\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/Recruiter/JobController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/SearchController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\:\:\$recruiter\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ApplicationController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>recruiters" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Candidate/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$statusEvents\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Candidate/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Candidate/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Candidate/ResumeController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Candidate/SavedJobController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\<string, mixed\>, Closure\(App\\Models\\Job\)\: array\<string, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/CompanyController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: int, title\: string\}, Closure\(App\\Models\\Job\)\: array\{id\: int, title\: string\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/CompanyController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:published\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Relation ''company'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>preferred_categories" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/HomeController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/JobController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/JobController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),mixed\>\:\:map\(\) expects callable\(mixed, int\|string\)\: array\<string, mixed\>, Closure\(App\\Models\\Company\)\: array\<string, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/JobController.php
+
+		-
+			message: '#^Relation ''company'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/JobController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PostController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$candidate\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Recruiter/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$statusEvents\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Recruiter/ApplicationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$candidate\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Recruiter/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Recruiter/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Recruiter/DashboardController.php
+
+		-
+			message: '#^Relation ''candidate'' is not found in App\\Models\\Application model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Recruiter/DashboardController.php
+
+		-
+			message: '#^Relation ''job'' is not found in App\\Models\\Application model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Http/Controllers/Recruiter/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Recruiter/JobController.php
+
+		-
+			message: '#^PHPDoc type array of property App\\Http\\Middleware\\EncryptCookies\:\:\$except is not covariant with PHPDoc type array\<int, string\> of overridden property Illuminate\\Cookie\\Middleware\\EncryptCookies\:\:\$except\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Http/Middleware/EncryptCookies.php
+
+		-
+			message: '#^Instanceof between App\\Models\\User and Illuminate\\Contracts\\Auth\\MustVerifyEmail will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Http/Middleware/EnsureEmailIsVerified.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/HandleInertiaRequests.php
+
+		-
+			message: '#^Cannot access property \$notes on object\|string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Requests/UpdateApplicationStatusRequest.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AdminUserResource\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Resources/AdminUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AdminUserResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AdminUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AdminUserResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AdminUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AdminUserResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AdminUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AdminUserResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AdminUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AdminUserResource\:\:\$roles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AdminUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$candidate\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$cover_letter\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$interview_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$interview_instructions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$interview_location\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$interview_mode\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$interview_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$notes_added\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$notes_added_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$original_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$resume_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$statusEvents\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$status_changed\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ApplicationResource\:\:\$status_changed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ApplicationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$culture\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$founded_year\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$jobs\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$linkedin_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$location\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$logo_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$mission\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$size\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$tagline\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyDetailResource\:\:\$website_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyDetailResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyResource\:\:\$jobs\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyResource\:\:\$location\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyResource\:\:\$logo_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyResource\:\:\$size\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanyResource\:\:\$tagline\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanyResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanySummaryResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanySummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanySummaryResource\:\:\$location\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanySummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanySummaryResource\:\:\$logo_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanySummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanySummaryResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanySummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanySummaryResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanySummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CompanySummaryResource\:\:\$tagline\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CompanySummaryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$closes_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$location\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$published_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$remote_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$salary_max\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$salary_min\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\JobResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\JobResource\:\:isExpired\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/JobResource.php
+
+		-
+			message: '#^Instanceof between App\\Enums\\ApplicationStatus and BackedEnum will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 3
+			path: app/Models/Application.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Models/Application.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Models\\Post\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/Post.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>experiences" in empty\(\) is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Notifications/ApplicationStatusUpdatedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/ApplicationStatusUpdatedNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$candidate\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/NewApplicationNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Notifications/NewApplicationNotification.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Policies/ApplicationPolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$roles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:published\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^PHPDoc tag @var for constant App\\Services\\AdminDashboardService\:\:ACTIVITY_LIMIT_PER_SOURCE with type array\<int, string\> is incompatible with value 8\.$#'
+			identifier: classConstant.phpDocType
+			count: 1
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:sortByDesc\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Parameter \#1 \$value of function collect contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Relation ''applications'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Relation ''candidate'' is not found in App\\Models\\Application model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Relation ''company'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Relation ''job'' is not found in App\\Models\\Application model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Services/AdminDashboardService.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Services/DemoContentService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>location" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/DemoContentService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/DemoContentService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>title" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/DemoContentService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SmartSearchService.php
+
+		-
+			message: '#^Relation ''company'' is not found in App\\Models\\Job model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/SmartSearchService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/UserAccountDeletionService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Support/JobCardSerializer.php
