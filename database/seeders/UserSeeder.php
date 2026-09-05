@@ -27,7 +27,7 @@ class UserSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'admin@recruivo.work'],
             [
-                'name' => 'Admin User',
+                'name' => 'Demo Admin',
                 'password' => $defaultPassword,
                 'is_recruiter' => false,
                 'is_demo' => true,
@@ -146,7 +146,7 @@ class UserSeeder extends Seeder
         $demoCandidate = User::firstOrCreate(
             ['email' => 'candidate@recruivo.work'],
             [
-                'name' => 'John Doe',
+                'name' => 'Demo Candidate',
                 'password' => $defaultPassword,
                 'is_recruiter' => false,
                 'is_demo' => true,
