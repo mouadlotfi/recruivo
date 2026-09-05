@@ -61,8 +61,8 @@ COPY --from=composer-prod /var/www/html /var/www/html
 RUN php artisan package:discover --ansi
 COPY --from=node-builder /var/www/html/public/build /var/www/html/public/build
 COPY Caddyfile /etc/caddy/Caddyfile
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-app.ini
-COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/zz-opcache.ini
+COPY docker/php/php.ini /usr/local/etc/php/conf.d/10-app.ini
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/10-opcache.ini
 
 RUN mkdir -p \
         storage/app/public \
@@ -96,6 +96,6 @@ ENV APP_ENV=local \
 
 COPY --from=composer-dev /var/www/html/vendor /var/www/html/vendor
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
-COPY docker/php/php.dev.ini /usr/local/etc/php/conf.d/zz-dev.ini
+COPY docker/php/php.dev.ini /usr/local/etc/php/conf.d/99-dev.ini
 
 RUN rm -f bootstrap/cache/*.php
