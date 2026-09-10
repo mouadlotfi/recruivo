@@ -687,7 +687,7 @@ watch(showDeleteModal, (open) => {
                             </section>
                         </div>
 
-                        <div class="mt-6 flex justify-end">
+                        <div class="mt-6 flex justify-start sm:justify-end">
                             <button type="submit" :disabled="profileForm.processing" class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-60">
                                 {{ profileForm.processing ? labels.save_entry : labels.update_profile }}
                             </button>
@@ -709,7 +709,7 @@ watch(showDeleteModal, (open) => {
                     <fieldset :disabled="user.is_demo" class="space-y-6 [&_:disabled]:cursor-not-allowed [&_:disabled]:opacity-60">
                         <div class="space-y-2"><label for="current_email" :class="labelClass">{{ labels.current_email }}</label><input id="current_email" type="email" :value="user.email" disabled class="w-full rounded-2xl border border-stone-200/80 bg-stone-100 px-4 py-3 text-sm text-stone-500 shadow-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400"></div>
                         <div class="space-y-2"><label for="new_email" :class="labelClass">{{ labels.new_email_address }}</label><input id="new_email" v-model="emailForm.email" type="email" required :class="inputClass"><p class="text-xs text-stone-500 dark:text-stone-400">{{ labels.verification_email_sent }}</p><p v-if="emailForm.errors.email" :class="errorClass" role="alert">{{ emailForm.errors.email }}</p></div>
-                        <div class="flex justify-end"><button type="submit" :disabled="emailForm.processing" class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-60">{{ labels.request_email_change }}</button></div>
+                        <div class="flex justify-start sm:justify-end"><button type="submit" :disabled="emailForm.processing" class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-60">{{ labels.request_email_change }}</button></div>
                     </fieldset>
                 </form>
             </section>
@@ -721,7 +721,7 @@ watch(showDeleteModal, (open) => {
                         <div class="space-y-2"><label for="current_password" :class="labelClass">{{ labels.current_password }}</label><input id="current_password" v-model="passwordForm.current_password" type="password" required :class="inputClass"><p v-if="passwordForm.errors.current_password" :class="errorClass" role="alert">{{ passwordForm.errors.current_password }}</p></div>
                         <div class="space-y-2"><label for="new_password" :class="labelClass">{{ labels.new_password }}</label><input id="new_password" v-model="passwordForm.password" type="password" required :class="inputClass"><p v-if="passwordForm.errors.password" :class="errorClass" role="alert">{{ passwordForm.errors.password }}</p></div>
                         <div class="space-y-2"><label for="password_confirmation" :class="labelClass">{{ labels.confirm_new_password }}</label><input id="password_confirmation" v-model="passwordForm.password_confirmation" type="password" required :class="inputClass"><p v-if="passwordForm.errors.password_confirmation" :class="errorClass" role="alert">{{ passwordForm.errors.password_confirmation }}</p></div>
-                        <div class="flex justify-end"><button type="submit" :disabled="passwordForm.processing" class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-60">{{ labels.change_password }}</button></div>
+                        <div class="flex justify-start sm:justify-end"><button type="submit" :disabled="passwordForm.processing" class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-60">{{ labels.change_password }}</button></div>
                     </fieldset>
                 </form>
             </section>
