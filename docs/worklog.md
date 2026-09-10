@@ -202,6 +202,62 @@ Tests after round 3: **331 passed / 2457 assertions**.
     my first version had the newest publication be the newest row too, so it passed
     against the buggy code, and only the control run caught that.
 
+## Round 8 — Item 4: frontend a11y / SEO batch ✅
+
+15. **Shell i18n.** Five shell strings the Vue shell renders were missing from the
+    `SHELL_TRANSLATION_SOURCES` map, most visibly the guest-page skip link, which
+    rendered the literal key `skip_to_content` as the first thing a screen reader
+    announced. Added `skip_to_content`, `open_sidebar`, `close_sidebar`,
+    `popular_searches` and `company` (with both locales), and switched the admin
+    `DEMO` badge, the sidebar trigger's `sr-only` text, the notification company
+    fallback, the search modal's "Popular:" prefix, the company-logo `alt` and a
+    dead label fallback chain over to them. The badge is a real fix in French
+    (`DÉMO`). Also removed 7 shadowed duplicate keys from the lang files and a
+    duplicate `RecruiterNoteTemplate` interface (TypeScript was silently merging
+    two shapes); the duplicate language values were identical, so removing the
+    earlier definitions changes nothing observable.
+16. **Accessibility.** The mobile admin drawer's close button had no accessible
+    name; the closed drawer stayed in the tab order (its links were reachable but
+    invisible); the admin-users and profile delete dialogs moved no focus, trapped
+    none, and rendered Escape on a non-focusable element; nine `text-stone-500
+    dark:text-stone-500` no-ops sat below AA contrast (4.1:1 instead of 7.8:1).
+    All four are fixed, and skip links were added to `AppLayout` and
+    `AdminLayout` (only `GuestLayout` had one) with matching `#main-content`
+    targets.
+    *Evidence (headless Chrome against the running dev stack):* the skip link is
+    the first focusable element on all three layouts and reads "Skip to main
+    content"; the drawer's close button reports `aria-label="Close sidebar"`; on a
+    390px viewport the closed drawer has `inert` + `aria-hidden="true"` and
+    **no Tab lands inside it**, while on desktop it is not inert; opening a delete
+    dialog focuses Cancel, four Tabs stay inside, Shift+Tab wraps, Escape closes it
+    and **restores focus to the triggering button**; the sidebar's muted heading
+    computes to `rgb(168,162,158)` (stone-400) in dark mode.
+17. **Pagination failures are no longer silent** on the two admin lists (they were
+    the only lists without an error state), with the label wired through both
+    controllers.
+18. **Shareable metadata is rendered server-side.** Social crawlers do not execute
+    JavaScript, so everything set through Vue's `<Head>` was invisible to them: the
+    shell served one static description for every URL and no OG/Twitter/canonical
+    tags at all. `resources/views/inertia.blade.php` now derives title,
+    description, canonical, Open Graph and Twitter tags from the page props for
+    job, company and post pages (site defaults elsewhere).
+    *Evidence:* `tests/Feature/ShareableMetadataTest.php` (3) asserts the tags in
+    the server HTML, plus a live check of a public job page:
+    `og:title="IT Consultant — Recruivo"`, per-job description, canonical,
+    `og:image`, `twitter:card=summary_large_image`.
+
+    *Audit claim that was wrong:* "no pending guard on VerifyEmail / ForgotPassword
+    / ResetPassword". All five auth forms already carry
+    `:disabled="form.processing"` - the sweep misread these single-line templates.
+
+    *Deliberately not changed:* the two `window.confirm` destructive actions
+    (`CandidateApplicationCard`, `Recruiter/NoteTemplates/Index`). A native confirm
+    is accessible and already localized by the browser; replacing it is cosmetic
+    consistency, not a defect, and it costs two more hand-rolled dialogs. The
+    search modal's category chips stay English because categories are not
+    localized anywhere in the app (the enum stores English values that the whole
+    search surface matches on).
+
 ## Remaining work (agreed order, one item per session)
 
 1. ~~CSP + HSTS.~~ **done**
@@ -209,7 +265,7 @@ Tests after round 3: **331 passed / 2457 assertions**.
 3. ~~Two live correctness bugs~~ (`Post::scopeLatest` shadowed by Eloquent's
    `latest()`; `mapJobData` clearing `published_at` on an update that omits
    `status`). **done**
-4. Frontend a11y/SEO batch.
+4. ~~Frontend a11y/SEO batch.~~ **done**
 5. `AGENTS.md` refresh (says PHP 8.2 / Laravel 12; points at `resources/js/Layout/*`
    which is actually `Components/Layout/` and `Layouts/`).
 6. PHPStan baseline burn-down (163 entries, ~80% from 15 untyped relations).
