@@ -67,5 +67,8 @@ auth.json
 # Docker bind-mounted data
 /data/*
 !/data/.gitignore
+
+# Local database/file backups - may contain production data, never commit
+/backups/
 dogfood-output/
 composer.phar

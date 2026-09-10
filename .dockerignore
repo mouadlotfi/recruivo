@@ -61,6 +61,7 @@ Dockerfile*
 .dockerignore
 deploy/
 backups/
+scripts/
 *.tmp
 *.temp
 *.cache
