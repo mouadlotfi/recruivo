@@ -192,6 +192,13 @@ jobs:
 
           PROJECT_NAME="recruivo"
           TARGET_TAG="${APP_TAG}"
+
+          # The job-level APP_IMAGE is an untagged repository, and being set it
+          # wins over the compose default that would append APP_TAG - every
+          # deploy silently pulled :latest and the rollback below could not pin
+          # an older build. Pin this build's reference explicitly instead.
+          APP_IMAGE="${APP_IMAGE}:${TARGET_TAG}"
+          export APP_IMAGE
           HEALTH_TIMEOUT=120
           MIGRATE_TIMEOUT=300
           POLL_INTERVAL=3
@@ -210,8 +217,12 @@ jobs:
           PREV_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
           PREV_TAG=""
           if [ -n "${PREV_CID}" ]; then
-            PREV_IMAGE=$(docker inspect --format '{{.Config.Image}}' "${PREV_CID}" 2>/dev/null || true)
-            PREV_TAG="${PREV_IMAGE##*:}"
+            PREV_REF=$(docker inspect --format '{{.Config.Image}}' "${PREV_CID}" 2>/dev/null || true)
+            PREV_TAG="${PREV_REF##*:}"
+            # An untagged reference yields no tag: leave it empty to skip the rollback.
+            if [ "${PREV_TAG}" = "${PREV_REF}" ]; then
+              PREV_TAG=""
+            fi
           fi
 
           echo "Pulling images for tag ${TARGET_TAG}..."
@@ -289,7 +300,7 @@ jobs:
 
           if [ -n "${PREV_TAG}" ] && [ "${PREV_TAG}" != "${TARGET_TAG}" ]; then
             echo "::warning::Rolling back to previous tag: ${PREV_TAG}"
-            APP_TAG="${PREV_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans || {
+            APP_IMAGE="${APP_IMAGE%:*}:${PREV_TAG}" APP_TAG="${PREV_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans || {
               echo "::error::Rollback to ${PREV_TAG} failed"
             }
           fi
@@ -329,6 +340,13 @@ jobs:
 
           PROJECT_NAME="recruivo-demo"
           TARGET_TAG="${APP_TAG}"
+
+          # The job-level APP_IMAGE is an untagged repository, and being set it
+          # wins over the compose default that would append APP_TAG - every
+          # deploy silently pulled :latest and the rollback below could not pin
+          # an older build. Pin this build's reference explicitly instead.
+          APP_IMAGE="${APP_IMAGE}:${TARGET_TAG}"
+          export APP_IMAGE
           HEALTH_TIMEOUT=120
           MIGRATE_TIMEOUT=300
           POLL_INTERVAL=3
@@ -345,8 +363,12 @@ jobs:
           PREV_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
           PREV_TAG=""
           if [ -n "${PREV_CID}" ]; then
-            PREV_IMAGE=$(docker inspect --format '{{.Config.Image}}' "${PREV_CID}" 2>/dev/null || true)
-            PREV_TAG="${PREV_IMAGE##*:}"
+            PREV_REF=$(docker inspect --format '{{.Config.Image}}' "${PREV_CID}" 2>/dev/null || true)
+            PREV_TAG="${PREV_REF##*:}"
+            # An untagged reference yields no tag: leave it empty to skip the rollback.
+            if [ "${PREV_TAG}" = "${PREV_REF}" ]; then
+              PREV_TAG=""
+            fi
           fi
 
           echo "Pulling images for tag ${TARGET_TAG}..."
@@ -418,7 +440,7 @@ jobs:
 
             if [ -n "${PREV_TAG}" ] && [ "${PREV_TAG}" != "${TARGET_TAG}" ]; then
               echo "::warning::Rolling back to previous tag: ${PREV_TAG}"
-              APP_TAG="${PREV_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans || {
+              APP_IMAGE="${APP_IMAGE%:*}:${PREV_TAG}" APP_TAG="${PREV_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans || {
                 echo "::error::Rollback to ${PREV_TAG} failed"
               }
             fi

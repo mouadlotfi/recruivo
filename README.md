@@ -170,14 +170,12 @@ Production architecture and deployment procedures are documented in detail in [d
 
 ---
 
-## CI/CD Pipeline (GitHub Actions + GHCR + Coolify)
+## CI/CD Pipeline (GitHub Actions + GHCR + Docker Compose)
 
-Recruivo uses an automated, reproducible deployment pipeline modeled after the Safelink reference architecture:
+Recruivo deploys straight from `main` onto the two hosts' Docker Compose stacks:
 
 ```text
                          GitHub
-                           |
-                      Pull Request
                            |
                     GitHub Actions
               +------------+------------+
@@ -188,7 +186,7 @@ Recruivo uses an automated, reproducible deployment pipeline modeled after the S
                            |
                      Docker Build
                            |
-                     PR → STOP
+                     PR -> STOP
                            |
                          main
                            |
@@ -196,26 +194,38 @@ Recruivo uses an automated, reproducible deployment pipeline modeled after the S
                            |
                          GHCR
                ghcr.io/...:sha-<SHA>
+               ghcr.io/...:latest
+                           |
+        self-hosted runner (Linux, X64, recruivo)
                            |
              +-------------+-------------+
              |                           |
-       Coolify Production           Coolify Demo
+      Deploy Production             Deploy Demo
+      recruivo/.env                 recruivo-demo/.env
+      APP_IMAGE=...:sha-<SHA>       APP_IMAGE=...:sha-<SHA>
              |                           |
-        APP_TAG=SHA                 APP_TAG=SHA
+       wait for migrate             wait for migrate
              |                           |
-        Deploy                        Deploy
+      gate on /api/health          gate on /api/health
              |                           |
-         Verify                       Verify
-        /api/health                  /api/health
+       rollback on failure          rollback on failure
              |                           |
          Production                     Demo
 ```
 
 ### Key Features
-- **Immutable Image Tags**: Every build is tagged with its unique Git SHA (`sha-${{ github.sha }}`) in GHCR.
-- **Private Coolify Connectivity**: Deployments authenticate through Tailscale Workload Identity Federation (WIF) without exposing the Coolify API to the public internet.
-- **Health Verification Gate**: Deployments only complete when `/api/health` returns `200 OK` and `"status":"healthy"`.
-- **Rollback**: Simply point `APP_TAG` to a previous immutable commit SHA in Coolify and trigger deployment.
+- **Immutable Image Tags**: Every build publishes `sha-${{ github.sha }}` (plus
+  `latest`) to GHCR, and each deploy pins the app image to that exact reference, so
+  a release is always the artifact that was built from that commit.
+- **Self-hosted deployment**: The deploy jobs run on the `recruivo` runner on the
+  deployment host, which owns the compose stacks - there is no external control
+  plane between GitHub and Docker.
+- **Migration Gate**: `migrate` runs as its own compose service; the deploy waits
+  for its exit code before probing health.
+- **Health Verification Gate**: Deployments only complete when `/api/health`
+  returns `200 OK` with `"status":"healthy"`; otherwise the app is rolled back to
+  the previous image tag and the job fails.
+- **Rollback**: See [Rollback Procedure](docs/docker.md#6-rollback-procedure).
 
 ---
 

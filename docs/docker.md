@@ -55,9 +55,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app php arti
 
 ---
 
-## 3. Production Deployment (Coolify)
+## 3. Production Deployment (Docker Compose)
 
-Production uses the exact same canonical `docker-compose.yml` file, parameterized by Coolify's environment variables:
+Production uses the exact same canonical `docker-compose.yml` file, parameterized by the deployment environment file:
 
 - `APP_ENV=production`
 - `APP_IS_DEMO=false`
@@ -79,11 +79,13 @@ CI does the same (`APP_ENV_FILE` + `--env-file` in `.github/workflows/ci.yml`).
 Without it, `DB_HOST`/`REDIS_HOST` set in the deployment file are discarded and the
 `infra` profile (mysql/redis containers) is never enabled.
 
-Deployments are triggered automatically by GitHub Actions or via the Coolify dashboard.
+Deployments are triggered by GitHub Actions on every push to `main` (see
+`.github/workflows/ci.yml`); a manual operation uses the same compose invocation
+shown above on the deployment host.
 
 ---
 
-## 4. Demo Environment (Coolify)
+## 4. Demo Environment (Docker Compose)
 
 The Demo environment deploys the exact same canonical `docker-compose.yml` file and image SHA with isolated Demo environment variables:
 
@@ -112,18 +114,36 @@ GitHub Actions builds and publishes immutable OCI images to GitHub Container Reg
 
 - `ghcr.io/mouadlotfi/recruivo:sha-${GITHUB_SHA}`
 
-Deployments update `APP_TAG=sha-${GITHUB_SHA}` in Coolify and verify `/api/health` before completing.
+Each deploy pins both `APP_IMAGE=ghcr.io/<owner>/recruivo:sha-${GITHUB_SHA}` and
+`APP_TAG=sha-${GITHUB_SHA}`, waits for the `migrate` service to exit successfully,
+then verifies `/api/health` before completing.
+
+The app image reference is resolved from `APP_IMAGE`, whose compose default appends
+`APP_TAG`. A *set but untagged* `APP_IMAGE` therefore wins over that default and the
+deploy silently pulls `latest` - the deploy jobs export the fully qualified reference
+for exactly this reason.
 
 ---
 
 ## 6. Rollback Procedure
 
-To roll back a deployment to any previous commit:
+To roll back a deployment to any previous commit, on the deployment host:
 
-1. Locate the desired previous Git commit SHA (e.g. `abc1234`).
-2. In Coolify, update `APP_TAG` to `sha-abc1234`.
-3. Click **Deploy** in Coolify.
-4. Coolify pulls the immutable image from GHCR and recreates the containers instantly without rebuilding.
+1. Locate the desired previous Git commit SHA (e.g. `abc1234`), which must still
+   have its `sha-abc1234` image in GHCR.
+2. From a checkout of this repository, pin the image and recreate the containers:
+
+   ```bash
+   APP_ENV_FILE=/mnt/hdd2-data/containers/recruivo/.env \
+     APP_IMAGE=ghcr.io/mouadlotfi/recruivo:sha-abc1234 APP_TAG=sha-abc1234 \
+     docker compose --env-file /mnt/hdd2-data/containers/recruivo/.env \
+     -p recruivo up -d --remove-orphans
+   ```
+
+   Use `-p recruivo-demo` with `/mnt/hdd2-data/containers/recruivo-demo/.env` for
+   the Demo stack.
+3. Docker pulls the immutable image from GHCR and recreates the containers without
+   rebuilding anything.
 
 Rollback only swaps the image tag: it does not restore data, and re-running an older
 image re-applies that image's migration set on top of the current schema. Pair it with
