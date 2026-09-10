@@ -52,7 +52,7 @@ function notificationMessage(item: AppNotification): string {
         })
     }
     return t('application_status_message', {
-        company: item.data.company_name ?? 'Company',
+        company: item.data.company_name ?? t('company'),
         job: item.data.job_title ?? '',
     })
 }

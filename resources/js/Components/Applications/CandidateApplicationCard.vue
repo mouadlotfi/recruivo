@@ -105,7 +105,7 @@ function withdraw(): void {
                         </span>
                     </div>
 
-                    <div class="mb-3 text-sm text-stone-500 dark:text-stone-500">
+                    <div class="mb-3 text-sm text-stone-500 dark:text-stone-400">
                         {{ application.applied_label }}
                     </div>
 

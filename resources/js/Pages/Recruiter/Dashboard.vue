@@ -159,7 +159,7 @@ const applicationsUrl = (application: RecruiterDashboardApplication) =>
                             >
                                 {{ application.status_label }}
                             </span>
-                            <span class="whitespace-nowrap text-sm text-stone-500 dark:text-stone-500">
+                            <span class="whitespace-nowrap text-sm text-stone-500 dark:text-stone-400">
                                 {{ application.created_at_label }}
                             </span>
                             <Link

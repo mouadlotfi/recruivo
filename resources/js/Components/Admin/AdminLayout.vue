@@ -7,12 +7,14 @@ import UserDropdown from '../Layout/UserDropdown.vue'
 import ThemeToggle from '../Layout/ThemeToggle.vue'
 import LanguageToggle from '../Layout/LanguageToggle.vue'
 import FlashMessages from '../Layout/FlashMessages.vue'
+import { useTranslation } from '../../composables/useTranslation'
 
 const props = defineProps<{
     labels: Record<string, string>
 }>()
 
 const page = usePage<PageProps>()
+const { t } = useTranslation()
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
 
 const sidebarOpen = ref(false)
@@ -20,6 +22,7 @@ const sidebarOpen = ref(false)
 
 <template>
     <div class="flex h-screen w-full overflow-hidden bg-[#f4f4f5] text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100">
+        <a href="#main-content" class="sr-only z-[100] rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">{{ t('skip_to_content') }}</a>
         <AdminSidebar 
             :labels="props.labels" 
             :mobile-open="sidebarOpen" 
@@ -36,7 +39,7 @@ const sidebarOpen = ref(false)
                         class="inline-flex h-11 w-11 items-center justify-center rounded-lg text-stone-500 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500 lg:hidden dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white"
                         @click="sidebarOpen = true"
                     >
-                        <span class="sr-only">Open sidebar</span>
+                        <span class="sr-only">{{ t('open_sidebar') }}</span>
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                         </svg>
@@ -67,7 +70,7 @@ const sidebarOpen = ref(false)
                             v-if="page.props.isDemoEnvironment"
                             class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
                         >
-                            DEMO
+                            {{ t('demo_environment_badge') }}
                         </span>
                     </Link>
                 </div>
@@ -80,7 +83,7 @@ const sidebarOpen = ref(false)
             </header>
 
             <!-- Main Content Area -->
-            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
                 <FlashMessages />
                 <div class="mx-auto max-w-7xl">
                     <slot />

@@ -216,7 +216,7 @@ const pickQuickCategory = (val: string) => {
                 />
 
                 <div class="mt-4 flex flex-wrap items-center gap-1.5 border-t border-stone-100 pt-3 dark:border-stone-800/80">
-                    <span class="text-[11px] font-medium text-stone-400 dark:text-stone-500">Popular:</span>
+                    <span class="text-[11px] font-medium text-stone-400 dark:text-stone-400">{{ t('popular_searches') }}:</span>
                     <button
                         v-for="cat in quickCategories"
                         :key="cat.value"

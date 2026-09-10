@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import type {
@@ -414,6 +414,50 @@ function submitEmail(): void {
 function deleteAccount(): void {
     router.delete(localeUrl('/profile'))
 }
+
+// Delete-confirmation dialog: move focus into it, keep Tab inside, restore focus
+// on close. Without the trap, Tab walks into the page behind the modal.
+const deleteDialog = ref<HTMLElement | null>(null)
+const cancelButton = ref<HTMLButtonElement | null>(null)
+const focusableSelector =
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+let previouslyFocused: HTMLElement | null = null
+
+const handleDialogKeydown = (event: KeyboardEvent) => {
+    if (event.key !== 'Tab') return
+
+    const focusable = deleteDialog.value
+        ? Array.from(deleteDialog.value.querySelectorAll<HTMLElement>(focusableSelector))
+        : []
+    if (focusable.length === 0) {
+        event.preventDefault()
+        return
+    }
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+    }
+}
+
+const openDeleteModal = () => {
+    previouslyFocused = document.activeElement as HTMLElement | null
+    showDeleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+    showDeleteModal.value = false
+    nextTick(() => previouslyFocused?.focus())
+}
+
+watch(showDeleteModal, (open) => {
+    if (open) nextTick(() => cancelButton.value?.focus())
+})
 </script>
 
 <template>
@@ -527,7 +571,7 @@ function deleteAccount(): void {
                             </div>
                             <div class="space-y-2">
                                 <label for="logo" :class="labelClass">{{ labels.company_logo }}</label>
-                                <img v-if="company.logo_url" :src="company.logo_url" alt="Company logo" class="mb-2 h-20 w-20 rounded-lg object-cover">
+                                <img v-if="company.logo_url" :src="company.logo_url" :alt="labels.company_logo" class="mb-2 h-20 w-20 rounded-lg object-cover">
                                 <div class="flex items-center gap-3">
                                     <label for="logo" class="inline-flex cursor-pointer items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
                                         {{ labels.choose_logo }}
@@ -691,11 +735,11 @@ function deleteAccount(): void {
             <section v-else class="rounded-xl border border-red-200 bg-red-50 p-8 dark:border-red-800 dark:bg-red-900/30">
                 <h2 class="mb-4 text-xl font-semibold text-red-900 dark:text-red-200">{{ labels.delete_account }}</h2>
                 <p class="mb-6 text-sm text-red-800 dark:text-red-300">{{ labels.delete_account_warning }}</p>
-                <button type="button" class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-200 active:bg-red-700" @click="showDeleteModal = true">{{ labels.delete_account }}</button>
+                <button type="button" class="inline-flex min-h-11 items-center justify-center rounded-2xl bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-200 active:bg-red-700" @click="openDeleteModal">{{ labels.delete_account }}</button>
 
-                <div v-if="showDeleteModal" class="fixed inset-0 z-50 overflow-y-auto" @keydown.esc.window="showDeleteModal = false">
+                <div v-if="showDeleteModal" ref="deleteDialog" class="fixed inset-0 z-50 overflow-y-auto" @keydown.esc="closeDeleteModal" @keydown="handleDialogKeydown">
                     <div class="flex min-h-screen items-center justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-                        <div class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm transition-opacity" @click="showDeleteModal = false"></div>
+                        <div class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm transition-opacity" @click="closeDeleteModal"></div>
                         <span class="hidden sm:inline-block sm:h-screen sm:align-middle">&#8203;</span>
                         <div role="dialog" aria-modal="true" aria-labelledby="delete-account-title" class="inline-block transform overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 text-left align-bottom shadow-2xl backdrop-blur transition-all dark:border-stone-700/60 dark:bg-stone-900/95 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
                             <div class="p-6 sm:p-8">
@@ -704,7 +748,7 @@ function deleteAccount(): void {
                             </div>
                             <div class="bg-stone-50/80 px-6 py-4 dark:bg-stone-800/40 sm:flex sm:flex-row-reverse sm:px-8">
                                 <button type="button" class="inline-flex w-full justify-center rounded-2xl bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900 sm:w-auto" @click="deleteAccount">{{ labels.delete_account }}</button>
-                                <button type="button" class="mt-3 inline-flex w-full justify-center rounded-2xl border border-stone-200/80 bg-white px-6 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:border-stone-700 dark:bg-stone-800/80 dark:text-stone-200 dark:hover:bg-stone-700 dark:focus:ring-offset-stone-900 sm:mr-3 sm:mt-0 sm:w-auto" @click="showDeleteModal = false">{{ labels.cancel }}</button>
+                                <button ref="cancelButton" type="button" class="mt-3 inline-flex w-full justify-center rounded-2xl border border-stone-200/80 bg-white px-6 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:border-stone-700 dark:bg-stone-800/80 dark:text-stone-200 dark:hover:bg-stone-700 dark:focus:ring-offset-stone-900 sm:mr-3 sm:mt-0 sm:w-auto" @click="closeDeleteModal">{{ labels.cancel }}</button>
                             </div>
                         </div>
                     </div>

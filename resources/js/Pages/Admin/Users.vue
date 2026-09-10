@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps, Pagination } from '../../types'
 import AdminLayout from '../../Components/Admin/AdminLayout.vue'
@@ -53,15 +53,66 @@ const roleClasses = (user: AdminUser) => user.roles.includes('Admin')
 
 const submitFilters = () => router.get(localeUrl('/admin/users'), { search: search.value || undefined, role: role.value || undefined }, { preserveState: true, replace: true })
 const clearFilters = () => { search.value = ''; role.value = ''; submitFilters() }
+const loadMoreFailed = ref(false)
 const loadMore = () => {
     if (!props.pagination.next_page_url || loading.value) return
     loading.value = true
-    router.get(props.pagination.next_page_url, {}, { preserveState: true, preserveScroll: true, onFinish: () => { loading.value = false } })
+    loadMoreFailed.value = false
+    router.get(props.pagination.next_page_url, {}, {
+        preserveState: true,
+        preserveScroll: true,
+        onFinish: () => { loading.value = false },
+        onError: () => { loadMoreFailed.value = true },
+    })
 }
 const deleteUser = () => {
     if (!selectedUser.value) return
     router.delete(localeUrl(`/admin/users/${selectedUser.value.id}`), { preserveScroll: true, onFinish: () => { selectedUser.value = null } })
 }
+
+// Delete-confirmation dialog: move focus into it, keep Tab inside, restore focus
+// on close. Without the trap, Tab walks into the page behind the modal.
+const deleteDialog = ref<HTMLElement | null>(null)
+const cancelButton = ref<HTMLButtonElement | null>(null)
+const focusableSelector =
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+let previouslyFocused: HTMLElement | null = null
+
+const handleDialogKeydown = (event: KeyboardEvent) => {
+    if (event.key !== 'Tab') return
+
+    const focusable = deleteDialog.value
+        ? Array.from(deleteDialog.value.querySelectorAll<HTMLElement>(focusableSelector))
+        : []
+    if (focusable.length === 0) {
+        event.preventDefault()
+        return
+    }
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+    }
+}
+
+const openDeleteDialog = (user: AdminUser) => {
+    previouslyFocused = document.activeElement as HTMLElement | null
+    selectedUser.value = user
+}
+
+const closeDeleteDialog = () => {
+    selectedUser.value = null
+    nextTick(() => previouslyFocused?.focus())
+}
+
+watch(selectedUser, (user) => {
+    if (user) nextTick(() => cancelButton.value?.focus())
+})
 </script>
 
 <template>
@@ -121,7 +172,7 @@ const deleteUser = () => {
                             class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-stone-100 px-4 text-sm font-semibold text-stone-700 transition hover:bg-stone-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 sm:flex-none"
                             @click="clearFilters"
                         >
-                            {{ labels.clear || labels.clear_button || 'Clear' }}
+                            {{ labels.clear_button }}
                         </button>
                     </div>
                 </form>
@@ -246,7 +297,7 @@ const deleteUser = () => {
                                 type="button"
                                 class="inline-flex min-h-9 items-center justify-center rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
                                 :title="labels.delete_user"
-                                @click="selectedUser = user"
+                                @click="openDeleteDialog(user)"
                             >
                                 <svg class="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -265,12 +316,13 @@ const deleteUser = () => {
                         class="inline-flex min-h-11 items-center justify-center rounded-xl border border-stone-200 bg-white px-6 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:cursor-wait disabled:opacity-70 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                         @click="loadMore"
                     >
+                        <p v-if="loadMoreFailed" role="alert" class="mb-2 text-sm text-red-600 dark:text-red-400">{{ labels.load_more_failed }}</p>
                         {{ loading ? labels.loading_more : labels.show_more }}
                     </button>
                 </div>
             </template>
 
-            <div v-if="selectedUser" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" :aria-labelledby="`delete-user-title-${selectedUser.id}`" @keydown.escape="selectedUser = null"><div class="flex min-h-screen items-center justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0"><div class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm" @click="selectedUser = null"></div><span class="hidden sm:inline-block sm:h-screen sm:align-middle">&#8203;</span><div class="inline-block transform overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 text-left align-bottom shadow-2xl backdrop-blur transition-all dark:border-stone-700/60 dark:bg-stone-900/95 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle"><div class="p-6 sm:p-8"><div class="flex items-start"><div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20"><svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg></div></div><div class="mt-4 text-center"><h3 :id="`delete-user-title-${selectedUser.id}`" class="text-xl font-semibold text-stone-900 dark:text-white">{{ labels.delete_user }}</h3><div class="mt-3"><p class="text-sm text-stone-600 dark:text-stone-400">{{ labels.delete_user_confirmation }}</p></div></div></div><div class="bg-stone-50/80 px-6 py-4 dark:bg-stone-800/40 sm:flex sm:flex-row-reverse sm:px-8"><button type="button" class="inline-flex w-full justify-center rounded-2xl bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900 sm:w-auto" @click="deleteUser">{{ labels.delete_user }}</button><button type="button" class="mt-3 inline-flex w-full justify-center rounded-2xl border border-stone-200/80 bg-white px-6 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:border-stone-700 dark:bg-stone-800/80 dark:text-stone-200 dark:hover:bg-stone-700 dark:focus:ring-offset-stone-900 sm:mr-3 sm:mt-0 sm:w-auto" @click="selectedUser = null">{{ labels.cancel }}</button></div></div></div></div>
+            <div v-if="selectedUser" ref="deleteDialog" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" :aria-labelledby="`delete-user-title-${selectedUser.id}`" @keydown.escape="closeDeleteDialog" @keydown="handleDialogKeydown"><div class="flex min-h-screen items-center justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0"><div class="fixed inset-0 bg-stone-900/75 backdrop-blur-sm" @click="closeDeleteDialog"></div><span class="hidden sm:inline-block sm:h-screen sm:align-middle">&#8203;</span><div class="inline-block transform overflow-hidden rounded-2xl border border-stone-200/60 bg-white/95 text-left align-bottom shadow-2xl backdrop-blur transition-all dark:border-stone-700/60 dark:bg-stone-900/95 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle"><div class="p-6 sm:p-8"><div class="flex items-start"><div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20"><svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg></div></div><div class="mt-4 text-center"><h3 :id="`delete-user-title-${selectedUser.id}`" class="text-xl font-semibold text-stone-900 dark:text-white">{{ labels.delete_user }}</h3><div class="mt-3"><p class="text-sm text-stone-600 dark:text-stone-400">{{ labels.delete_user_confirmation }}</p></div></div></div><div class="bg-stone-50/80 px-6 py-4 dark:bg-stone-800/40 sm:flex sm:flex-row-reverse sm:px-8"><button type="button" class="inline-flex w-full justify-center rounded-2xl bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-stone-900 sm:w-auto" @click="deleteUser">{{ labels.delete_user }}</button><button ref="cancelButton" type="button" class="mt-3 inline-flex w-full justify-center rounded-2xl border border-stone-200/80 bg-white px-6 py-3 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:border-stone-700 dark:bg-stone-800/80 dark:text-stone-200 dark:hover:bg-stone-700 dark:focus:ring-offset-stone-900 sm:mr-3 sm:mt-0 sm:w-auto" @click="closeDeleteDialog">{{ labels.cancel }}</button></div></div></div></div>
         </div>
     </AdminLayout>
 </template>

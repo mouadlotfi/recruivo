@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 
 const props = defineProps<{
     labels: Record<string, string>
@@ -13,7 +14,24 @@ const emit = defineEmits<{
 }>()
 
 const page = usePage<PageProps>()
+const { t } = useTranslation()
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
+
+// Below `lg` the drawer slides off-screen instead of unmounting, so its links
+// would stay in the tab order (and in the accessibility tree) while invisible.
+// On `lg` and up the drawer is always visible, so it must never be inert.
+const isDesktop = ref(false)
+let desktopQuery: MediaQueryList | undefined
+const syncViewport = () => { isDesktop.value = desktopQuery?.matches ?? false }
+const drawerHidden = computed(() => !isDesktop.value && !props.mobileOpen)
+
+onMounted(() => {
+    desktopQuery = window.matchMedia('(min-width: 1024px)')
+    syncViewport()
+    desktopQuery.addEventListener('change', syncViewport)
+})
+
+onBeforeUnmount(() => desktopQuery?.removeEventListener('change', syncViewport))
 
 const isActive = (href: string) => {
     const currentPath = page.url.split('?')[0]
@@ -35,6 +53,8 @@ const linkClasses = (href: string) => [
             mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
         ]"
         :aria-label="labels.admin_area"
+        :aria-hidden="drawerHidden ? 'true' : undefined"
+        :inert="drawerHidden ? true : undefined"
     >
         <!-- Logo Area -->
         <div class="flex h-16 shrink-0 items-center justify-between border-b border-stone-200/70 px-6 dark:border-stone-800">
@@ -63,11 +83,11 @@ const linkClasses = (href: string) => [
                     v-if="page.props.isDemoEnvironment"
                     class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
                 >
-                    DEMO
+                    {{ t('demo_environment_badge') }}
                 </span>
             </Link>
-            <button type="button" class="lg:hidden text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200" @click="emit('close-mobile')">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <button type="button" class="lg:hidden text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200" :aria-label="t('close_sidebar')" @click="emit('close-mobile')">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
@@ -76,7 +96,7 @@ const linkClasses = (href: string) => [
         <!-- Navigation -->
         <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
             <nav class="flex flex-col space-y-1" :aria-label="labels.admin_area">
-                <p class="px-3 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-500">
+                <p class="px-3 pb-2 pt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
                     {{ labels.sidebar_overview }}
                 </p>
                 <Link
@@ -91,7 +111,7 @@ const linkClasses = (href: string) => [
                     <span class="whitespace-nowrap">{{ labels.sidebar_overview }}</span>
                 </Link>
 
-                <p class="px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-500">
+                <p class="px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
                     {{ labels.sidebar_management }}
                 </p>
                 <Link

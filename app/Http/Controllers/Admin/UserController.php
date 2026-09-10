@@ -107,6 +107,7 @@ class UserController extends Controller
                 'loading_more' => __('common.loading_more'),
                 'cancel' => __('common.cancel'),
                 'show_more' => __('common.show_more'),
+                'load_more_failed' => __('common.load_more_failed'),
                 'view_profile' => __('admin.view_profile'),
                 'candidate_profile' => __('admin.candidate_profile'),
                 'view_company' => __('admin.view_company'),

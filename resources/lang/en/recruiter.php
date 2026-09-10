@@ -41,9 +41,6 @@ return [
     'create_job_title' => 'Post New Job',
     'create_job_subtitle' => 'Create a new job posting to attract candidates',
     'edit_job' => 'Edit Job',
-    'edit_job_title' => 'Edit Job',
-    'edit_job_subtitle' => 'Update your job posting',
-    'back_to_jobs' => 'Back to Jobs',
 
     // Job Form
     'job_title' => 'Job Title',
@@ -70,7 +67,6 @@ return [
     'extend_closing_date_before_publishing' => 'This job is expired. Set a closing date of today or later before publishing it.',
     'cancel' => 'Cancel',
     'create_job' => 'Create Job',
-    'update_job' => 'Update Job',
 
     // Categories
     'engineering' => 'Engineering',

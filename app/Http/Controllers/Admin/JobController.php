@@ -141,6 +141,7 @@ class JobController extends Controller
                 ->mapWithKeys(fn (string $key): array => [$key => __('admin.'.$key)])
                 ->all(),
             'show_more' => __('common.show_more'),
+            'load_more_failed' => __('common.load_more_failed'),
         ];
     }
 

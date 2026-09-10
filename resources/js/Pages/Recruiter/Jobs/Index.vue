@@ -235,9 +235,9 @@ const iconButtonClass =
                                         </svg>
                                         <span class="break-words text-stone-600 dark:text-stone-400">{{ job.applications_label }}</span>
                                     </div>
-                                    <div class="min-w-0 break-words text-stone-500 dark:text-stone-500">{{ job.posted_label }}</div>
-                                    <div v-if="job.published_label" class="min-w-0 break-words text-stone-500 dark:text-stone-500">{{ job.published_label }}</div>
-                                    <div v-if="job.closes_label" class="min-w-0 break-words text-stone-500 dark:text-stone-500">{{ job.closes_label }}</div>
+                                    <div class="min-w-0 break-words text-stone-500 dark:text-stone-400">{{ job.posted_label }}</div>
+                                    <div v-if="job.published_label" class="min-w-0 break-words text-stone-500 dark:text-stone-400">{{ job.published_label }}</div>
+                                    <div v-if="job.closes_label" class="min-w-0 break-words text-stone-500 dark:text-stone-400">{{ job.closes_label }}</div>
                                 </div>
                             </div>
 

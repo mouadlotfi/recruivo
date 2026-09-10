@@ -41,9 +41,6 @@ return [
     'create_job_title' => 'Publier une nouvelle offre',
     'create_job_subtitle' => 'Créez une nouvelle offre d\'emploi pour attirer des candidats',
     'edit_job' => 'Modifier l\'offre',
-    'edit_job_title' => 'Modifier l\'offre',
-    'edit_job_subtitle' => 'Mettez à jour votre offre d\'emploi',
-    'back_to_jobs' => 'Retour aux offres',
 
     // Job Form
     'job_title' => 'Titre du poste',
@@ -70,7 +67,6 @@ return [
     'extend_closing_date_before_publishing' => 'Cette offre est expirée. Définissez une date de clôture à aujourd\'hui ou plus tard avant de la publier.',
     'cancel' => 'Annuler',
     'create_job' => 'Créer l\'offre',
-    'update_job' => 'Mettre à jour l\'offre',
 
     // Categories
     'engineering' => 'Ingénierie',

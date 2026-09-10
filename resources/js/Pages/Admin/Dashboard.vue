@@ -393,7 +393,7 @@ const changeRange = () => {
                     <div v-for="row in marketplaceRows" :key="row.key" class="flex items-start justify-between gap-4 border-b border-stone-200/60 pb-3 dark:border-stone-800">
                         <div class="min-w-0">
                             <dt class="text-sm text-stone-600 dark:text-stone-400">{{ row.label }}</dt>
-                            <p v-if="row.help" class="mt-1 max-w-[16rem] text-xs leading-5 text-stone-500 dark:text-stone-500">{{ row.help }}</p>
+                            <p v-if="row.help" class="mt-1 max-w-[16rem] text-xs leading-5 text-stone-500 dark:text-stone-400">{{ row.help }}</p>
                         </div>
                         <dd class="shrink-0 text-right text-lg font-semibold text-stone-900 dark:text-white">{{ formatMarketplaceValue(row.value, row.format) }}</dd>
                     </div>

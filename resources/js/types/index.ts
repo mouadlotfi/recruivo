@@ -246,12 +246,6 @@ export interface RecruiterApplication {
     is_withdrawn: boolean
 }
 
-export interface RecruiterNoteTemplate {
-    id: number
-    name: string
-    body: string
-}
-
 export interface ReviewFormData {
     status: string
     interview_mode: string

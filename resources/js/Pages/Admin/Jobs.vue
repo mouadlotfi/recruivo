@@ -89,15 +89,20 @@ const clearFilters = () => {
     submitFilters()
 }
 
+const loadMoreFailed = ref(false)
 const loadMore = () => {
     if (!props.pagination.next_page_url || loading.value) return
 
     loading.value = true
+    loadMoreFailed.value = false
     router.get(props.pagination.next_page_url, {}, {
         preserveState: true,
         preserveScroll: true,
         onFinish: () => {
             loading.value = false
+        },
+        onError: () => {
+            loadMoreFailed.value = true
         },
     })
 }
@@ -255,6 +260,7 @@ const statusClass = (jobStatus: string) => jobStatus === 'published'
                     class="inline-flex min-h-11 items-center justify-center rounded-xl border border-stone-200 bg-white px-6 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:cursor-wait disabled:opacity-70 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                     @click="loadMore"
                 >
+                    <p v-if="loadMoreFailed" role="alert" class="mb-2 text-sm text-red-600 dark:text-red-400">{{ labels.load_more_failed }}</p>
                     {{ loading ? labels.loading : labels.show_more }}
                 </button>
             </div>

@@ -35,6 +35,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
 
 <template>
     <div class="flex min-h-screen flex-col bg-stone-100 pb-16 text-stone-900 antialiased sm:pb-0 dark:bg-stone-950 dark:text-stone-100">
+        <a href="#main-content" class="sr-only z-[100] rounded-lg bg-amber-600 px-4 py-2 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">{{ t('skip_to_content') }}</a>
         <header class="sticky top-0 z-[9999] border-b border-stone-200/60 bg-white/75 backdrop-blur-xl dark:border-stone-800/70 dark:bg-stone-950/80">
             <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
                 <div class="flex h-full items-center gap-6 lg:gap-8">
@@ -121,7 +122,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
 
         <FlashMessages />
 
-        <main class="mx-auto w-full max-w-6xl flex-1 px-4 pb-20 pt-10 sm:px-6 sm:pb-16">
+        <main id="main-content" tabindex="-1" class="mx-auto w-full max-w-6xl flex-1 px-4 pb-20 pt-10 sm:px-6 sm:pb-16">
             <slot />
         </main>
 

@@ -185,7 +185,7 @@ const statusClass = (status: string) => statusClasses[status] ?? 'bg-stone-100 t
                             <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', statusClass(application.status)]">
                                 {{ application.status_label }}
                             </span>
-                            <span class="text-xs text-stone-500 dark:text-stone-500 sm:text-sm">
+                            <span class="text-xs text-stone-500 dark:text-stone-400 sm:text-sm">
                                 {{ application.applied_label }}
                             </span>
                             <Link
