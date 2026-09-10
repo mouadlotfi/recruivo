@@ -52,7 +52,7 @@ const necessaryOnly = () => storeConsent('necessary')
         role="dialog"
         aria-live="polite"
         :aria-label="t('cookie_settings')"
-        class="fixed inset-x-0 bottom-0 z-[9998] border-t border-stone-200 bg-white/95 px-4 py-4 shadow-2xl backdrop-blur dark:border-stone-800 dark:bg-stone-950/95"
+        class="fixed inset-x-0 bottom-0 z-[9998] border-t border-stone-200 bg-white/95 px-4 py-5 shadow-2xl backdrop-blur dark:border-stone-800 dark:bg-stone-950/95"
     >
         <div class="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p class="max-w-2xl text-sm text-stone-600 dark:text-stone-300">

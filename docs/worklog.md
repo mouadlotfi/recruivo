@@ -358,6 +358,11 @@ Tests after round 3: **331 passed / 2457 assertions**.
     **On the servers this needs `php artisan migrate --force`** - it is the one
     change here that alters an existing table.
 
+27. **Roomier cookie banner** (requested): vertical padding stepped up one notch
+    (`py-4` -> `py-5`), taking the banner from ~93px to 101px on desktop and to
+    177px on a 390px viewport, verified by measuring the rendered box and
+    reviewing a screenshot.
+
 ## Remaining work (agreed order, one item per session)
 
 1. ~~CSP + HSTS.~~ **done**
