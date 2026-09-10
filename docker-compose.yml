@@ -6,9 +6,19 @@ networks:
     name: recruivo_network
 name: ${COMPOSE_PROJECT_NAME:-recruivo}
 
+# Container stdout is the fastest-growing thing on the host disk. Docker's
+# default json-file driver is unbounded, so a chatty service can fill the volume
+# that also holds mysql_data and app_storage.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 x-laravel-service: &laravel-service
   image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-latest}}
   restart: unless-stopped
+  logging: *default-logging
   working_dir: /var/www/html
   env_file:
     - path: ${APP_ENV_FILE:-.env}
@@ -44,6 +54,7 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    logging: *default-logging
     profiles: ["infra"]
     networks:
       default:
@@ -69,6 +80,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *default-logging
     profiles: ["infra"]
     networks:
       default:

@@ -149,10 +149,39 @@ Tests after round 3: **331 passed / 2457 assertions**.
     Local stack state after this: **running** on http://localhost:8000 (dev only;
     it is not part of the deployed environments).
 
+## Round 6 — Item 2: docker log rotation + non-root ✅
+
+11. **Container logs capped.** `json-file` with `max-size: 10m` / `max-file: 3` on
+    every service in both compose files (previously Docker's unbounded default on
+    the same disk as `mysql_data`/`app_storage`). The in-container Laravel log now
+    rotates as well: the `stack` channel writes to the `daily` driver (14 days)
+    instead of the framework's unbounded `single`, so growth is bounded without
+    requiring an env change on the servers.
+    *Evidence:* resolved config shows the options on all seven services in both
+    files (`app`, `migrate`, `queue`, `scheduler`, `mysql`, `redis`, `vite`).
+12. **Production runs unprivileged.** `USER www-data` in the production stage,
+    with `setcap cap_net_bind_service=+ep` on the frankenphp binary so it can still
+    bind `:80`, and `/data` + `/config` chowned at build time. The `development`
+    target is explicitly `USER root` because it bind-mounts a developer-owned
+    working tree.
+    *Evidence:* `docker inspect` reports `www-data` (prod) and `root` (dev);
+    `getcap` confirms the capability; a production container runs as uid 33,
+    executes `migrate` against sqlite, answers `/api/health` 200 (all five checks)
+    and `/en` 200, and the container healthcheck reaches **healthy** - i.e. the
+    unprivileged bind on `:80` really works. The dev stack was rebuilt and
+    restarted afterwards: all services healthy, `/en` 200, and `exec app id`
+    still reports root, so host-mounted development is unaffected.
+
+    *Gotcha learned:* `fs.protected_regular` on the host blocks writes to a file
+    owned by another uid inside a sticky world-writable directory, and PHP's
+    `is_writable()` still returns true - a bind-mounted sqlite file in host `/tmp`
+    therefore fails with "attempt to write a readonly database". Create state
+    inside the container instead.
+
 ## Remaining work (agreed order, one item per session)
 
 1. ~~CSP + HSTS.~~ **done**
-2. Docker log rotation + non-root user.
+2. ~~Docker log rotation + non-root user.~~ **done**
 3. Two live correctness bugs: `Post::scopeLatest` shadowed by Eloquent's
    `latest()`, and `Api/Recruiter/JobController::mapJobData` clearing
    `published_at` on an update that omits `status`.

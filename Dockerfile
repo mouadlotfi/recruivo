@@ -75,8 +75,11 @@ RUN mkdir -p \
         bootstrap/cache \
     && rm -rf public/storage \
     && ln -s /var/www/html/storage/app/public public/storage \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R ug+rwX storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache /data /config \
+    && chmod -R ug+rwX storage bootstrap/cache \
+    # The container publishes :80; a non-root process may only bind a privileged
+    # port with a file capability on the binary (setcap ships in the base image).
+    && setcap 'cap_net_bind_service=+ep' /usr/local/bin/frankenphp
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
@@ -85,6 +88,10 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -f http://127.0.0.1/api/health >/dev/null 2>&1 || exit 1
 
 EXPOSE 80
+
+# Everything above ran as root; the server itself does not need to. Caddy writes
+# only to /data and /config, PHP only to storage/ - all chowned above.
+USER www-data
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
@@ -99,3 +106,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 COPY docker/php/php.dev.ini /usr/local/etc/php/conf.d/99-dev.ini
 
 RUN rm -f bootstrap/cache/*.php
+
+# Development mounts the working tree from the host, which is owned by the
+# developer, so it keeps running as root: the entrypoint reconciles ownership of
+# storage/ and bootstrap/cache, and PHP must be able to write there.
+USER root

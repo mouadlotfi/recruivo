@@ -15,7 +15,10 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            // `daily`, not the framework default `single`: this file lives in the
+            // app storage volume, which nothing prunes, so a single unbounded
+            // laravel.log would grow for the lifetime of the deployment.
+            'channels' => ['daily'],
             'ignore_exceptions' => false,
         ],
 

@@ -244,3 +244,51 @@ dashboard (charts) in a browser with the devtools console open: a violated
 directive is logged as `Refused to ...`/`Applying inline style ...`. Keep
 `tests/Feature/SecurityHeadersTest.php` in step with any change - it pins the
 allow-list, so dropping a font host or adding a wildcard has to be deliberate.
+
+---
+
+## 9. Runtime hardening
+
+### Container logs are capped
+
+Every service in both compose files uses `json-file` with `max-size: 10m` and
+`max-file: 3`. Docker's default is unbounded, and these logs live on the same
+disk as `mysql_data` and `app_storage` - a crash-looping worker or a noisy query
+log would otherwise fill it and take the database down with it.
+
+The in-container Laravel log rotates too: the `stack` channel writes to the
+`daily` driver (14 days) instead of the framework default `single`. That file
+lives in the app storage volume, which nothing prunes, so a single unbounded
+`laravel.log` would grow for the lifetime of the deployment. Set
+`LOG_CHANNEL=daily` explicitly if you prefer; both paths rotate now.
+
+### Production runs unprivileged
+
+The `production` image runs as `www-data` (uid 33). Caddy writes only to `/data`
+and `/config`, PHP only to `storage/` - both chowned at build time. Because the
+container still publishes `:80`, the build sets a file capability on the server
+binary:
+
+```dockerfile
+setcap 'cap_net_bind_service=+ep' /usr/local/bin/frankenphp
+```
+
+so an unprivileged process may bind the privileged port without the container
+running as root or needing `--privileged`.
+
+The `development` target stays `root` on purpose: it bind-mounts the working tree
+from the host, so the entrypoint must be able to reconcile ownership of
+`storage/` and `bootstrap/cache` for a developer-owned checkout.
+
+Verify a running container:
+
+```bash
+docker compose -p recruivo exec app id                  # uid=33(www-data)
+docker inspect --format '{{.Config.User}}' <image>      # www-data
+docker compose -p recruivo exec app getcap /usr/local/bin/frankenphp
+```
+
+If a future base image change drops the file capability, the container fails fast
+with `bind: permission denied` on :80 - the healthcheck never goes green and the
+deploy rolls back. In that case either re-add the capability or move the internal
+port to 8080 and update the compose port mapping and both healthchecks.

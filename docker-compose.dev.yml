@@ -5,6 +5,12 @@
 # `development` target: the base file points them at the private GHCR image,
 # which cannot be pulled without registry credentials.
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 x-laravel-service-dev: &laravel-service-dev
   image: ${APP_IMAGE:-recruivo:development}
   build:
@@ -45,6 +51,7 @@ services:
     image: node:22-bookworm-slim
     init: true
     restart: unless-stopped
+    logging: *default-logging
     working_dir: /var/www/html
     env_file:
       - ${APP_ENV_FILE:-.env}
