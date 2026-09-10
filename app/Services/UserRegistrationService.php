@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 use Spatie\Permission\Models\Role;
 
 class UserRegistrationService
@@ -104,9 +105,14 @@ class UserRegistrationService
         $roleName = $isRecruiter ? 'Recruiter' : 'Candidate';
         $role = Role::where('name', $roleName)->first();
 
-        if ($role) {
-            $user->assignRole($role);
+        if (! $role) {
+            // Skipping quietly here used to leave accounts with no role, which the
+            // navigation and every role middleware then treat as nobody. The
+            // ensure_default_roles_exist migration is what guarantees these rows.
+            throw new RuntimeException("Role [{$roleName}] does not exist; run the role seeder or migrate.");
         }
+
+        $user->assignRole($role);
     }
 
     /**
