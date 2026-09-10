@@ -43,7 +43,7 @@ return [
             ],
             [
                 'heading' => '7. Cookies et requêtes vers des tiers',
-                'body' => 'Les cookies que nous déposons sont ceux dont le site a besoin pour fonctionner : un cookie de session, un jeton CSRF, et des cookies mémorisant votre langue et votre thème. Nous n\'utilisons aucun cookie publicitaire ou de mesure d\'audience et aucun traceur tiers. Les polices du site sont servies par Google Fonts, qui reçoit votre adresse IP et les informations de votre navigateur pour livrer les fichiers de police : ces requêtes ne sont effectuées que si vous les acceptez dans le bandeau de consentement, et vous pouvez modifier ou retirer ce choix à tout moment (« Gérer les cookies » dans le pied de page, ou en supprimant vos cookies). Le site est diffusé via Cloudflare, qui voit nécessairement le trafic qu\'il relaie.',
+                'body' => 'Les cookies que nous déposons sont ceux dont le site a besoin pour fonctionner : un cookie de session, un jeton CSRF, des cookies mémorisant votre langue et votre thème, et un cookie indiquant que vous avez vu le bandeau d\'information. Nous n\'utilisons aucun cookie publicitaire ou de mesure d\'audience et aucun traceur tiers. Les polices sont servies par ce site et non par un tiers : rien de ce que vous chargez ici ne transmet votre adresse IP à quelqu\'un d\'autre. Le bandeau explique cela ; aucun élément du site n\'attend votre consentement, car tous les cookies ci-dessus sont nécessaires à son fonctionnement. Le site est diffusé via Cloudflare, qui voit nécessairement le trafic qu\'il relaie.',
             ],
             [
                 'heading' => '8. Qui peut voir vos données',

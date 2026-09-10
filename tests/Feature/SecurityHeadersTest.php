@@ -43,12 +43,15 @@ class SecurityHeadersTest extends TestCase
         $this->assertSame(1, substr_count($csp, 'unsafe-inline'));
     }
 
-    public function test_allows_the_google_fonts_assets_the_app_imports(): void
+    public function test_allows_no_third_party_hosts_for_styles_or_fonts(): void
     {
         $csp = (string) $this->response()->headers->get('Content-Security-Policy');
 
-        $this->assertStringContainsString("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", $csp);
-        $this->assertStringContainsString("font-src 'self' https://fonts.gstatic.com", $csp);
+        // The fonts are self-hosted, so the policy needs no external hosts at all.
+        $this->assertStringContainsString("style-src 'self' 'unsafe-inline';", $csp);
+        $this->assertStringContainsString("font-src 'self';", $csp);
+        $this->assertStringNotContainsString('googleapis', $csp);
+        $this->assertStringNotContainsString('gstatic', $csp);
     }
 
     public function test_closes_off_framing_plugins_and_form_hijacking(): void

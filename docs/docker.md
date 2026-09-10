@@ -200,10 +200,8 @@ Two layers, one owner per header so nothing is emitted twice:
 
 ```text
 default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';
-object-src 'none'; script-src 'self';
-style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:;
-connect-src 'self'
+object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline';
+font-src 'self'; img-src 'self' data: https:; connect-src 'self'
 ```
 
 Why it looks like this:
@@ -216,8 +214,12 @@ Why it looks like this:
   runtime (nProgress, per-page styles); hashes change on every build and the
   injected elements cannot carry a nonce. Inline *style* is not a script-execution
   vector, and `script-src` stays strict.
-- **Google Fonts** is what `resources/css/app.css` imports; both hosts are
-  allow-listed (`style-src` for the stylesheet, `font-src` for the files).
+- **No external hosts.** The webfonts are self-hosted as two variable files in
+  `public/fonts/` (declared in `resources/css/fonts.css`, referenced by
+  origin-relative paths so dev and production serve them the same way), so
+  `style-src`/`font-src` need nothing beyond `'self'` and no visitor request
+  leaves the origin. The filenames carry their upstream version because the
+  Caddyfile caches `*.woff2` as immutable for a year.
 - **`local`/`testing` are exempt.** The Vite dev server injects inline scripts and
   styles and talks over a websocket that this policy blocks, so the middleware is a
   no-op outside production/demo.

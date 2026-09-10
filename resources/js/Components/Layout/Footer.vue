@@ -2,7 +2,6 @@
 import { Link, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
-import { openConsentSettings } from '../../composables/useCookieConsent'
 
 const page = usePage<PageProps>()
 const { t } = useTranslation()
@@ -19,11 +18,7 @@ const linkClasses = 'transition hover:text-amber-600 dark:hover:text-amber-400'
             <nav :aria-label="t('legal_links')" class="flex flex-wrap items-center justify-center gap-4">
                 <Link :href="localeUrl('/contact')" :class="linkClasses">{{ t('contact') }}</Link>
                 <Link :href="localeUrl('/privacy')" :class="linkClasses">{{ t('privacy_policy') }}</Link>
-                <Link :href="localeUrl('/terms')" :class="linkClasses">{{ t('terms_of_service') }}</Link>
-                <button type="button" :class="linkClasses" @click="openConsentSettings">
-                    {{ t('cookie_settings') }}
-                </button>
-            </nav>
+                <Link :href="localeUrl('/terms')" :class="linkClasses">{{ t('terms_of_service') }}</Link>            </nav>
         </div>
     </footer>
 </template>

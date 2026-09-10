@@ -69,11 +69,6 @@
             : url()->current();
 
         $availableLocales = config('locales.available', []);
-
-        // The site's only third-party request, so it waits for consent;
-        // CookieConsent.vue reads this URL to add the tags without a reload.
-        $fontStylesheet = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap';
-        $hasFontConsent = request()->cookie('recruivo:cookie_consent') === 'accepted';
     @endphp
 
     <title inertia>{{ $metaTitle }}</title>
@@ -109,14 +104,6 @@
             <link rel="alternate" hreflang="x-default" href="{{ localized_route($currentRoute, $routeParams, config('locales.default', 'en')) }}" />
         @endif
     </x-inertia::head>
-
-    <!-- Fonts: only with consent, see $hasFontConsent above. -->
-    <meta name="font-stylesheet" content="{{ $fontStylesheet }}">
-    @if($hasFontConsent)
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="{{ $fontStylesheet }}">
-    @endif
 
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">

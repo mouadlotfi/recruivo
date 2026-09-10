@@ -43,7 +43,7 @@ return [
             ],
             [
                 'heading' => '7. Cookies and third-party requests',
-                'body' => 'The cookies we set are the ones the site needs to work: a session cookie, a CSRF token cookie, and cookies that remember your language and colour theme. We use no advertising or analytics cookies and we run no third-party trackers. The fonts used on the site are served by Google Fonts, which receives your IP address and details of your browser to deliver the font files: those requests are made only if you accept them in the cookie banner, and you can change or withdraw that choice at any time ("Cookie settings" in the footer, or by clearing your cookies). The site is delivered through Cloudflare, which necessarily sees the traffic it proxies.',
+                'body' => 'The cookies we set are the ones the site needs to work: a session cookie, a CSRF token cookie, cookies that remember your language and colour theme, and one recording that you have seen the cookie notice. We use no advertising or analytics cookies and we run no trackers. The fonts are served from this site rather than from a third party, so nothing you load here discloses your IP address to anyone else. The notice explains this; nothing on the site is waiting for your consent, because every cookie listed above is necessary for it to work. The site is delivered through Cloudflare, which necessarily sees the traffic it proxies.',
             ],
             [
                 'heading' => '8. Who can see your data',
