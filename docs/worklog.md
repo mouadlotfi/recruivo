@@ -178,13 +178,37 @@ Tests after round 3: **331 passed / 2457 assertions**.
     therefore fails with "attempt to write a readonly database". Create state
     inside the container instead.
 
+## Round 7 — Item 3: the two live correctness bugs ✅
+
+13. **Posts index was ordered by insertion time.** `Post::scopeLatest()` looked
+    like it ordered by `published_at`, but a real Eloquent builder method beats a
+    local scope, so `Post::published()->latest()` resolved to `orderBy('created_at')`
+    and the dead scope never ran. Proved with `toSql()` on the live stack:
+    `... order by "created_at" desc` before, `order by "published_at" desc` after.
+    Fixed the call site (`->latest('published_at')`) and deleted the scope, which
+    could never be called and was the trap that made the code read as correct.
+14. **An API job update that omitted `status` silently unpublished the job.**
+    `mapJobData()` derived `published_at` from `status`, which is a `sometimes`
+    field on update, so its absence was read as "not published" and cleared the
+    timestamp - the job vanished from every public listing while the recruiter got
+    a success response. The mapper now takes the job being updated: creates keep
+    their behaviour, updates only stamp the timestamp on the draft -> published
+    transition, mirroring `Recruiter\JobController::update()`.
+
+    *Evidence:* `tests/Feature/PostOrderingTest.php` and
+    `tests/Feature/Api/Recruiter/JobUpdateTest.php` fail before the fixes and pass
+    after (negative control run both ways: 3 failed/2 passed pre-fix, 5 passed
+    post-fix). The ordering fixture deliberately makes the two orderings disagree -
+    my first version had the newest publication be the newest row too, so it passed
+    against the buggy code, and only the control run caught that.
+
 ## Remaining work (agreed order, one item per session)
 
 1. ~~CSP + HSTS.~~ **done**
 2. ~~Docker log rotation + non-root user.~~ **done**
-3. Two live correctness bugs: `Post::scopeLatest` shadowed by Eloquent's
-   `latest()`, and `Api/Recruiter/JobController::mapJobData` clearing
-   `published_at` on an update that omits `status`.
+3. ~~Two live correctness bugs~~ (`Post::scopeLatest` shadowed by Eloquent's
+   `latest()`; `mapJobData` clearing `published_at` on an update that omits
+   `status`). **done**
 4. Frontend a11y/SEO batch.
 5. `AGENTS.md` refresh (says PHP 8.2 / Laravel 12; points at `resources/js/Layout/*`
    which is actually `Components/Layout/` and `Layouts/`).

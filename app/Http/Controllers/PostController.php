@@ -32,7 +32,7 @@ class PostController extends Controller
     public function index()
     {
         $posts = Post::published()
-            ->latest()
+            ->latest('published_at')
             ->paginate(12)
             ->withQueryString();
 

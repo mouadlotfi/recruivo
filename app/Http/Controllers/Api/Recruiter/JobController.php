@@ -49,7 +49,7 @@ class JobController extends Controller
     {
         $this->authorizeJob($job);
 
-        $job->update($this->mapJobData($request->validated(), $request));
+        $job->update($this->mapJobData($request->validated(), $request, $job));
 
         return response()->json([
             'message' => 'Job updated successfully.',
@@ -90,12 +90,28 @@ class JobController extends Controller
         abort_unless($job->recruiter_id === auth()->id(), 403, 'You can only manage your own jobs.');
     }
 
-    protected function mapJobData(array $data, Request $request): array
+    /**
+     * Normalise a job payload before it is persisted.
+     *
+     * `$job` is null when creating and the job being updated otherwise. `status`
+     * is optional on update, so an update that omits it must leave `published_at`
+     * untouched: deriving "not published" from a missing status cleared the
+     * timestamp and silently dropped the job out of every public listing. The
+     * timestamp is stamped once, on the draft -> published transition, matching
+     * Recruiter\JobController::update().
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mapJobData(array $data, Request $request, ?Job $job = null): array
     {
-        if (($data['status'] ?? null) === JobStatus::Published->value) {
-            $data['published_at'] = $data['published_at'] ?? now();
-        } else {
-            $data['published_at'] = null;
+        $isPublished = ($data['status'] ?? null) === JobStatus::Published->value;
+
+        if ($job === null) {
+            // New job: a draft carries no publication date.
+            $data['published_at'] = $isPublished ? now() : null;
+        } elseif ($isPublished && $job->status !== JobStatus::Published) {
+            $data['published_at'] = now();
         }
 
         $data['company_id'] = $request->user()->company_id;

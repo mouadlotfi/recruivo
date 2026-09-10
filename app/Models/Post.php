@@ -97,15 +97,4 @@ class Post extends Model
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now());
     }
-
-    /**
-     * Scope a query to order by latest published.
-     *
-     * @param  Builder  $query
-     * @return Builder
-     */
-    public function scopeLatest($query)
-    {
-        return $query->orderBy('published_at', 'desc');
-    }
 }
