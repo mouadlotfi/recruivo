@@ -38,6 +38,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // password-reset links, turning a reset email into an account takeover.
         $middleware->trustHosts(at: ['^127\.0\.0\.1$', '^localhost$', '^\[::1\]$']);
 
+        // Preferences are written by JavaScript (the theme toggle and the cookie
+        // banner) and read by the shell, so they arrive unencrypted. Without this
+        // exclusion Laravel tries to decrypt them, fails, and replaces them with
+        // null - which is how the theme cookie silently stopped working.
+        $middleware->encryptCookies(except: ['recruivo:theme', 'recruivo:cookie_consent']);
+
         $middleware->redirectGuestsTo(fn (Request $request) => route('login', [
             'locale' => $request->route('locale') ?? config('locales.default', 'en'),
         ]));

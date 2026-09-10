@@ -13,6 +13,7 @@ import LanguageToggle from '../Components/Layout/LanguageToggle.vue'
 import ScrollToTop from '../Components/Layout/ScrollToTop.vue'
 import FlashMessages from '../Components/Layout/FlashMessages.vue'
 import Footer from '../Components/Layout/Footer.vue'
+import CookieConsent from '../Components/Layout/CookieConsent.vue'
 
 const page = usePage<PageProps>()
 const { t } = useTranslation()
@@ -128,6 +129,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
         </main>
 
         <Footer />
+        <CookieConsent />
 
         <MobileNav v-if="!isAdmin" />
         <ScrollToTop />

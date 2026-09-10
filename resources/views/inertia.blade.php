@@ -72,6 +72,13 @@
             : url()->current();
 
         $availableLocales = config('locales.available', []);
+
+        // The only third-party request the site makes: the Google Fonts
+        // stylesheet (and the font files it pulls from fonts.gstatic.com) tells
+        // Google the visitor's IP address, so it is loaded only after consent.
+        // CookieConsent.vue reads this URL to add the same tags without a reload.
+        $fontStylesheet = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap';
+        $hasFontConsent = request()->cookie('recruivo:cookie_consent') === 'accepted';
     @endphp
 
     <title inertia>{{ $metaTitle }}</title>
@@ -108,9 +115,13 @@
         @endif
     </x-inertia::head>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fonts: only with consent, see $hasFontConsent above. -->
+    <meta name="font-stylesheet" content="{{ $fontStylesheet }}">
+    @if($hasFontConsent)
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="{{ $fontStylesheet }}">
+    @endif
 
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
