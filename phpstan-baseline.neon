@@ -85,18 +85,6 @@ parameters:
 			path: app/Http/Controllers/Api/Admin/UserController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Application\:\:\$candidate\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/ApplicationController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Application\:\:\$job\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/ApplicationController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Job\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Job\>\:\:\$recruiter\.$#'
 			identifier: property.notFound
 			count: 1
@@ -105,18 +93,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\User\:\:\$candidateProfile\.$#'
 			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Api/ApplicationController.php
-
-		-
-			message: '#^Relation ''candidate'' is not found in App\\Models\\Application model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/Api/ApplicationController.php
-
-		-
-			message: '#^Relation ''job'' is not found in App\\Models\\Application model\.$#'
-			identifier: larastan.relationExistence
 			count: 2
 			path: app/Http/Controllers/Api/ApplicationController.php
 
@@ -371,12 +347,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Recruiter/JobController.php
-
-		-
-			message: '#^PHPDoc type array of property App\\Http\\Middleware\\EncryptCookies\:\:\$except is not covariant with PHPDoc type array\<int, string\> of overridden property Illuminate\\Cookie\\Middleware\\EncryptCookies\:\:\$except\.$#'
-			identifier: property.phpDocType
-			count: 1
-			path: app/Http/Middleware/EncryptCookies.php
 
 		-
 			message: '#^Instanceof between App\\Models\\User and Illuminate\\Contracts\\Auth\\MustVerifyEmail will always evaluate to true\.$#'

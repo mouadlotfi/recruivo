@@ -56,14 +56,7 @@ class UserController extends Controller
                 'is_admin' => $user->hasRole('Admin'),
                 'joined_label' => $user->created_at?->translatedFormat('M d, Y'),
             ])->values()->all(),
-            'pagination' => [
-                'total' => $users->total(),
-                'per_page' => $users->perPage(),
-                'current_page' => $users->currentPage(),
-                'last_page' => $users->lastPage(),
-                'next_page_url' => $users->nextPageUrl(),
-                'prev_page_url' => $users->previousPageUrl(),
-            ],
+            'pagination' => pagination_payload($users),
             'filters' => [
                 'search' => $request->input('search', ''),
                 'role' => $request->input('role', ''),

@@ -85,14 +85,7 @@ class ApplicationController extends Controller
                 'name' => $template->name,
                 'body' => $template->body,
             ])->values()->all(),
-            'pagination' => [
-                'total' => $applications->total(),
-                'per_page' => $applications->perPage(),
-                'current_page' => $applications->currentPage(),
-                'last_page' => $applications->lastPage(),
-                'next_page_url' => $applications->nextPageUrl(),
-                'prev_page_url' => $applications->previousPageUrl(),
-            ],
+            'pagination' => pagination_payload($applications),
             'labels' => $this->pageLabels($status, $job, $applications->total()),
         ]);
     }

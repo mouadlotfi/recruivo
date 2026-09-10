@@ -32,9 +32,4 @@ final class SearchEnvelope
     {
         return $this->companies->count();
     }
-
-    public function totalCount(): int
-    {
-        return $this->jobCount() + $this->companyCount();
-    }
 }

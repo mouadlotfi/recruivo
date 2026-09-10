@@ -129,14 +129,7 @@ class JobController extends Controller
                 'salary_min' => $request->input('salary_min'),
                 'salary_max' => $request->input('salary_max'),
             ],
-            'pagination' => [
-                'total' => $jobs->total(),
-                'per_page' => $jobs->perPage(),
-                'current_page' => $jobs->currentPage(),
-                'last_page' => $jobs->lastPage(),
-                'next_page_url' => $jobs->nextPageUrl(),
-                'prev_page_url' => $jobs->previousPageUrl(),
-            ],
+            'pagination' => pagination_payload($jobs),
             'labels' => [
                 ...collect(self::INDEX_PAGE_LABEL_KEYS)->mapWithKeys(
                     fn (string $key) => [$key => __("jobs.$key")]

@@ -41,14 +41,7 @@ class PostController extends Controller
                 ->map(fn (Post $post) => $this->serializePost($post))
                 ->values()
                 ->all(),
-            'pagination' => [
-                'total' => $posts->total(),
-                'per_page' => $posts->perPage(),
-                'current_page' => $posts->currentPage(),
-                'last_page' => $posts->lastPage(),
-                'next_page_url' => $posts->nextPageUrl(),
-                'prev_page_url' => $posts->previousPageUrl(),
-            ],
+            'pagination' => pagination_payload($posts),
             'placeholder_image_url' => asset('images/post-placeholder.svg'),
             'labels' => [
                 ...collect(self::INDEX_PAGE_LABEL_KEYS)->mapWithKeys(

@@ -62,14 +62,7 @@ class JobController extends Controller
                 ->map(fn (Job $job): array => $this->serializeJob($job))
                 ->values()
                 ->all(),
-            'pagination' => [
-                'total' => $jobs->total(),
-                'per_page' => $jobs->perPage(),
-                'current_page' => $jobs->currentPage(),
-                'last_page' => $jobs->lastPage(),
-                'next_page_url' => $jobs->nextPageUrl(),
-                'prev_page_url' => $jobs->previousPageUrl(),
-            ],
+            'pagination' => pagination_payload($jobs),
             'filters' => [
                 'search' => $search,
                 'status' => $status?->value ?? '',

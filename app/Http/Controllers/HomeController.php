@@ -126,14 +126,7 @@ class HomeController extends Controller
                 'active_companies' => Company::whereHas('jobs', fn (Builder $jobs) => $jobs->published())->count(),
             ],
             'hasPreferences' => $hasPreferences,
-            'pagination' => [
-                'total' => $jobs->total(),
-                'per_page' => $jobs->perPage(),
-                'current_page' => $jobs->currentPage(),
-                'last_page' => $jobs->lastPage(),
-                'next_page_url' => $jobs->nextPageUrl(),
-                'prev_page_url' => $jobs->previousPageUrl(),
-            ],
+            'pagination' => pagination_payload($jobs),
             'preferenceModal' => [
                 'show' => $showPreferenceModal,
                 'categories' => ItCategory::values(),

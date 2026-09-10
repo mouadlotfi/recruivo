@@ -77,14 +77,7 @@ class JobController extends Controller
 
         return Inertia::render('Recruiter/Jobs/Index', [
             'jobs' => array_map(fn (Job $job) => $this->serializeJobSummary($job), $jobs->items()),
-            'pagination' => [
-                'total' => $jobs->total(),
-                'per_page' => $jobs->perPage(),
-                'current_page' => $jobs->currentPage(),
-                'last_page' => $jobs->lastPage(),
-                'next_page_url' => $jobs->nextPageUrl(),
-                'prev_page_url' => $jobs->previousPageUrl(),
-            ],
+            'pagination' => pagination_payload($jobs),
             'labels' => $this->labelsFor(self::INDEX_PAGE_LABEL_KEYS) + [
                 'show_more' => __('common.show_more'),
                 'loading_more' => __('common.loading_more'),

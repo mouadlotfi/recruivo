@@ -2,23 +2,15 @@
 
 namespace App\Providers;
 
-use App\Support\DynamicVite;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Foundation\Vite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        $this->app->singleton(Vite::class, DynamicVite::class);
-    }
-
     public function boot(): void
     {
         ResetPasswordNotification::createUrlUsing(fn ($user, string $token): string => route('password.reset', [
@@ -46,14 +38,5 @@ class AppServiceProvider extends ServiceProvider
         ));
         // Public form that sends mail.
         RateLimiter::for('contact', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
-        // Set default password rules (fallback for places not using StrongPassword rule)
-        Password::defaults(function () {
-            return Password::min(12)
-                ->max(64)
-                ->mixedCase()
-                ->numbers()
-                ->symbols()
-                ->uncompromised();
-        });
     }
 }

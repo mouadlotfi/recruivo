@@ -8,11 +8,6 @@ export default {
     './resources/js/**/*.vue',
     './resources/js/**/*.ts',
   ],
-  safelist: [
-    'lg:flex',
-    'lg:hidden',
-    'whitespace-nowrap',
-  ],
   theme: {
     extend: {
       fontFamily: {

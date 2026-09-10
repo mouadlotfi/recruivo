@@ -29,14 +29,7 @@ class SavedJobController extends Controller
                 fn () => $this->serializedScroll($jobs),
                 metadata: fn () => ScrollMetadata::fromPaginator($jobs),
             ),
-            'pagination' => [
-                'total' => $jobs->total(),
-                'per_page' => $jobs->perPage(),
-                'current_page' => $jobs->currentPage(),
-                'last_page' => $jobs->lastPage(),
-                'next_page_url' => $jobs->nextPageUrl(),
-                'prev_page_url' => $jobs->previousPageUrl(),
-            ],
+            'pagination' => pagination_payload($jobs),
             'labels' => [
                 'saved_jobs' => __('jobs.saved_jobs'),
                 'saved_jobs_empty_description' => __('jobs.saved_jobs_empty_description'),

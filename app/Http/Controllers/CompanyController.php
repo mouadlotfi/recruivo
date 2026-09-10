@@ -73,14 +73,7 @@ class CompanyController extends Controller
                         ->all(),
                 ))
                 ->all(),
-            'pagination' => [
-                'total' => $companies->total(),
-                'per_page' => $companies->perPage(),
-                'current_page' => $companies->currentPage(),
-                'last_page' => $companies->lastPage(),
-                'next_page_url' => $companies->nextPageUrl(),
-                'prev_page_url' => $companies->previousPageUrl(),
-            ],
+            'pagination' => pagination_payload($companies),
             'labels' => [
                 ...collect(self::INDEX_PAGE_LABEL_KEYS)->mapWithKeys(
                     fn (string $key) => [$key => __("companies.$key")]

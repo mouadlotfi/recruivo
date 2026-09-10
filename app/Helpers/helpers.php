@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Pagination\LengthAwarePaginator;
+
 if (! function_exists('localized_route')) {
     /**
      * Generate a localized route URL.
@@ -23,5 +25,24 @@ if (! function_exists('localized_route')) {
         }
 
         return route($name, $parameters);
+    }
+}
+
+if (! function_exists('pagination_payload')) {
+    /**
+     * Flat pagination payload shared by every paginated Inertia page.
+     *
+     * @return array<string, mixed>
+     */
+    function pagination_payload(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'total' => $paginator->total(),
+            'per_page' => $paginator->perPage(),
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'next_page_url' => $paginator->nextPageUrl(),
+            'prev_page_url' => $paginator->previousPageUrl(),
+        ];
     }
 }

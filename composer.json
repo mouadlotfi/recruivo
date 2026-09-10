@@ -9,7 +9,6 @@
         "laravel/sanctum": "^4.0",
         "spatie/laravel-permission": "^6.0",
         "spatie/laravel-translatable": "^6.0",
-        "guzzlehttp/guzzle": "^7.8",
         "fakerphp/faker": "^1.23",
         "inertiajs/inertia-laravel": "^3.0"
     },
