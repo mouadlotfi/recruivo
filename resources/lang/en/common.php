@@ -79,7 +79,7 @@ return [
     'pagination_showing' => 'Showing :from to :to of :total results',
     'footer_text' => '© :year Recruivo. The modern tech hiring platform.',
     'privacy_policy' => 'Privacy Policy',
-    'cookie_notice' => 'This site uses only the cookies it needs to work: your session, your language and your theme. No tracking, no advertising, no third-party requests.',
+    'cookie_notice' => 'This site uses only the cookies it needs to work: your session, your language and your theme. We also count page views with cookieless analytics running on our own servers - no advertising, no cross-site tracking, no third-party requests.',
     'cookie_acknowledge' => 'Got it',
     'terms_of_service' => 'Terms of Service',
     'legal_links' => 'Legal',

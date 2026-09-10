@@ -1,6 +1,8 @@
 {
 	frankenphp
 	order php_server before file_server
+	# analytics must be handled before the PHP catch-all
+	order handle_path before php_server
 }
 
 :80 {
@@ -37,6 +39,13 @@
 		path /composer.* /package*.json /vite.config.* /.env*
 	}
 	error @sensitive 404
+
+	# Analytics (Umami): proxied under our own origin, which keeps the browser
+	# talking only to this site - no third-party request, no CORS, and the
+	# content security policy stays at 'self'. Set UMAMI_UPSTREAM where Umami runs.
+	handle_path /u/* {
+		reverse_proxy {$UMAMI_UPSTREAM:host.docker.internal:3000}
+	}
 
 	# PHP server directive
 	php_server {

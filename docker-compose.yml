@@ -18,6 +18,10 @@ x-laravel-service: &laravel-service
   image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-latest}}
   restart: unless-stopped
   logging: *default-logging
+  # Lets Caddy proxy the analytics endpoint to a container on this host
+  # (UMAMI_UPSTREAM=host.docker.internal:<port>). Harmless when unused.
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
   working_dir: /var/www/html
   env_file:
     - path: ${APP_ENV_FILE:-.env}

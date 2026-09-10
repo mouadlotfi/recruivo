@@ -79,7 +79,7 @@ return [
     'pagination_showing' => 'Affichage de :from à :to sur :total résultats',
     'footer_text' => '© :year Recruivo. La plateforme moderne de recrutement tech.',
     'privacy_policy' => 'Politique de confidentialité',
-    'cookie_notice' => 'Ce site n\'utilise que les cookies nécessaires à son fonctionnement : votre session, votre langue et votre thème. Aucun suivi, aucune publicité, aucune requête vers des tiers.',
+    'cookie_notice' => 'Ce site n\'utilise que les cookies nécessaires à son fonctionnement : votre session, votre langue et votre thème. Nous comptons aussi les pages vues avec un outil de mesure sans cookies hébergé sur nos propres serveurs - aucune publicité, aucun suivi entre sites, aucune requête vers des tiers.',
     'cookie_acknowledge' => 'J\'ai compris',
     'terms_of_service' => 'Conditions d\'utilisation',
     'legal_links' => 'Mentions légales',

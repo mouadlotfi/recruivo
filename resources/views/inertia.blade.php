@@ -112,5 +112,9 @@
 </head>
 <body class="min-h-screen bg-stone-100 font-sans text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100">
     <x-inertia::app />
+
+    @if(config('services.umami.website_id'))
+        <script defer src="{{ config('services.umami.script_url') }}" data-website-id="{{ config('services.umami.website_id') }}"></script>
+    @endif
 </body>
 </html>
