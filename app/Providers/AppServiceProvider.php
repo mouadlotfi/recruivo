@@ -40,6 +40,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('job-apply', fn (Request $request) => Limit::perMinute(15)->by(
             $request->user()?->id ?: $request->ip()
         ));
+        // Public JSON endpoints (job/company listings, autocomplete). The search
+        // modal debounces at 180ms, so a human can burst well past one request
+        // per second; 120/min stops scripted scraping without clipping typing.
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)->by(
+            $request->user()?->id ?: $request->ip()
+        ));
         // Set default password rules (fallback for places not using StrongPassword rule)
         Password::defaults(function () {
             return Password::min(12)

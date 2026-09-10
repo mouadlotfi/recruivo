@@ -13,12 +13,17 @@ use App\Http\Controllers\Api\Recruiter\DashboardController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Candidate\ResumeController;
 use App\Models\User;
+use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
+// Public liveness/readiness probe. It is the only gate the deploy pipeline
+// trusts, so failures are reported without echoing internal exception details
+// (hostnames, credentials, SQL fragments) to anonymous callers.
 Route::get('/health', function () {
     $checks = [
         'status' => 'healthy',
@@ -29,23 +34,52 @@ Route::get('/health', function () {
     try {
         DB::connection()->getPdo();
         $checks['checks']['database'] = 'ok';
-    } catch (Throwable $e) {
+    } catch (Throwable) {
         $checks['checks']['database'] = 'failed';
+        $checks['status'] = 'unhealthy';
+    }
+
+    try {
+        $migrator = app(Migrator::class);
+        $pending = array_diff(
+            array_keys($migrator->getMigrationFiles(
+                array_merge($migrator->paths(), [database_path('migrations')])
+            )),
+            $migrator->getRepository()->getRan(),
+        );
+
+        $checks['checks']['migrations'] = $pending === [] ? 'ok' : count($pending).' pending';
+
+        if ($pending !== []) {
+            $checks['status'] = 'unhealthy';
+        }
+    } catch (Throwable) {
+        $checks['checks']['migrations'] = 'failed';
         $checks['status'] = 'unhealthy';
     }
 
     try {
         Cache::store()->get('health_check');
         $checks['checks']['cache'] = 'ok';
-    } catch (Throwable $e) {
-        $checks['checks']['cache'] = 'failed: '.$e->getMessage();
+    } catch (Throwable) {
+        $checks['checks']['cache'] = 'failed';
+        $checks['status'] = 'unhealthy';
+    }
+
+    try {
+        // Encrypt/decrypt round trip: an empty or malformed APP_KEY breaks every
+        // session cookie, signed URL and queued payload while the app still boots.
+        Crypt::decryptString(Crypt::encryptString('health_check'));
+        $checks['checks']['app_key'] = 'ok';
+    } catch (Throwable) {
+        $checks['checks']['app_key'] = 'failed';
         $checks['status'] = 'unhealthy';
     }
 
     try {
         Storage::disk('private')->exists('health_check');
         $checks['checks']['storage'] = 'ok';
-    } catch (Throwable $e) {
+    } catch (Throwable) {
         $checks['checks']['storage'] = 'failed';
         $checks['status'] = 'unhealthy';
     }
@@ -55,12 +89,17 @@ Route::get('/health', function () {
     return response()->json($checks, $statusCode);
 })->name('api.health');
 
-Route::get('/jobs', [JobController::class, 'index'])->name('api.jobs.index');
-Route::get('/jobs/{job}', [JobController::class, 'show'])->name('api.jobs.show');
-Route::get('/companies', [CompanyController::class, 'index'])->name('api.companies.index');
-Route::get('/companies/{company:slug}', [CompanyController::class, 'show'])->name('api.companies.show');
+// Company logos are <img>-sourced by every listing page and cached by Caddy, so
+// they stay outside the API throttle.
 Route::get('/companies/{slug}/logo', [CompanyLogoController::class, 'show'])->name('api.companies.logo');
-Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('api.search.suggestions');
+
+Route::middleware('throttle:api')->group(function () {
+    Route::get('/jobs', [JobController::class, 'index'])->name('api.jobs.index');
+    Route::get('/jobs/{job}', [JobController::class, 'show'])->name('api.jobs.show');
+    Route::get('/companies', [CompanyController::class, 'index'])->name('api.companies.index');
+    Route::get('/companies/{company:slug}', [CompanyController::class, 'show'])->name('api.companies.show');
+    Route::get('/search/suggestions', [SearchController::class, 'suggestions'])->name('api.search.suggestions');
+});
 
 // Authentication routes
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth-login');

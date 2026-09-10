@@ -19,9 +19,23 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Cloudflare Tunnel terminates TLS and forwards to the container with
-        // X-Forwarded-* headers. Trust it so HTTPS detection, URL generation,
-        // and client-IP rate limiting work correctly behind the tunnel.
-        $middleware->trustProxies(at: '*');
+        // X-Forwarded-* headers. Only loopback and private-range peers are
+        // proxies: trusting every peer ('*') lets an attacker choose the
+        // X-Forwarded-For value that client IPs (and the rate limiters keyed on
+        // them) are derived from.
+        $middleware->trustProxies(
+            at: ['127.0.0.1', '::1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'],
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO,
+        );
+
+        // Reject requests whose effective host is neither the application URL
+        // (and its subdomains) nor the loopback names the container healthcheck
+        // uses. Without this a spoofed Host/X-Forwarded-Host flows into
+        // password-reset links, turning a reset email into an account takeover.
+        $middleware->trustHosts(at: ['^127\.0\.0\.1$', '^localhost$', '^\[::1\]$']);
 
         $middleware->redirectGuestsTo(fn (Request $request) => route('login', [
             'locale' => $request->route('locale') ?? config('locales.default', 'en'),
