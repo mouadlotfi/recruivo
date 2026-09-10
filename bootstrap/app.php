@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureEmailIsVerified;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -46,6 +47,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ], append: [
             HandleInertiaRequests::class,
         ]);
+
+        // Appended unconditionally: the middleware itself skips local/testing,
+        // because config (and therefore the environment) is not yet loaded when
+        // this closure runs - the console kernel resolves middleware before it
+        // bootstraps the framework.
+        $middleware->web(append: [SecurityHeaders::class]);
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
