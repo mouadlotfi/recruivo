@@ -2,7 +2,7 @@
 #
 # Dump the Recruivo database and uploaded files into a timestamped directory.
 #
-#   APP_ENV_FILE=/mnt/hdd2-data/containers/recruivo/.env ./scripts/backup.sh
+#   APP_ENV_FILE=/path/to/containers/recruivo/.env ./scripts/backup.sh
 #
 # Environment:
 #   COMPOSE_PROJECT_NAME  compose project to back up (default: recruivo)

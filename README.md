@@ -164,9 +164,10 @@ Production architecture and deployment procedures are documented in detail in [d
    and the restore procedure.
 
 > Both flags are required for the same reason as the demo stack above: `APP_ENV_FILE`
-> configures the containers, `--env-file` configures compose. Deployments must also
-> point `APP_ENV_FILE` at the deployment file (`/mnt/hdd2-data/containers/recruivo/.env`
-> for CI) — see `.github/workflows/ci.yml`.
+> configures the containers, `--env-file` configures compose. Deployments read
+> `APP_ENV_FILE` from the `APP_ENV_FILE` variable on the `production`/`demo`
+> environment — the host path is deliberately not stored in this repository. See
+> `.github/workflows/ci.yml`.
 
 ---
 

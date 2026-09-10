@@ -174,7 +174,7 @@ jobs:
     env:
       APP_TAG: sha-${{ github.sha }}
       APP_PORT: ${{ vars.APP_PORT || '8085' }}
-      APP_ENV_FILE: /mnt/hdd2-data/containers/recruivo/.env
+      APP_ENV_FILE: ${{ vars.APP_ENV_FILE }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -208,11 +208,13 @@ jobs:
           # (`${DB_HOST:-mysql}`, `${COMPOSE_PROFILES}`, ...) reads the shell or an
           # `--env-file` - pass the deployment env file to both.
           COMPOSE_ENV_ARGS=()
-          if [ -f "${APP_ENV_FILE}" ]; then
-            COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
-          else
-            echo "::warning::${APP_ENV_FILE} not found; relying on the runner environment"
+          # Host-specific, so it is not a path in this repository: set the
+          # APP_ENV_FILE variable on this environment (production/demo).
+          if [ ! -f "${APP_ENV_FILE:-}" ]; then
+            echo "::error::APP_ENV_FILE is not set, or is not a file - set the APP_ENV_FILE variable on this environment"
+            exit 1
           fi
+          COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
 
           PREV_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
           PREV_TAG=""
@@ -322,7 +324,7 @@ jobs:
     env:
       APP_TAG: sha-${{ github.sha }}
       APP_PORT: '8086'
-      APP_ENV_FILE: /mnt/hdd2-data/containers/recruivo-demo/.env
+      APP_ENV_FILE: ${{ vars.APP_ENV_FILE }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -354,11 +356,13 @@ jobs:
 
           # See the production job: the deployment env file needs `--env-file` too.
           COMPOSE_ENV_ARGS=()
-          if [ -f "${APP_ENV_FILE}" ]; then
-            COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
-          else
-            echo "::warning::${APP_ENV_FILE} not found; relying on the runner environment"
+          # Host-specific, so it is not a path in this repository: set the
+          # APP_ENV_FILE variable on this environment (production/demo).
+          if [ ! -f "${APP_ENV_FILE:-}" ]; then
+            echo "::error::APP_ENV_FILE is not set, or is not a file - set the APP_ENV_FILE variable on this environment"
+            exit 1
           fi
+          COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
 
           PREV_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
           PREV_TAG=""

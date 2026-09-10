@@ -2,7 +2,7 @@
 #
 # Restore a backup produced by scripts/backup.sh.
 #
-#   APP_ENV_FILE=/mnt/hdd2-data/containers/recruivo/.env \
+#   APP_ENV_FILE=/path/to/containers/recruivo/.env \
 #       ./scripts/restore.sh --force ./backups/20260910T101500Z
 #
 # DESTRUCTIVE: the current database and uploaded files are replaced. Both

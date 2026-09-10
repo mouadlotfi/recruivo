@@ -134,14 +134,14 @@ To roll back a deployment to any previous commit, on the deployment host:
 2. From a checkout of this repository, pin the image and recreate the containers:
 
    ```bash
-   APP_ENV_FILE=/mnt/hdd2-data/containers/recruivo/.env \
+   APP_ENV_FILE=/path/to/containers/recruivo/.env \
      APP_IMAGE=ghcr.io/mouadlotfi/recruivo:sha-abc1234 APP_TAG=sha-abc1234 \
-     docker compose --env-file /mnt/hdd2-data/containers/recruivo/.env \
-     -p recruivo up -d --remove-orphans
+     docker compose --env-file "$APP_ENV_FILE" -p recruivo up -d --remove-orphans
    ```
 
-   Use `-p recruivo-demo` with `/mnt/hdd2-data/containers/recruivo-demo/.env` for
-   the Demo stack.
+   `APP_ENV_FILE` is that host's deployment env file — the same value the
+   `APP_ENV_FILE` variable holds for the `production` environment. Use
+   `-p recruivo-demo` with the Demo environment's file for the Demo stack.
 3. Docker pulls the immutable image from GHCR and recreates the containers without
    rebuilding anything.
 
@@ -159,13 +159,13 @@ automatically — schedule the script below on the host that runs the stack:
 
 ```bash
 # Dump a new backup, verify it, prune local copies older than 7 days
-APP_ENV_FILE=/mnt/hdd2-data/containers/recruivo/.env ./scripts/backup.sh
+APP_ENV_FILE=/path/to/containers/recruivo/.env ./scripts/backup.sh
 ```
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `COMPOSE_PROJECT_NAME` | `recruivo` | Compose project to back up |
-| `APP_ENV_FILE` | unset | Deployment env file (also passed as `--env-file`) |
+| `APP_ENV_FILE` | unset | Deployment env file (also passed as `--env-file`); the deployed stacks take it from the `APP_ENV_FILE` environment variable |
 | `BACKUP_DIR` | `<repo>/backups` | Output directory, gitignored |
 | `BACKUP_KEEP_DAYS` | `7` | Local retention; `0` keeps everything |
 | `BACKUP_REMOTE` | unset | `rsync` target for the offsite copy |
@@ -180,13 +180,13 @@ manages local retention.
 Suggested cron entry (daily at 02:30, before the demo reset at 03:00):
 
 ```cron
-30 2 * * * cd /path/to/recruivo && APP_ENV_FILE=/mnt/hdd2-data/containers/recruivo/.env BACKUP_REMOTE=user@backup-host:/srv/backups/recruivo ./scripts/backup.sh >> /var/log/recruivo-backup.log 2>&1
+30 2 * * * cd /path/to/recruivo && APP_ENV_FILE=/path/to/containers/recruivo/.env BACKUP_REMOTE=user@backup-host:/srv/backups/recruivo ./scripts/backup.sh >> /var/log/recruivo-backup.log 2>&1
 ```
 
 ### Restore
 
 ```bash
-APP_ENV_FILE=/mnt/hdd2-data/containers/recruivo/.env ./scripts/restore.sh --force ./backups/20260910T101500Z
+APP_ENV_FILE=/path/to/containers/recruivo/.env ./scripts/restore.sh --force ./backups/20260910T101500Z
 ```
 
 The restore is destructive and intentionally requires `--force` (like
