@@ -89,6 +89,20 @@ class RecruiterApplicationPipelineTest extends TestCase
         $response = $this->actingAs($recruiter)
             ->get('/en/recruiter/dashboard');
 
+        // TEMPORARY DIAGNOSTIC (branch only): capture the anomalous response.
+        $page = null;
+        try {
+            $page = $response->viewData('page');
+        } catch (\Throwable) {
+            $page = '<no view>';
+        }
+        if (! $response->headers->has('X-Inertia') && ! is_array($page)) {
+            fwrite(STDERR, PHP_EOL.'[DIAG] status='.$response->getStatusCode()
+                .PHP_EOL.'[DIAG] headers='.json_encode($response->headers->all())
+                .PHP_EOL.'[DIAG] viewData_page_type='.get_debug_type($page)
+                .PHP_EOL.'[DIAG] body='.substr($response->getContent(), 0, 1500).PHP_EOL);
+        }
+
         $response->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Recruiter/Dashboard', false)
