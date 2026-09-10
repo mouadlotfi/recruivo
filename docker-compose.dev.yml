@@ -1,34 +1,37 @@
 # Local development compose overlay.
 # Run with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# Every Laravel service (app, queue, scheduler, migrate) must build the local
+# `development` target: the base file points them at the private GHCR image,
+# which cannot be pulled without registry credentials.
+
+x-laravel-service-dev: &laravel-service-dev
+  image: ${APP_IMAGE:-recruivo:development}
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: development
+  volumes:
+    - .:/var/www/html
+    - vendor_data:/var/www/html/vendor
+    - app_storage:/var/www/html/storage
 
 services:
   app:
-    image: ${APP_IMAGE:-recruivo:development}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
+    <<: *laravel-service-dev
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
-    volumes:
-      - .:/var/www/html
-      - vendor_data:/var/www/html/vendor
-      - app_storage:/var/www/html/storage
 
   queue:
-    image: ${APP_IMAGE:-recruivo:development}
-    volumes:
-      - .:/var/www/html
-      - vendor_data:/var/www/html/vendor
-      - app_storage:/var/www/html/storage
+    <<: *laravel-service-dev
 
   scheduler:
-    image: ${APP_IMAGE:-recruivo:development}
-    volumes:
-      - .:/var/www/html
-      - vendor_data:/var/www/html/vendor
-      - app_storage:/var/www/html/storage
+    <<: *laravel-service-dev
+
+  # Runs migrations against the working tree, not a published image.
+  migrate:
+    <<: *laravel-service-dev
 
   mysql:
     ports:
