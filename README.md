@@ -105,13 +105,19 @@ The following demo accounts are available in development and demo environments:
 
 2. Launch isolated demo stack:
    ```bash
-   docker compose --env-file .env.demo up -d --build
+   APP_ENV_FILE=.env.demo docker compose --env-file .env.demo up -d --build
    ```
 
 3. Seed canonical demo data:
    ```bash
-   docker compose --env-file .env.demo exec app php artisan migrate:fresh --seed --force
+   APP_ENV_FILE=.env.demo docker compose --env-file .env.demo exec app php artisan migrate:fresh --seed --force
    ```
+
+> `APP_ENV_FILE` is the file the **containers** read (`env_file:`); `--env-file` only
+> feeds compose **interpolation** (`APP_PORT`, `DB_HOST`, `REDIS_HOST`,
+> `COMPOSE_PROFILES`). Pass both, as above — with `--env-file` alone the containers
+> silently fall back to `.env`, and with `env_file:` alone `DB_HOST`/`REDIS_HOST`
+> set in your deployment file are discarded.
 
 ### Demo Reset Command
 
@@ -123,7 +129,7 @@ php artisan demo:reset --force
 
 Or within Docker:
 ```bash
-docker compose --env-file .env.demo exec app php artisan demo:reset --force
+APP_ENV_FILE=.env.demo docker compose --env-file .env.demo exec app php artisan demo:reset --force
 ```
 
 *The demo reset command automatically clears application caches, re-runs fresh canonical migrations and seeders, re-syncs brand assets and sample resumes, and flushes cache stores. It is hard-blocked from running in production.*
@@ -142,12 +148,25 @@ Production architecture and deployment procedures are documented in detail in [d
    ```
 2. Build and start production stack:
    ```bash
-   docker compose --env-file .env.production up -d --build
+   APP_ENV_FILE=.env.production docker compose --env-file .env.production up -d --build
    ```
 3. Run deliberate production migrations (never fresh/seed):
    ```bash
-   docker compose --env-file .env.production run --rm --no-deps app php artisan migrate --force
+   APP_ENV_FILE=.env.production docker compose --env-file .env.production run --rm --no-deps app php artisan migrate --force
    ```
+
+4. Schedule backups **before** real data arrives — `mysql_data` and `app_storage`
+   hold the only copy of applications and resumes:
+   ```bash
+   APP_ENV_FILE=.env.production BACKUP_REMOTE=user@backup-host:/srv/backups/recruivo ./scripts/backup.sh
+   ```
+   See [Backups & Restore](docs/docker.md#7-backups--restore) for retention, cron
+   and the restore procedure.
+
+> Both flags are required for the same reason as the demo stack above: `APP_ENV_FILE`
+> configures the containers, `--env-file` configures compose. Deployments must also
+> point `APP_ENV_FILE` at the deployment file (`/mnt/hdd2-data/containers/recruivo/.env`
+> for CI) — see `.github/workflows/ci.yml`.
 
 ---
 
