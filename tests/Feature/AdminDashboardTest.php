@@ -289,7 +289,6 @@ class AdminDashboardTest extends TestCase
         ]);
 
         DB::table('failed_jobs')->insert([
-            'id' => (string) Str::uuid(),
             'uuid' => (string) Str::uuid(),
             'connection' => 'sync',
             'queue' => 'default',
@@ -365,7 +364,6 @@ class AdminDashboardTest extends TestCase
 
         foreach (range(1, 2) as $index) {
             DB::table('failed_jobs')->insert([
-                'id' => (string) Str::uuid(),
                 'uuid' => (string) Str::uuid(),
                 'connection' => 'sync',
                 'queue' => 'default',
@@ -421,7 +419,6 @@ class AdminDashboardTest extends TestCase
             'published_at' => now()->subDays(8),
         ]);
         DB::table('failed_jobs')->insert([
-            'id' => (string) Str::uuid(),
             'uuid' => (string) Str::uuid(),
             'connection' => 'sync',
             'queue' => 'default',

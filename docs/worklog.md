@@ -305,6 +305,59 @@ Tests after round 3: **331 passed / 2457 assertions**.
     both layouts render the shared `<Footer />` and that flash messages still mount
     above it.
 
+## Round 10 — Contact page, cookie consent
+
+23. **Contact page.** `/{locale}/contact` with a real form (name, email, message)
+    that emails the operator via a queued notification, plus the direct address as
+    a fallback. Public, throttled at 5/min per IP, honeypot-protected: a filled
+    honeypot returns the normal success response and sends nothing, so scripts get
+    no signal. Nothing is stored in the database. The recipient - and the address
+    the legal pages publish - now comes from one place:
+    `config('mail.contact_address')` (`MAIL_CONTACT_ADDRESS`).
+    *Evidence:* `tests/Feature/ContactPageTest.php` (4) covers rendering in both
+    locales, delivery to the configured address with the visitor as Reply-To,
+    honeypot swallowing, and validation. End to end in the dev stack: the form
+    submitted, the flash appeared, and the queue worker ran
+    `ContactMessageReceived` to **DONE** (8s SMTP handshake, zero failed jobs).
+    One clearly labelled self-test message was delivered to the configured address;
+    ignore or delete it.
+
+24. **Cookie consent that gates something real.** The banner offers Accept or
+    Necessary only, stores the choice in `recruivo:cookie_consent` for a year, and
+    can be reopened from "Cookie settings" in the footer (withdrawing consent must
+    be as easy as giving it). It gates the only third-party request the site makes:
+    the Google Fonts stylesheet and the font files it pulls from `fonts.gstatic.com`,
+    which disclose the visitor's IP address to Google. Without consent the shell
+    renders no font tags; accepting adds them without a reload (the shell publishes
+    the URL in a meta tag, so it is not duplicated in JavaScript).
+    *Evidence (headless Chrome, dev stack):* "Necessary only" produced **zero**
+    requests to Google; Accept produced the stylesheet request plus the woff2
+    fetches and hid the banner; after a reload the banner stayed hidden and the
+    server-rendered font link was present. `tests/Feature/CookieConsentTest.php`
+    (4) covers the gating and the cookie plumbing.
+
+25. **JS-set cookies were being dropped by the server.** Chasing the consent gate
+    exposed a pre-existing bug: every incoming cookie is decrypted, and a cookie
+    written by JavaScript is not encrypted, so Laravel replaced it with `null`.
+    The blade's light/dark branch reads `recruivo:theme`, which therefore always
+    fell back to dark. Both JS-set cookies are now excluded from decryption
+    (`$middleware->encryptCookies(except: [...])`), proved by requesting the shell
+    with `recruivo:theme=light` and getting `class="light"`.
+
+26. **Failed jobs were never recorded.** Found while verifying the contact mail: the
+    `failed_jobs` table declared `id` as a `char(36)` primary key with no default,
+    but the configured provider (`QUEUE_FAILED_DRIVER=database-uuids`) inserts only
+    `uuid`, so every insert died with "Field 'id' doesn't have a default value".
+    Consequences: no failed-job record, no dashboard count, and delivery failures
+    invisible. The table (provably empty - every insert was rejected) is recreated
+    with the shape the provider expects, and the admin dashboard tests no longer
+    hand-supply an id.
+    *Evidence:* before, the worker logged the SQL error and `failed_jobs` stayed
+    empty; after, a deliberately unprocessable job landed in the table and
+    `php artisan queue:failed` listed it.
+    **On the servers this needs `php artisan migrate --force`** - it is the one
+    change here that alters an existing table.
+
 ## Remaining work (agreed order, one item per session)
 
 1. ~~CSP + HSTS.~~ **done**
