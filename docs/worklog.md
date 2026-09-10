@@ -258,6 +258,53 @@ Tests after round 3: **331 passed / 2457 assertions**.
     localized anywhere in the app (the enum stores English values that the whole
     search surface matches on).
 
+## Round 9 — Privacy policy, terms of service, footer
+
+19. **Legal pages.** `/{locale}/privacy` and `/{locale}/terms`, rendered by one
+    component (`Legal/Show`) from structured copy in
+    `resources/lang/{en,fr}/legal.php` (title, summary, numbered sections), so a
+    wording change never needs a code change and both locales stay in step. The
+    controller passes `meta` explicitly, which the shell now prefers over its
+    per-page derivation, so crawlers get a real title/description/canonical.
+    *Evidence:* all four URLs 200; in Chrome the English page renders its heading,
+    "Last updated: 10 September 2026", 13 sequentially numbered sections, the
+    contact link and a back link; the French page renders 13 sections; the
+    screenshot was reviewed (styled dark-mode document, no layout or contrast
+    problems). `tests/Feature/LegalPagesTest.php` asserts both documents in both
+    locales with their metadata and numbering (2 tests, 180 assertions).
+
+    *What the documents deliberately do not invent:* the operating entity and the
+    governing law. Both are unknown to the codebase, and guessing them would put
+    false statements on a public page. The copy describes only what the platform
+    actually does (private resume storage, functional cookies only, Google Fonts,
+    Cloudflare, rate limiting, the demo reset) and uses the contact address that
+    was already published in the footer.
+
+20. **Footer.** Removed the portfolio, LinkedIn and contact links and replaced the
+    footer markup that was duplicated in both layouts with a single
+    `Components/Layout/Footer.vue` rendering the copyright plus Privacy Policy and
+    Terms of Service links in a labelled `nav`.
+    *Evidence:* DOM probe on the public site reports exactly two links
+    (`/en/privacy`, `/en/terms`), `hasExternalProfiles: false` (no `mouadlotfi.com`,
+    no `linkedin.com`, no `mailto:`), and clicking Terms navigates client-side to
+    `/en/terms` with the Terms heading rendered.
+
+21. **Development could not autoload new classes.** The development image inherited
+    the production authoritative classmap, which only knows the classes that
+    existed at build time, so a class added afterwards (`LegalController`) returned
+    500 in the dev stack - `Target class [...] does not exist`. The development
+    stage now runs `composer dump-autoload --no-scripts` (PSR-4 fallback) and
+    restores `USER root` before it, since it inherits `USER www-data` from the
+    production stage and cannot write to `vendor/`. An existing dev checkout needs
+    `docker compose exec app composer dump-autoload` once, because the
+    `vendor_data` volume keeps the vendor directory from the first build.
+
+22. **`ApplicationUiPolishTest` pinned the old footer markup** (regexes matching an
+    inline `<footer>` in both layouts). Those assertions describe incidental markup
+    placement rather than behaviour, so they were replaced with the contract that
+    both layouts render the shared `<Footer />` and that flash messages still mount
+    above it.
+
 ## Remaining work (agreed order, one item per session)
 
 1. ~~CSP + HSTS.~~ **done**

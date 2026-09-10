@@ -97,9 +97,13 @@ ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
 
 FROM production AS development
-
 ENV APP_ENV=local \
     APP_DEBUG=1
+
+# Development mounts the working tree from the host, which is owned by the
+# developer, so it runs as root: the entrypoint reconciles ownership of storage/
+# and bootstrap/cache, and PHP (and composer, below) must be able to write there.
+USER root
 
 COPY --from=composer-dev /var/www/html/vendor /var/www/html/vendor
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
@@ -107,7 +111,7 @@ COPY docker/php/php.dev.ini /usr/local/etc/php/conf.d/99-dev.ini
 
 RUN rm -f bootstrap/cache/*.php
 
-# Development mounts the working tree from the host, which is owned by the
-# developer, so it keeps running as root: the entrypoint reconciles ownership of
-# storage/ and bootstrap/cache, and PHP must be able to write there.
-USER root
+# The production vendor ships an authoritative classmap, which only knows the
+# classes that existed at build time - a class added to the bind-mounted source
+# would 500 in development. Regenerate it with PSR-4 fallback here.
+RUN composer dump-autoload --no-scripts
