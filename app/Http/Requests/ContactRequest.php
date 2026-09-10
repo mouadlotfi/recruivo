@@ -12,9 +12,8 @@ class ContactRequest extends FormRequest
     }
 
     /**
-     * The honeypot field is deliberately absent from these rules: it is checked
-     * in the controller so a bot that fills it gets the normal success response
-     * instead of a validation error that tells it what went wrong.
+     * The honeypot field is absent on purpose: the controller checks it, so a bot
+     * that fills it gets the normal success response instead of an error.
      *
      * @return array<string, array<int, string>>
      */

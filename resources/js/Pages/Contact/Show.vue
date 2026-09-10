@@ -14,7 +14,6 @@ const form = useForm({
     name: '',
     email: '',
     message: '',
-    // Honeypot, checked server-side; a real visitor never sees or fills it.
     contact_website_url: '',
 })
 
@@ -51,7 +50,7 @@ const submit = () => {
                     <p class="mt-1">{{ labels.sent_description }}</p>
                 </div>
 
-                <!-- Honeypot: hidden from people, irresistible to scripts. -->
+                <!-- Honeypot, checked server-side. -->
                 <div class="hidden" aria-hidden="true">
                     <label for="contact_website_url">Website</label>
                     <input

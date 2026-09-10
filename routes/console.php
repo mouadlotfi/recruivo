@@ -8,9 +8,8 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Scheduled tasks must be registered here: this application boots through
-// `Application::configure()`, so App\Console\Kernel (and its schedule() method)
-// is never resolved.
+// Scheduled tasks belong here: App\Console\Kernel is never resolved under
+// `Application::configure()`.
 if (config('app.demo_scheduled_reset') || app()->environment('demo')) {
     Schedule::command('demo:reset --force')
         ->dailyAt('03:00')

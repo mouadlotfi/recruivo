@@ -42,8 +42,7 @@ class ContactController extends Controller
 
     public function store(ContactRequest $request): RedirectResponse
     {
-        // Honeypot: a real visitor never sees this field. Answer exactly as if the
-        // message had been sent so scripts get no signal to iterate on.
+        // Honeypot: answer as if it had been sent, so scripts get no signal.
         if ($request->filled('contact_website_url')) {
             return back()->with('success', __('contact.sent'));
         }

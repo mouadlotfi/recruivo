@@ -64,6 +64,7 @@ COPY Caddyfile /etc/caddy/Caddyfile
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/10-app.ini
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/10-opcache.ini
 
+# setcap lets the unprivileged server below bind :80.
 RUN mkdir -p \
         storage/app/public \
         storage/app/private \
@@ -77,8 +78,6 @@ RUN mkdir -p \
     && ln -s /var/www/html/storage/app/public public/storage \
     && chown -R www-data:www-data storage bootstrap/cache /data /config \
     && chmod -R ug+rwX storage bootstrap/cache \
-    # The container publishes :80; a non-root process may only bind a privileged
-    # port with a file capability on the binary (setcap ships in the base image).
     && setcap 'cap_net_bind_service=+ep' /usr/local/bin/frankenphp
 
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
@@ -89,8 +88,7 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=15s --retries=3 \
 
 EXPOSE 80
 
-# Everything above ran as root; the server itself does not need to. Caddy writes
-# only to /data and /config, PHP only to storage/ - all chowned above.
+# The server does not need root: /data, /config and storage/ are chowned above.
 USER www-data
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
@@ -100,9 +98,8 @@ FROM production AS development
 ENV APP_ENV=local \
     APP_DEBUG=1
 
-# Development mounts the working tree from the host, which is owned by the
-# developer, so it runs as root: the entrypoint reconciles ownership of storage/
-# and bootstrap/cache, and PHP (and composer, below) must be able to write there.
+# Root here: the working tree is mounted from the host, so the entrypoint must be
+# able to fix ownership of storage/ and bootstrap/cache (and composer write vendor/).
 USER root
 
 COPY --from=composer-dev /var/www/html/vendor /var/www/html/vendor
@@ -111,7 +108,6 @@ COPY docker/php/php.dev.ini /usr/local/etc/php/conf.d/99-dev.ini
 
 RUN rm -f bootstrap/cache/*.php
 
-# The production vendor ships an authoritative classmap, which only knows the
-# classes that existed at build time - a class added to the bind-mounted source
-# would 500 in development. Regenerate it with PSR-4 fallback here.
+# Regenerate with PSR-4 fallback: the authoritative classmap only knows the classes
+# that existed at build time, so a new one would 500 in development.
 RUN composer dump-autoload --no-scripts

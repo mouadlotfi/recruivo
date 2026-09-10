@@ -6,10 +6,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * The Google Fonts stylesheet is the only third-party request the site makes, and
- * it discloses the visitor's IP address to Google - so the shell must not render
- * it unless the visitor accepted. The banner reads the stylesheet URL from the
- * shell meta tag to load the fonts without a reload.
+ * The Google Fonts stylesheet discloses the visitor's IP address to Google, so the
+ * shell renders it only for visitors who accepted the banner.
  */
 class CookieConsentTest extends TestCase
 {

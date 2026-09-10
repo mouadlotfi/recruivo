@@ -19,11 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Cloudflare Tunnel terminates TLS and forwards to the container with
-        // X-Forwarded-* headers. Only loopback and private-range peers are
-        // proxies: trusting every peer ('*') lets an attacker choose the
-        // X-Forwarded-For value that client IPs (and the rate limiters keyed on
-        // them) are derived from.
+        // Cloudflare Tunnel forwards X-Forwarded-* headers. Only loopback and
+        // private-range peers count as proxies: trusting every peer ('*') lets an
+        // attacker pick the client IP that rate limiters key on.
         $middleware->trustProxies(
             at: ['127.0.0.1', '::1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'],
             headers: Request::HEADER_X_FORWARDED_FOR
@@ -32,16 +30,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 | Request::HEADER_X_FORWARDED_PROTO,
         );
 
-        // Reject requests whose effective host is neither the application URL
-        // (and its subdomains) nor the loopback names the container healthcheck
-        // uses. Without this a spoofed Host/X-Forwarded-Host flows into
-        // password-reset links, turning a reset email into an account takeover.
+        // Reject hosts that are neither the app URL (and its subdomains) nor the
+        // loopback names the healthcheck uses: a spoofed Host reaches reset links.
         $middleware->trustHosts(at: ['^127\.0\.0\.1$', '^localhost$', '^\[::1\]$']);
 
-        // Preferences are written by JavaScript (the theme toggle and the cookie
-        // banner) and read by the shell, so they arrive unencrypted. Without this
-        // exclusion Laravel tries to decrypt them, fails, and replaces them with
-        // null - which is how the theme cookie silently stopped working.
+        // Written by JavaScript, so they arrive unencrypted: without this Laravel
+        // tries to decrypt them and replaces them with null.
         $middleware->encryptCookies(except: ['recruivo:theme', 'recruivo:cookie_consent']);
 
         $middleware->redirectGuestsTo(fn (Request $request) => route('login', [
@@ -54,10 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
         ]);
 
-        // Appended unconditionally: the middleware itself skips local/testing,
-        // because config (and therefore the environment) is not yet loaded when
-        // this closure runs - the console kernel resolves middleware before it
-        // bootstraps the framework.
+        // Appended unconditionally; the middleware itself skips local/testing.
         $middleware->web(append: [SecurityHeaders::class]);
 
         $middleware->alias([

@@ -21,9 +21,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
-// Public liveness/readiness probe. It is the only gate the deploy pipeline
-// trusts, so failures are reported without echoing internal exception details
-// (hostnames, credentials, SQL fragments) to anonymous callers.
+// Public readiness probe and the deploy pipeline's only gate: never echo exception
+// details here.
 Route::get('/health', function () {
     $checks = [
         'status' => 'healthy',

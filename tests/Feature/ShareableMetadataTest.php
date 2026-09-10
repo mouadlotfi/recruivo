@@ -9,9 +9,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Social crawlers (Facebook, LinkedIn, Slack, X) do not execute JavaScript, so
- * metadata set through Vue's <Head> is invisible to them. The shell has to render
- * title, description, canonical and Open Graph tags server-side.
+ * Social crawlers do not execute JavaScript, so metadata set through Vue's <Head>
+ * is invisible to them: the shell renders it server-side.
  */
 class ShareableMetadataTest extends TestCase
 {

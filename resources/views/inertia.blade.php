@@ -6,18 +6,15 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @php
-        // Server-rendered metadata. Social crawlers (Facebook, LinkedIn, Slack,
-        // X) do not execute JavaScript, so anything set through Vue's <Head> is
-        // invisible to them - the shell has to render it, and the Inertia page
-        // props are the only place the shell can see the page's own content.
+        // Rendered here because social crawlers do not run JavaScript, so anything
+        // set through Vue's <Head> is invisible to them.
         $pageComponent = $page['component'] ?? '';
         $pageProps = $page['props'] ?? [];
 
         $siteName = config('app.name', 'Recruivo');
         $siteDescription = 'Recruivo connects IT professionals with modern teams — engineering, cloud, security, and data roles with transparent hiring.';
 
-        // A controller may supply the metadata itself (the legal pages do); the
-        // per-component derivation below is the fallback for pages that do not.
+        // A controller may supply this itself; the derivation below is the fallback.
         $suppliedMeta = is_array($pageProps['meta'] ?? null) ? $pageProps['meta'] : [];
 
         $metaTitle = $suppliedMeta['title'] ?? null;
@@ -73,10 +70,8 @@
 
         $availableLocales = config('locales.available', []);
 
-        // The only third-party request the site makes: the Google Fonts
-        // stylesheet (and the font files it pulls from fonts.gstatic.com) tells
-        // Google the visitor's IP address, so it is loaded only after consent.
-        // CookieConsent.vue reads this URL to add the same tags without a reload.
+        // The site's only third-party request, so it waits for consent;
+        // CookieConsent.vue reads this URL to add the tags without a reload.
         $fontStylesheet = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap';
         $hasFontConsent = request()->cookie('recruivo:cookie_consent') === 'accepted';
     @endphp

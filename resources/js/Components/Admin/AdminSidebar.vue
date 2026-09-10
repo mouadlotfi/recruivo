@@ -17,9 +17,8 @@ const page = usePage<PageProps>()
 const { t } = useTranslation()
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
 
-// Below `lg` the drawer slides off-screen instead of unmounting, so its links
-// would stay in the tab order (and in the accessibility tree) while invisible.
-// On `lg` and up the drawer is always visible, so it must never be inert.
+// Below `lg` the drawer slides off-screen instead of unmounting, so its links stay
+// focusable while invisible; on `lg` and up it is always visible and never inert.
 const isDesktop = ref(false)
 let desktopQuery: MediaQueryList | undefined
 const syncViewport = () => { isDesktop.value = desktopQuery?.matches ?? false }

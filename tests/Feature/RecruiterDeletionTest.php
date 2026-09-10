@@ -15,9 +15,8 @@ use Tests\TestCase;
 
 /**
  * `jobs.recruiter_id` used cascadeOnDelete(), and `applications.job_id` cascades
- * in turn, so one admin deletion of a recruiter account destroyed every job they
- * posted along with the applications and status events of every candidate who
- * had applied. This proves the constraint now orphans jobs instead.
+ * in turn, so deleting a recruiter destroyed every job they posted along with the
+ * applications and status events on them. This proves jobs are orphaned now.
  */
 class RecruiterDeletionTest extends TestCase
 {

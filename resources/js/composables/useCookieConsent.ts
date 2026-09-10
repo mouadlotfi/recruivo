@@ -1,17 +1,14 @@
 import { ref } from 'vue'
 
 /**
- * Cookie-consent state, shared by the banner and the footer control.
- *
- * The choice is stored in a plain cookie the server can read, because the one
- * thing consent actually gates - the Google Fonts stylesheet, which discloses the
- * visitor's IP address to Google - is rendered by the shell, not by JavaScript.
+ * Cookie-consent state, shared by the banner and the footer control. The choice
+ * lives in a plain cookie the server can read: what it gates - the Google Fonts
+ * stylesheet - is rendered by the shell, not by JavaScript.
  */
 export const CONSENT_COOKIE = 'recruivo:cookie_consent'
 
 export type ConsentValue = 'accepted' | 'necessary'
 
-/** Whether the banner should be visible (no stored choice, or reopened). */
 export const consentOpen = ref(false)
 
 export function readConsent(): ConsentValue | null {
@@ -26,10 +23,6 @@ export function storeConsent(value: ConsentValue): void {
     consentOpen.value = false
 }
 
-/**
- * Withdrawing consent must be as easy as giving it: drop the stored choice and
- * ask again.
- */
 export function openConsentSettings(): void {
     document.cookie = `${CONSENT_COOKIE}=; path=/; max-age=0; SameSite=Lax`
     consentOpen.value = true

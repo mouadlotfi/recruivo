@@ -9,11 +9,9 @@ use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 /**
- * The posts index is ordered by publication date.
- *
- * `Post::scopeLatest()` used to sit in the model looking like it did that, but a
- * real Eloquent builder method wins over a local scope, so the page was ordered
- * by `created_at` - insertion order - while the code read as if it were not.
+ * `Post::scopeLatest()` looked like it ordered by publication date, but a real
+ * Eloquent builder method wins over a local scope: the page was ordered by
+ * `created_at` - insertion order - while the code read as if it were not.
  */
 class PostOrderingTest extends TestCase
 {

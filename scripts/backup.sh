@@ -39,9 +39,8 @@ compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump \
     --single-transaction --routines --triggers --events --default-character-set=utf8mb4 \
     --databases "$MYSQL_DATABASE"' | gzip -9 > "${TARGET}/database.sql.gz"
 
-# Candidate resumes, logos and private uploads. Logs and framework caches are
-# regenerable and are deliberately left out. Redis (cache/session/queue) is not
-# backed up: losing a queued notification is preferable to restoring stale state.
+# Candidate resumes, logos and private uploads; logs, caches and Redis (stale
+# sessions, expendable queue) are deliberately left out.
 echo "  - storage"
 compose exec -T app tar czf - -C /var/www/html/storage app > "${TARGET}/storage.tar.gz"
 

@@ -1,9 +1,8 @@
 # Local development compose overlay.
 # Run with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 #
-# Every Laravel service (app, queue, scheduler, migrate) must build the local
-# `development` target: the base file points them at the private GHCR image,
-# which cannot be pulled without registry credentials.
+# Every Laravel service must build the `development` target: the base file points
+# them at the private GHCR image, which cannot be pulled without credentials.
 
 x-logging: &default-logging
   driver: json-file

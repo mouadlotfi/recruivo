@@ -197,10 +197,9 @@ jobs:
           POLL_INTERVAL=3
           HTTP_PORT="${APP_PORT##*:}"
 
-          # compose `env_file:` only injects variables into the container, while
-          # interpolation (`${DB_HOST:-mysql}`, `${COMPOSE_PROFILES}`, ...) reads
-          # the shell environment or an `--env-file`. Pass the deployment env file
-          # to both, otherwise DB_HOST/REDIS_HOST set there are silently dropped.
+          # `env_file:` only injects into the container; compose interpolation
+          # (`${DB_HOST:-mysql}`, `${COMPOSE_PROFILES}`, ...) reads the shell or an
+          # `--env-file` - pass the deployment env file to both.
           COMPOSE_ENV_ARGS=()
           if [ -f "${APP_ENV_FILE}" ]; then
             COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
@@ -224,9 +223,8 @@ jobs:
           echo "Updating containers and running migrations..."
           APP_TAG="${TARGET_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans
 
-          # The `migrate` one-shot service runs concurrently with `up -d`, so the
-          # app can answer the health probe before the schema is current. Wait for
-          # its exit code first: a failed migration must never roll forward.
+          # `migrate` runs concurrently with `up -d`, so the app can answer the
+          # health probe before the schema is current: wait for its exit code.
           echo "Waiting for migrations to complete..."
           MIGRATE_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -a -q migrate 2>/dev/null || true)
           MIGRATE_EXIT=1
@@ -261,9 +259,8 @@ jobs:
 
             echo "Status (${ELAPSED}s): app=${APP_HEALTH}"
 
-            # A container is transiently unhealthy while pending migrations are
-            # applied (the probe reports 503 until the schema is current), so the
-            # overall timeout - not a single probe - decides failure.
+            # Transiently unhealthy while migrations are applied: only the
+            # overall timeout decides failure.
 
             if [ "${APP_HEALTH}" = "healthy" ]; then
               HTTP_STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:${HTTP_PORT}/api/health" 2>/dev/null || true)
@@ -337,8 +334,7 @@ jobs:
           POLL_INTERVAL=3
           HTTP_PORT="${APP_PORT##*:}"
 
-          # See the production job: `env_file:` does not feed interpolation, so the
-          # deployment env file must also be passed as an `--env-file`.
+          # See the production job: the deployment env file needs `--env-file` too.
           COMPOSE_ENV_ARGS=()
           if [ -f "${APP_ENV_FILE}" ]; then
             COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
@@ -362,9 +358,7 @@ jobs:
           echo "Updating containers and running migrations..."
           APP_TAG="${TARGET_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans
 
-          # The `migrate` one-shot service runs concurrently with `up -d`, so the
-          # app can answer the health probe before the schema is current. Wait for
-          # its exit code first: a failed migration must never roll forward.
+          # See the production job: gate on the migration container's exit code.
           echo "Waiting for migrations to complete..."
           MIGRATE_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -a -q migrate 2>/dev/null || true)
           MIGRATE_EXIT=1
@@ -399,8 +393,7 @@ jobs:
 
             echo "Status (${ELAPSED}s): app=${APP_HEALTH}"
 
-            # See the production job: transient "unhealthy" while migrations are
-            # applied is expected; only the timeout fails the deploy.
+            # See the production job: only the timeout fails the deploy.
 
             if [ "${APP_HEALTH}" = "healthy" ]; then
               HTTP_STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:${HTTP_PORT}/api/health" 2>/dev/null || true)

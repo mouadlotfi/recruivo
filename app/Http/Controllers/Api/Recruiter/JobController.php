@@ -91,14 +91,8 @@ class JobController extends Controller
     }
 
     /**
-     * Normalise a job payload before it is persisted.
-     *
-     * `$job` is null when creating and the job being updated otherwise. `status`
-     * is optional on update, so an update that omits it must leave `published_at`
-     * untouched: deriving "not published" from a missing status cleared the
-     * timestamp and silently dropped the job out of every public listing. The
-     * timestamp is stamped once, on the draft -> published transition, matching
-     * Recruiter\JobController::update().
+     * `$job` is null when creating. `status` is optional on update, so only a real
+     * draft -> published transition may touch `published_at`.
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>

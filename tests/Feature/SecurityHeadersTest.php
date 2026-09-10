@@ -8,9 +8,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 
 /**
- * Pins the browser-facing policy sent on HTML responses. A browser silently
- * enforces whatever is here, so an accidental relaxation (a wildcard, inline
- * scripts, a dropped font host that breaks typography) has to be deliberate.
+ * Pins the policy sent on HTML responses: a browser enforces whatever is here, so
+ * a wildcard, inline script, or dropped font host has to be deliberate.
  */
 class SecurityHeadersTest extends TestCase
 {

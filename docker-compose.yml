@@ -6,9 +6,8 @@ networks:
     name: recruivo_network
 name: ${COMPOSE_PROJECT_NAME:-recruivo}
 
-# Container stdout is the fastest-growing thing on the host disk. Docker's
-# default json-file driver is unbounded, so a chatty service can fill the volume
-# that also holds mysql_data and app_storage.
+# Docker's json-file driver is unbounded by default, and these logs share a disk
+# with mysql_data and app_storage.
 x-logging: &default-logging
   driver: json-file
   options:

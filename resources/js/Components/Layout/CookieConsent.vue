@@ -13,11 +13,8 @@ onMounted(() => {
     if (readConsent() === null) consentOpen.value = true
 })
 
-/**
- * The font stylesheet is the only third-party request the site makes, and the
- * shell renders it only for visitors who accepted. On acceptance we add the same
- * tags without a reload; the URL comes from the shell so it stays single-sourced.
- */
+// Adds the tags the shell withholds until consent, so accepting needs no reload.
+// The URL comes from the shell (meta[name="font-stylesheet"]), not from here.
 const enableFonts = () => {
     const url = document.querySelector<HTMLMetaElement>('meta[name="font-stylesheet"]')?.content
     if (!url || document.querySelector('link[data-consented-fonts]')) return

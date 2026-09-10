@@ -70,8 +70,6 @@ const deleteUser = () => {
     router.delete(localeUrl(`/admin/users/${selectedUser.value.id}`), { preserveScroll: true, onFinish: () => { selectedUser.value = null } })
 }
 
-// Delete-confirmation dialog: move focus into it, keep Tab inside, restore focus
-// on close. Without the trap, Tab walks into the page behind the modal.
 const deleteDialog = ref<HTMLElement | null>(null)
 const cancelButton = ref<HTMLButtonElement | null>(null)
 const focusableSelector =
