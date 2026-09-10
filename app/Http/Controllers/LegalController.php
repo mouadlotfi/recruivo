@@ -30,7 +30,8 @@ class LegalController extends Controller
         /** @var array{title: string, summary: string, sections: array<int, array{heading: string, body: string}>} $document */
         $document = __('legal.'.$key);
 
-        $contactEmail = __('legal.contact_email');
+        // Single source for the published address (see config/mail.php).
+        $contactEmail = config('mail.contact_address');
 
         return Inertia::render('Legal/Show', [
             'document' => [
@@ -42,6 +43,7 @@ class LegalController extends Controller
             'labels' => [
                 'updated' => __('legal.updated_label', ['date' => __('legal.updated_date')]),
                 'back_home' => __('legal.back_home'),
+                'contact' => __('common.contact'),
                 'questions' => __('legal.questions', ['email' => $contactEmail]),
             ],
             'contact_email' => $contactEmail,

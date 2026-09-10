@@ -46,6 +46,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)->by(
             $request->user()?->id ?: $request->ip()
         ));
+        // The contact form is public and sends mail: keep it cheap to use by hand
+        // and useless as a relay for bulk sending.
+        RateLimiter::for('contact', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
         // Set default password rules (fallback for places not using StrongPassword rule)
         Password::defaults(function () {
             return Password::min(12)

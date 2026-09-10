@@ -8,7 +8,6 @@
  * réinitialisation de la démo).
  */
 return [
-    'contact_email' => 'mouad.lotfi.work@gmail.com',
     'updated_date' => '10 septembre 2026',
     'updated_label' => 'Dernière mise à jour : :date',
     'back_home' => 'Retour à l\'accueil',
@@ -44,7 +43,7 @@ return [
             ],
             [
                 'heading' => '7. Cookies et requêtes vers des tiers',
-                'body' => 'Nous n\'utilisons ni cookie publicitaire ni cookie de mesure d\'audience, et nous n\'intégrons aucun traceur tiers. Les polices du site sont servies par Google Fonts, qui reçoit votre adresse IP et les informations de votre navigateur pour livrer les fichiers de police. Le site est diffusé via Cloudflare, qui voit nécessairement le trafic qu\'il relaie.',
+                'body' => 'Les cookies que nous déposons sont ceux dont le site a besoin pour fonctionner : un cookie de session, un jeton CSRF, et des cookies mémorisant votre langue et votre thème. Nous n\'utilisons aucun cookie publicitaire ou de mesure d\'audience et aucun traceur tiers. Les polices du site sont servies par Google Fonts, qui reçoit votre adresse IP et les informations de votre navigateur pour livrer les fichiers de police : ces requêtes ne sont effectuées que si vous les acceptez dans le bandeau de consentement, et vous pouvez modifier ou retirer ce choix à tout moment (« Gérer les cookies » dans le pied de page, ou en supprimant vos cookies). Le site est diffusé via Cloudflare, qui voit nécessairement le trafic qu\'il relaie.',
             ],
             [
                 'heading' => '8. Qui peut voir vos données',

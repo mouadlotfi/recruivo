@@ -9,6 +9,7 @@ use App\Http\Controllers\Candidate\DashboardController;
 use App\Http\Controllers\Candidate\ResumeController;
 use App\Http\Controllers\Candidate\SavedJobController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LegalController;
@@ -58,6 +59,12 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(SetLocale::c
     // Legal documents
     Route::get('/privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
     Route::get('/terms', [LegalController::class, 'terms'])->name('legal.terms');
+
+    // Contact
+    Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
+    Route::post('/contact', [ContactController::class, 'store'])
+        ->middleware('throttle:contact')
+        ->name('contact.store');
 
     // Guest routes
     Route::middleware('guest')->group(function () {

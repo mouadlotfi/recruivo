@@ -29,4 +29,11 @@ return [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Recruivo'),
     ],
+
+    /*
+     * Where messages posted on the public contact page are delivered, and the
+     * address the legal pages tell visitors to write to. Must be a monitored
+     * mailbox: it is published on the site.
+     */
+    'contact_address' => env('MAIL_CONTACT_ADDRESS', 'mouad.lotfi.work@gmail.com'),
 ];

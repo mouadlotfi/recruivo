@@ -45,12 +45,21 @@ const localeUrl = (path: string) => `/${page.props.locale}${path}`
                 <p class="text-sm text-stone-600 dark:text-stone-400">
                     {{ labels.questions }}
                 </p>
-                <a
-                    :href="`mailto:${contact_email}`"
-                    class="mt-3 inline-block font-medium text-amber-600 transition hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
-                >
-                    {{ contact_email }}
-                </a>
+                <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <a
+                        :href="`mailto:${contact_email}`"
+                        class="inline-block font-medium text-amber-600 transition hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
+                    >
+                        {{ contact_email }}
+                    </a>
+                    <span class="text-stone-400 dark:text-stone-500" aria-hidden="true">·</span>
+                    <Link
+                        :href="localeUrl('/contact')"
+                        class="inline-block font-medium text-amber-600 transition hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300"
+                    >
+                        {{ labels.contact }}
+                    </Link>
+                </div>
                 <div class="mt-6">
                     <Link
                         :href="localeUrl('/')"
