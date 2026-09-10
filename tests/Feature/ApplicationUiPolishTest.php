@@ -38,8 +38,10 @@ class ApplicationUiPolishTest extends TestCase
         $this->assertStringContainsString(':key="`${alert.kind}:${alert.message}`"', $flash);
         $this->assertStringContainsString('pointer-events-auto', $flash);
         $this->assertMatchesRegularExpression('/<FlashMessages \/>\s*<main[^>]*>/', $appLayout);
-        $this->assertMatchesRegularExpression('/<\/main>\s*<footer/', $appLayout);
-        $this->assertMatchesRegularExpression('/<\/div>\s*<FlashMessages \/>\s*<footer/', $guestLayout);
+        // The footer markup lives in a shared component now: both layouts must
+        // still render it, and the guest layout still mounts flash above it.
+        $this->assertStringContainsString('<Footer />', $appLayout);
+        $this->assertMatchesRegularExpression('/<\/div>\s*<FlashMessages \/>\s*<Footer \/>/', $guestLayout);
     }
 
     public function test_dashboard_recent_application_rows_wrap_without_truncating_primary_content(): void

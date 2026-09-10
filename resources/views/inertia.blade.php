@@ -16,29 +16,35 @@
         $siteName = config('app.name', 'Recruivo');
         $siteDescription = 'Recruivo connects IT professionals with modern teams — engineering, cloud, security, and data roles with transparent hiring.';
 
-        $metaTitle = null;
-        $metaDescription = null;
-        $metaImage = null;
-        $metaType = 'website';
+        // A controller may supply the metadata itself (the legal pages do); the
+        // per-component derivation below is the fallback for pages that do not.
+        $suppliedMeta = is_array($pageProps['meta'] ?? null) ? $pageProps['meta'] : [];
 
-        if ($pageComponent === 'Jobs/Show') {
-            $jobTitle = $pageProps['job']['title'] ?? '';
-            $jobCompany = $pageProps['job']['company']['name'] ?? null;
+        $metaTitle = $suppliedMeta['title'] ?? null;
+        $metaDescription = $suppliedMeta['description'] ?? null;
+        $metaImage = $suppliedMeta['image'] ?? null;
+        $metaType = $suppliedMeta['type'] ?? 'website';
 
-            $metaTitle = $jobTitle ?: null;
-            $metaDescription = $jobCompany
-                ? __('jobs.meta_description_with_company', ['title' => $jobTitle, 'company' => $jobCompany])
-                : null;
-            $metaImage = $pageProps['job']['company']['logo_url'] ?? null;
-        } elseif ($pageComponent === 'Companies/Show') {
-            $metaTitle = $pageProps['company']['name'] ?? null;
-            $metaDescription = $pageProps['company']['tagline'] ?? ($pageProps['company']['mission'] ?? null);
-            $metaImage = $pageProps['company']['logo_url'] ?? null;
-        } elseif ($pageComponent === 'Posts/Show') {
-            $metaTitle = $pageProps['post']['title'] ?? null;
-            $metaDescription = $pageProps['post']['excerpt'] ?? null;
-            $metaImage = $pageProps['post']['featured_image_url'] ?? null;
-            $metaType = 'article';
+        if ($metaTitle === null) {
+            if ($pageComponent === 'Jobs/Show') {
+                $jobTitle = $pageProps['job']['title'] ?? '';
+                $jobCompany = $pageProps['job']['company']['name'] ?? null;
+
+                $metaTitle = $jobTitle ?: null;
+                $metaDescription = $jobCompany
+                    ? __('jobs.meta_description_with_company', ['title' => $jobTitle, 'company' => $jobCompany])
+                    : null;
+                $metaImage = $pageProps['job']['company']['logo_url'] ?? null;
+            } elseif ($pageComponent === 'Companies/Show') {
+                $metaTitle = $pageProps['company']['name'] ?? null;
+                $metaDescription = $pageProps['company']['tagline'] ?? ($pageProps['company']['mission'] ?? null);
+                $metaImage = $pageProps['company']['logo_url'] ?? null;
+            } elseif ($pageComponent === 'Posts/Show') {
+                $metaTitle = $pageProps['post']['title'] ?? null;
+                $metaDescription = $pageProps['post']['excerpt'] ?? null;
+                $metaImage = $pageProps['post']['featured_image_url'] ?? null;
+                $metaType = 'article';
+            }
         }
 
         $metaDescription = filled($metaDescription)

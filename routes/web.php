@@ -11,6 +11,7 @@ use App\Http\Controllers\Candidate\SavedJobController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
@@ -53,6 +54,10 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(SetLocale::c
     // Blog/Post routes
     Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
     Route::get('/posts/{slug}', [PostController::class, 'show'])->name('posts.show');
+
+    // Legal documents
+    Route::get('/privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
+    Route::get('/terms', [LegalController::class, 'terms'])->name('legal.terms');
 
     // Guest routes
     Route::middleware('guest')->group(function () {
