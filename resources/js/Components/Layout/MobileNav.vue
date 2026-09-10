@@ -43,7 +43,7 @@ const explorePanelClass = 'absolute bottom-full right-0 mb-2 w-max min-w-36 over
         :aria-label="t('primary_navigation')"
         class="fixed bottom-0 left-0 right-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur-xl dark:border-stone-800 dark:bg-stone-950/95 sm:hidden"
     >
-        <div class="grid grid-cols-4 gap-1 px-2 py-2">
+        <div class="grid grid-cols-4 gap-0.5 px-2 py-2">
             <template v-if="!user">
                 <Link :href="localeUrl('/')" :class="itemClasses(localeUrl('/'))">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l9-9 9 9M4.5 9.75V21h5.25v-6h4.5v6h5.25V9.75" /></svg>
