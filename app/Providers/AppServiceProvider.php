@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Support\DynamicVite;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Vite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -11,6 +13,13 @@ use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        // Rewrites Vite's asset host to the request host, so the dev server works
+        // from a LAN address as well as localhost.
+        $this->app->singleton(Vite::class, DynamicVite::class);
+    }
+
     public function boot(): void
     {
         ResetPasswordNotification::createUrlUsing(fn ($user, string $token): string => route('password.reset', [
