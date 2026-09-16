@@ -1,6 +1,6 @@
 ARG PHP_VERSION=8.4
 ARG NODE_VERSION=22
-ARG FRANKENPHP_VERSION=1.4
+ARG FRANKENPHP_VERSION=1.12
 
 FROM node:${NODE_VERSION}-bookworm-slim AS node-builder
 
@@ -37,7 +37,7 @@ RUN composer install \
     --no-scripts \
     && composer dump-autoload --classmap-authoritative --no-scripts
 
-FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-php${PHP_VERSION}-bookworm AS php-runtime-base
+FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-php${PHP_VERSION}-trixie AS php-runtime-base
 
 RUN install-php-extensions \
     bcmath \
@@ -47,8 +47,19 @@ RUN install-php-extensions \
     opcache \
     pcntl \
     pdo_mysql \
+    pdo_pgsql \
     zip \
     redis
+
+# Database clients for spatie/laravel-backup, which shells out to them locally.
+# Debian trixie ships postgresql-client 17, matching the PostgreSQL 17 server;
+# a 15 client refuses to dump a 17 server ("server version mismatch").
+# default-mysql-client only covers the window until the PostgreSQL cutover.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        postgresql-client \
+        default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
 
