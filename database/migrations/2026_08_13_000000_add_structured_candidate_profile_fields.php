@@ -10,10 +10,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('candidate_profiles', function (Blueprint $table) {
-            $table->json('languages_data')->nullable()->after('languages');
-            $table->json('profile_links')->nullable()->after('website_url');
-            $table->json('experiences')->nullable()->after('profile_links');
-            $table->json('educations')->nullable()->after('experiences');
+            $table->jsonb('languages_data')->nullable()->after('languages');
+            $table->jsonb('profile_links')->nullable()->after('website_url');
+            $table->jsonb('experiences')->nullable()->after('profile_links');
+            $table->jsonb('educations')->nullable()->after('experiences');
         });
 
         DB::table('candidate_profiles')->orderBy('id')->each(function ($profile) {

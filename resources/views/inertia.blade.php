@@ -108,12 +108,15 @@
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
 
     @vite('resources/js/app.ts')
+
+    {{-- Umami analytics: proxied under our own origin (Caddyfile: /u/*) so the
+         browser never talks to a third party and script-src/connect-src stay at
+         'self'. Absent unless a website ID is configured. --}}
+    @if(config('services.umami.website_id'))
+        <script defer src="{{ config('services.umami.script_url') }}" data-website-id="{{ config('services.umami.website_id') }}"@if(config('services.umami.domains')) data-domains="{{ config('services.umami.domains') }}"@endif></script>
+    @endif
 </head>
 <body class="min-h-screen bg-stone-100 font-sans text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100">
     <x-inertia::app />
-
-    @if(config('services.umami.website_id'))
-        <script defer src="{{ config('services.umami.script_url') }}" data-website-id="{{ config('services.umami.website_id') }}"></script>
-    @endif
 </body>
 </html>

@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('candidate_profiles', function (Blueprint $table) {
-            $table->json('preferred_categories')->nullable()->after('educations');
+            $table->jsonb('preferred_categories')->nullable()->after('educations');
         });
     }
 

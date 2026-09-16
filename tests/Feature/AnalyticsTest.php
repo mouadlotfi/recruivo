@@ -27,7 +27,10 @@ class AnalyticsTest extends TestCase
 
     public function test_the_tracker_is_served_from_our_own_origin(): void
     {
-        config(['services.umami.website_id' => '11111111-2222-3333-4444-555555555555']);
+        config([
+            'services.umami.website_id' => '11111111-2222-3333-4444-555555555555',
+            'services.umami.domains' => null,
+        ]);
 
         $html = $this->get('/en')->assertOk()->getContent();
 
@@ -35,6 +38,21 @@ class AnalyticsTest extends TestCase
             '<script defer src="/u/script.js" data-website-id="11111111-2222-3333-4444-555555555555"></script>',
             $html
         );
+        $this->assertStringNotContainsString('data-domains', $html);
+    }
+
+    public function test_the_tracker_emits_the_configured_domain_scope(): void
+    {
+        // Per-environment because prod and the demo stack share one image but
+        // report to different websites. An unset value must not scope at all.
+        config([
+            'services.umami.website_id' => '11111111-2222-3333-4444-555555555555',
+            'services.umami.domains' => 'recruivo.work',
+        ]);
+
+        $html = $this->get('/en')->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-domains="recruivo.work"', $html);
     }
 
     public function test_the_tracker_url_stays_on_our_origin(): void

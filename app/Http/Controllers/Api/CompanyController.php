@@ -20,9 +20,9 @@ class CompanyController extends Controller
                 $search = $request->input('search');
 
                 $query->where(function ($builder) use ($search) {
-                    $builder->where('name', 'like', "%{$search}%")
-                        ->orWhere('location', 'like', "%{$search}%")
-                        ->orWhere('tagline', 'like', "%{$search}%");
+                    $builder->whereLike('name', "%{$search}%")
+                        ->orWhereLike('location', "%{$search}%")
+                        ->orWhereLike('tagline', "%{$search}%");
                 });
             })
             ->orderByDesc('jobs_count')

@@ -10,6 +10,7 @@
 #                         --env-file so DB_HOST/REDIS_HOST resolve (see README)
 #   BACKUP_DIR            where backups are written (default: <repo>/backups)
 #   BACKUP_KEEP_DAYS      prune local backups older than this (default: 7, 0 keeps all)
+#   BACKUP_STORAGE        back up uploaded files too (default: 1; 0 = database only)
 #   BACKUP_REMOTE         optional rsync target, e.g. user@host:/srv/backups/recruivo
 #
 # Restore with scripts/restore.sh.
@@ -18,6 +19,7 @@ set -euo pipefail
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-recruivo}"
 BACKUP_DIR="${BACKUP_DIR:-$(cd "$(dirname "$0")/.." && pwd)/backups}"
 BACKUP_KEEP_DAYS="${BACKUP_KEEP_DAYS:-7}"
+BACKUP_STORAGE="${BACKUP_STORAGE:-1}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 
 COMPOSE_ENV_ARGS=()
@@ -33,22 +35,53 @@ TARGET="${BACKUP_DIR}/${STAMP}"
 mkdir -p "${TARGET}"
 echo "Backing up project '${PROJECT_NAME}' into ${TARGET}"
 
-# Database. MYSQL_PWD keeps the password out of the container's process list.
-echo "  - database"
-compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump \
-    --single-transaction --routines --triggers --events --default-character-set=utf8mb4 \
-    --databases "$MYSQL_DATABASE"' | gzip -9 > "${TARGET}/database.sql.gz"
+# Database. MySQL stays the source of truth until the cutover flips
+# DB_CONNECTION in the deployment env file, so the dump follows the configured
+# connection: dumping the (still empty) PostgreSQL service in that window would
+# produce a table-less artifact that passes the checks below and then prunes the
+# last real MySQL backups. MYSQL_PWD/PGPASSWORD keep the password out of the
+# container's process list.
+DB_CONNECTION="${DB_CONNECTION:-}"
+if [ -z "${DB_CONNECTION}" ] && [ -n "${APP_ENV_FILE:-}" ] && [ -f "${APP_ENV_FILE}" ]; then
+    DB_CONNECTION="$(sed -n 's/^[[:space:]]*DB_CONNECTION=//p' "${APP_ENV_FILE}" | tr -d ' "\r' | tail -n 1)"
+fi
+DB_CONNECTION="${DB_CONNECTION:-pgsql}"
+echo "  - database (${DB_CONNECTION})"
+case "${DB_CONNECTION}" in
+    mysql*)
+        compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump \
+            --single-transaction --routines --triggers --events --default-character-set=utf8mb4 \
+            --databases "$MYSQL_DATABASE"' | gzip -9 > "${TARGET}/database.sql.gz"
+        ;;
+    *)
+        compose exec -T postgres sh -c 'PGPASSWORD="$DB_PASSWORD" exec pg_dump \
+            --username="$DB_USERNAME" --dbname="$DB_DATABASE" --no-owner --no-acl' \
+            | gzip -9 > "${TARGET}/database.sql.gz"
+        ;;
+esac
 
 # Candidate resumes, logos and private uploads; logs, caches and Redis (stale
-# sessions, expendable queue) are deliberately left out.
-echo "  - storage"
-compose exec -T app tar czf - -C /var/www/html/storage app > "${TARGET}/storage.tar.gz"
+# sessions, expendable queue) are deliberately left out. Skipped entirely with
+# BACKUP_STORAGE=0, which makes the snapshot a database-only one (restore.sh
+# then leaves the uploads on disk untouched).
+if [ "${BACKUP_STORAGE}" = "1" ]; then
+    echo "  - storage"
+    compose exec -T app tar czf - -C /var/www/html/storage app > "${TARGET}/storage.tar.gz"
+fi
 
 # Never keep a truncated or empty artifact.
 test -s "${TARGET}/database.sql.gz"
-test -s "${TARGET}/storage.tar.gz"
 gzip -t "${TARGET}/database.sql.gz"
-tar tzf "${TARGET}/storage.tar.gz" > /dev/null
+if [ "${BACKUP_STORAGE}" = "1" ]; then
+    test -s "${TARGET}/storage.tar.gz"
+    tar tzf "${TARGET}/storage.tar.gz" > /dev/null
+fi
+# Nor one that holds no schema at all: an empty dump still passes every check
+# above, and the retention prune below would then delete the usable backups.
+# awk reads to EOF, so `set -o pipefail` cannot see a SIGPIPE from an early exit.
+zcat "${TARGET}/database.sql.gz" \
+    | awk '/^(CREATE TABLE|COPY )/ { found = 1 } END { exit found ? 0 : 1 }' \
+    || { echo "Database dump contains no tables - wrong DB_CONNECTION (${DB_CONNECTION})?" >&2; exit 1; }
 echo "  - verified ($(du -sh "${TARGET}" | cut -f1))"
 
 if [ "${BACKUP_KEEP_DAYS}" -gt 0 ]; then

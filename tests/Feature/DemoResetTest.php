@@ -28,8 +28,8 @@ class DemoResetTest extends TestCase
     public function test_demo_reset_refuses_to_run_against_production_named_database(): void
     {
         App::detectEnvironment(fn () => 'demo');
-        Config::set('database.connections.mysql.database', 'recruivo_production_db');
-        Config::set('database.default', 'mysql');
+        Config::set('database.connections.pgsql.database', 'recruivo_production_db');
+        Config::set('database.default', 'pgsql');
 
         $exitCode = Artisan::call('demo:reset', ['--force' => true]);
 
@@ -42,8 +42,8 @@ class DemoResetTest extends TestCase
     public function test_demo_reset_command_executes_steps_in_demo_environment(): void
     {
         App::detectEnvironment(fn () => 'demo');
-        Config::set('database.connections.sqlite.database', ':memory:');
-        Config::set('database.default', 'sqlite');
+        Config::set('database.connections.pgsql.database', 'recruivo_test');
+        Config::set('database.default', 'pgsql');
 
         $command = $this->createPartialMock(DemoReset::class, ['call', 'option']);
         $outputStyle = new OutputStyle(new ArrayInput([]), new NullOutput);

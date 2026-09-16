@@ -10,7 +10,7 @@ Recruivo uses a single canonical Docker Compose architecture (`docker-compose.ym
 Host / Traefik Reverse Proxy (:80)
         │
       app (FrankenPHP: Caddy + PHP 8.4 :80)
-       ├── mysql (:3306)
+       ├── postgres (:5432)
        ├── redis (:6379)
        ├── queue worker (`artisan queue:work`)
        ├── scheduler (`artisan schedule:work`)
@@ -19,9 +19,14 @@ Host / Traefik Reverse Proxy (:80)
 
 ### Services
 - **`app`**: Unified FrankenPHP runtime serving static assets and executing PHP 8.4 requests in-process via embedded Caddy web server.
-- **`mysql`**: MySQL 8.0 database engine.
+- **`postgres`**: PostgreSQL 17 database engine.
+- **`mysql`**: MySQL 8.0, retained while it is still the source of truth (and as
+  the rollback path) until the `mysql` service is deleted; it starts on every
+  `up` under the `infra` profile, so the database serving the app depends on
+  `DB_CONNECTION`, not on which containers are running.
 - **`redis`**: Redis 7 cache, session, and queue backend.
 - **`queue`**: Background queue worker processing asynchronous jobs.
+- **`backup`**: Scheduled archiver for the database dump (see [§7](#7-backups--restore)); runs under the `infra` profile, like `postgres`/`mysql`/`redis`.
 - **`scheduler`**: Executes Laravel scheduled tasks.
 - **`migrate`**: Runs one-shot database migrations on stack startup.
 
@@ -38,7 +43,8 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 - **Web Application**: `http://localhost:8000`
 - **Vite HMR Server**: `http://localhost:5173`
-- **MySQL Direct Access**: `localhost:3306` (User: `recruivo` / Pass: `secret`)
+- **PostgreSQL Direct Access**: `localhost:5432` (User: `recruivo` / Pass: `secret`)
+- **MySQL Direct Access** (legacy, still serving until the cutover): `localhost:3306`
 - **Redis Direct Access**: `localhost:6379`
 
 ### Development Commands
@@ -67,7 +73,7 @@ Production uses the exact same canonical `docker-compose.yml` file, parameterize
 
 ### Environment file
 Compose reads container environment from `env_file: ${APP_ENV_FILE:-.env}` but
-resolves `${DB_HOST:-mysql}` / `${REDIS_HOST:-redis}` / `${COMPOSE_PROFILES}` from
+resolves `${DB_HOST:-postgres}` / `${REDIS_HOST:-redis}` / `${COMPOSE_PROFILES}` from
 compose interpolation, which only sees the shell environment or an `--env-file`.
 Export both when operating a deployment manually:
 
@@ -77,7 +83,7 @@ APP_ENV_FILE=/path/to/production.env docker compose --env-file /path/to/producti
 
 CI does the same (`APP_ENV_FILE` + `--env-file` in `.github/workflows/ci.yml`).
 Without it, `DB_HOST`/`REDIS_HOST` set in the deployment file are discarded and the
-`infra` profile (mysql/redis containers) is never enabled.
+`infra` profile (postgres/redis containers) is never enabled.
 
 Deployments are triggered by GitHub Actions on every push to `main` (see
 `.github/workflows/ci.yml`); a manual operation uses the same compose invocation
@@ -153,55 +159,120 @@ the restore procedure below when a release has already changed data.
 
 ## 7. Backups & Restore
 
-`mysql_data` (the database) and `app_storage` (candidate resumes, logos, private
-uploads) hold the only copy of the platform's data. Neither is backed up
-automatically — schedule the script below on the host that runs the stack:
+Backups are taken by [spatie/laravel-backup](https://spatie.be/docs/laravel-backup)
+from inside the application, on the `scheduler` service. Each run writes one
+encrypted zip holding the database dump, the uploaded files, and the deployment
+env file - everything a restore onto a fresh host needs.
+
+| Command | When | Purpose |
+|---|---|---|
+| `backup:clean` | 01:00 | Prunes by age: all backups for 7 days, then daily for 16 days, weekly for 8 weeks, monthly for 4 months, yearly for 2 years |
+| `backup:run` | 01:30 | Dumps the database, zips the files, verifies the archive, copies it to the `backups` disk |
+| `backup:monitor` | 03:00 | Fails when the newest backup is older than a day. This is the only thing that notices a backup which silently stopped running |
+
+All three are defined in `routes/console.php`, next to the Demo environment's
+nightly `demo:reset`.
+
+### Two off switches
+
+A backup is skipped when either of these is true:
+
+- `BACKUP_ENABLED=false` - the explicit switch. The Demo environment sets it,
+  because `demo:reset` rebuilds that database every night.
+- `APP_ENV=demo` - the environment guard, so a missing flag cannot start backing
+  up a throwaway database.
+
+### Configuration
+
+| Variable | Purpose |
+|---|---|
+| `BACKUP_ENABLED` | `false` disables the scheduled commands |
+| `BACKUP_DIR` | Host directory bind-mounted to `/backups`. **Set it absolute in deployment** - the relative default resolves inside the CI runner's checkout, which is wiped on every deploy |
+| `BACKUP_DISK_ROOT` | Where inside the container laravel-backup writes; must match the mount (`/backups`) |
+| `BACKUP_ARCHIVE_PASSWORD` | Encrypts every archive. **Keep a copy in a password manager**: the archive contains the deployment env file, so losing this password loses the copy of `APP_KEY` that was taken alongside the data |
+| `BACKUP_ENV_FILE` | The deployment env file, mounted read-only at `/etc/recruivo/deployment.env`. Compose `env_file` injects variables but never puts the file itself in the container, so it has to be mounted to be included. Leave it empty and it is skipped |
+
+Retention and the file list live in `config/backup.php`. The included files are
+deliberately **not** `base_path()`, which is the package default and would put
+`app/`, `config/` and `public/build` into every archive. They are the uploads
+(`storage/app/private` for candidate resumes, `storage/app/public` for company
+logos) plus the env file.
+
+### The backup directory must be writable by the application user
+
+The app runs as `www-data` (uid 33) and creates `/backups/<APP_NAME>/` itself, so
+the host directory must be writable by that uid rather than by the operator:
 
 ```bash
-# Dump a new backup, verify it, prune local copies older than 7 days
-APP_ENV_FILE=/path/to/containers/recruivo/.env ./scripts/backup.sh
+docker run --rm -v /mnt/hdd2-data/backups/recruivo:/d alpine chown 33:1000 /d
+docker run --rm -v /mnt/hdd2-data/backups/recruivo:/d alpine chmod 775 /d
 ```
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `COMPOSE_PROJECT_NAME` | `recruivo` | Compose project to back up |
-| `APP_ENV_FILE` | unset | Deployment env file (also passed as `--env-file`); the deployed stacks take it from the `APP_ENV_FILE` environment variable |
-| `BACKUP_DIR` | `<repo>/backups` | Output directory, gitignored |
-| `BACKUP_KEEP_DAYS` | `7` | Local retention; `0` keeps everything |
-| `BACKUP_REMOTE` | unset | `rsync` target for the offsite copy |
+`33:1000` - owner `www-data`, group the operator - lets both write. A restore
+cannot extract beside the archive for the same reason, so it uses the system temp
+directory unless `RESTORE_WORK_DIR` says otherwise.
 
-Each run writes `<BACKUP_DIR>/<UTC timestamp>/{database.sql.gz,storage.tar.gz}`,
-verifies both archives (`gzip -t`, `tar tzf`, non-empty) and fails loudly if either
-is unusable. **Set `BACKUP_REMOTE`**: without it every backup lives on the same
-disk as the database it protects, which does not survive disk loss. Prune the
-remote copies according to your own offsite retention policy — the script only
-manages local retention.
+### Archive layout
 
-Suggested cron entry (daily at 02:30, before the demo reset at 03:00):
+One zip per run, at `<BACKUP_DIR>/<APP_NAME>/recruivo-<date>.zip`:
 
-```cron
-30 2 * * * cd /path/to/recruivo && APP_ENV_FILE=/path/to/containers/recruivo/.env BACKUP_REMOTE=user@backup-host:/srv/backups/recruivo ./scripts/backup.sh >> /var/log/recruivo-backup.log 2>&1
 ```
+db-dumps/postgresql-recruivo_db.sql    the dump (mysqldump or pg_dump, per DB_CONNECTION)
+etc/recruivo/deployment.env            the deployment env file
+var/www/html/storage/app/...           candidate resumes, company logos
+```
+
+`verify_backup` opens the zip and confirms it holds files before the run claims
+success, and `backup:run` exits non-zero on failure so the schedule records it.
 
 ### Restore
 
+spatie/laravel-backup v10 has no restore command, so `scripts/restore.sh` does it.
+It accepts either a spatie archive (`.zip`) or a `scripts/backup.sh` directory:
+
 ```bash
-APP_ENV_FILE=/path/to/containers/recruivo/.env ./scripts/restore.sh --force ./backups/20260910T101500Z
+APP_ENV_FILE=/path/to/containers/recruivo/.env \
+  ./scripts/restore.sh --force /mnt/hdd2-data/backups/recruivo/recruivo-2026-09-16-10-59-06.zip
 ```
 
-The restore is destructive and intentionally requires `--force` (like
-`demo:reset`). It verifies both artifacts first, then recreates the database
-schema the way the MySQL image created it (so table collation does not silently
-change), restores the uploaded files, and runs `php artisan migrate --force` so
-the schema matches the running image. Restart the stack afterwards:
+A `.zip` is extracted to a temporary directory and normalised into the directory
+layout the script works with. The restore is destructive and requires `--force`
+(like `demo:reset`). It verifies the dump before deleting anything, then drops and
+recreates the database, reloads the dump, restores the uploaded files, and runs
+`php artisan migrate --force` so the schema matches the running image.
+
+PostgreSQL refuses to drop a database that another session is connected to, so the
+script terminates those sessions first (an in-flight request, a queue worker, a
+concurrent `pg_dump`). Nothing has been dropped when that step fails, but stopping
+`app queue scheduler` before a restore avoids it. Restart the stack afterwards:
 
 ```bash
 docker compose -p recruivo restart app queue scheduler
 ```
 
+The env file inside the archive is **not** applied automatically. It is there so a
+restore onto a fresh host has the `APP_KEY` and the database credentials; compare
+it with the target's env file by hand.
+
 Redis is intentionally excluded: it holds cache, sessions and the queue, all of
-which are expendable compared to the data above. A restore therefore logs every
-user out and may drop notifications that were still queued.
+which are expendable next to the data above. A restore therefore logs every user
+out and may drop notifications that were still queued.
+
+### Offsite copies
+
+The archive sits on the same filesystem as the database it protects, so on its own
+it does not survive disk loss. `docker-compose.yml` keeps an
+[offen/docker-volume-backup](https://github.com/offen/docker-volume-backup)
+service (pinned to `v2.49.0`) for that, under a profile production does **not**
+enable:
+
+```bash
+COMPOSE_PROFILES=infra,offsite docker compose up -d backup
+```
+
+Point it at the archive directory and give it an SSH or S3 destination. It carries
+its own SSH client, which matters because neither host has `rsync` installed. Its
+pruning is prefix-scoped, so set `BACKUP_PRUNING_PREFIX` to `recruivo-`.
 
 ---
 
@@ -275,7 +346,7 @@ allow-list, so dropping a font host or adding a wildcard has to be deliberate.
 
 Every service in both compose files uses `json-file` with `max-size: 10m` and
 `max-file: 3`. Docker's default is unbounded, and these logs live on the same
-disk as `mysql_data` and `app_storage` - a crash-looping worker or a noisy query
+disk as `postgres_data` and `app_storage` - a crash-looping worker or a noisy query
 log would otherwise fill it and take the database down with it.
 
 The in-container Laravel log rotates too: the `stack` channel writes to the

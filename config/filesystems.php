@@ -36,6 +36,16 @@ return [
             'throw' => false,
         ],
 
+        /*
+         * Backup archives. The root is bind-mounted from the host so artifacts
+         * survive container rebuilds and stay readable without Docker.
+         */
+        'backups' => [
+            'driver' => 'local',
+            'root' => env('BACKUP_DISK_ROOT', storage_path('app/backups')),
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

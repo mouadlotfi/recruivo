@@ -17,14 +17,14 @@ class JobController extends Controller
 
         if ($search = $request->input('search')) {
             $query->where(function ($builder) use ($search) {
-                $builder->where('title', 'like', "%{$search}%")
-                    ->orWhere('location', 'like', "%{$search}%")
-                    ->orWhere('category', 'like', "%{$search}%");
+                $builder->whereLike('title', "%{$search}%")
+                    ->orWhereLike('location', "%{$search}%")
+                    ->orWhereLike('category', "%{$search}%");
             });
         }
 
         if ($location = $request->input('location')) {
-            $query->where('location', 'like', "%{$location}%");
+            $query->whereLike('location', "%{$location}%");
         }
 
         if ($category = $request->input('category')) {

@@ -7,6 +7,11 @@ return [
         // content security policy keeps script-src/connect-src at 'self'.
         'website_id' => env('UMAMI_WEBSITE_ID'),
         'script_url' => env('UMAMI_SCRIPT_URL', '/u/script.js'),
+        // Comma-delimited hostnames the tracker may run on (data-domains). Left
+        // empty by default so every environment tracks; the deployed stacks set
+        // their own host (recruivo.work / demo.recruivo.work) to keep staging
+        // hosts from reporting into production.
+        'domains' => env('UMAMI_DOMAINS'),
     ],
 
     'mailgun' => [

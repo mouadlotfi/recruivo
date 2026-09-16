@@ -35,6 +35,23 @@ class LoginTest extends TestCase
         $response->assertJsonStructure(['user', 'token']);
     }
 
+    public function test_login_matches_email_case_insensitively(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'Mixed.Case@Example.com',
+        ]);
+
+        $user->assignRole('Candidate');
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'mixed.case@example.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('user.id', $user->id);
+    }
+
     public function test_login_fails_with_invalid_password(): void
     {
         $user = User::factory()->create([

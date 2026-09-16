@@ -59,10 +59,13 @@ class PostController extends Controller
      */
     public function show(string $locale, string $slug)
     {
-        // Find post by localized slug using JSON query for better performance.
+        // The JSON path is interpolated, not bound: {locale} is constrained to en|fr
+        // by the route group in routes/web.php. The single arrow is Laravel's JSON
+        // syntax on both drivers: MySQL renders json_unquote(json_extract(...)),
+        // PostgreSQL renders "slug"->>'en'.
         $post = Post::published()
             ->with('user')
-            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(slug, '$.{$locale}')) = ?", [$slug])
+            ->where("slug->{$locale}", $slug)
             ->first();
 
         if (! $post) {

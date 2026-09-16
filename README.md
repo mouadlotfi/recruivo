@@ -69,7 +69,7 @@ The following demo accounts are available in development and demo environments:
 ## Quick Start (Local Development)
 
 ### Prerequisites
-- Docker & Docker Compose **or** PHP 8.3+, Composer, Node.js 20+, Bun, MySQL 8, Redis 7
+- Docker & Docker Compose **or** PHP 8.3+, Composer, Node.js 20+, Bun, PostgreSQL 17, Redis 7
 
 ### Local Setup with Docker (Recommended)
 
@@ -155,7 +155,7 @@ Production architecture and deployment procedures are documented in detail in [d
    APP_ENV_FILE=.env.production docker compose --env-file .env.production run --rm --no-deps app php artisan migrate --force
    ```
 
-4. Schedule backups **before** real data arrives — `mysql_data` and `app_storage`
+4. Schedule backups **before** real data arrives — `postgres_data` and `app_storage`
    hold the only copy of applications and resumes:
    ```bash
    APP_ENV_FILE=.env.production BACKUP_REMOTE=user@backup-host:/srv/backups/recruivo ./scripts/backup.sh

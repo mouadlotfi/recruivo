@@ -26,16 +26,16 @@ class JobController extends Controller
         if ($search !== '') {
             $query->where(function (Builder $jobs) use ($search): void {
                 $jobs
-                    ->where('title', 'like', "%{$search}%")
-                    ->orWhere('location', 'like', "%{$search}%")
-                    ->orWhere('category', 'like', "%{$search}%")
+                    ->whereLike('title', "%{$search}%")
+                    ->orWhereLike('location', "%{$search}%")
+                    ->orWhereLike('category', "%{$search}%")
                     ->orWhereHas('company', function (Builder $company) use ($search): void {
-                        $company->where('name', 'like', "%{$search}%");
+                        $company->whereLike('name', "%{$search}%");
                     })
                     ->orWhereHas('recruiter', function (Builder $recruiter) use ($search): void {
                         $recruiter
-                            ->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
+                            ->whereLike('name', "%{$search}%")
+                            ->orWhereLike('email', "%{$search}%");
                     });
             });
         }

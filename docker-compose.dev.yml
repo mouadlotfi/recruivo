@@ -42,6 +42,10 @@ services:
     ports:
       - "${DB_FORWARD_PORT:-3306}:3306"
 
+  postgres:
+    ports:
+      - "${POSTGRES_FORWARD_PORT:-5432}:5432"
+
   redis:
     ports:
       - "${REDIS_FORWARD_PORT:-6379}:6379"

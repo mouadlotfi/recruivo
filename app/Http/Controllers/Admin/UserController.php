@@ -16,11 +16,11 @@ class UserController extends Controller
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
+                $q->whereLike('name', "%{$search}%")
+                    ->orWhereLike('email', "%{$search}%")
+                    ->orWhereLike('phone', "%{$search}%")
                     ->orWhereHas('company', function ($companyQuery) use ($search) {
-                        $companyQuery->where('name', 'like', "%{$search}%");
+                        $companyQuery->whereLike('name', "%{$search}%");
                     });
             });
         }
@@ -31,7 +31,10 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->latest()->paginate(20)->withQueryString();
+        // id breaks ties on created_at: without it the row order (and therefore
+        // page boundaries) is whatever the engine returns, which differs per
+        // driver once rows share a second.
+        $users = $query->latest()->latest('id')->paginate(20)->withQueryString();
 
         return Inertia::render('Admin/Users', [
             'users' => $users->getCollection()->map(fn (User $user): array => [

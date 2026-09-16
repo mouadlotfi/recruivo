@@ -75,7 +75,7 @@ class SmartSearchService
             ->with('company')
             ->withSavedStateFor(auth()->user())
             ->when($remoteType, fn ($builder) => $builder->where('remote_type', $remoteType))
-            ->when($location, fn ($builder) => $builder->where('location', 'like', '%'.$location.'%'))
+            ->when($location, fn ($builder) => $builder->whereLike('location', '%'.$location.'%'))
             ->latest('published_at')
             ->limit($this->limit('jobs'));
 
@@ -100,7 +100,7 @@ class SmartSearchService
     {
         return Company::query()
             ->withCount('jobs')
-            ->when($location, fn ($builder) => $builder->where('location', 'like', '%'.$location.'%'))
+            ->when($location, fn ($builder) => $builder->whereLike('location', '%'.$location.'%'))
             ->latest()
             ->limit($this->limit('companies'))
             ->get()

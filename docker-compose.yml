@@ -27,12 +27,22 @@ x-laravel-service: &laravel-service
     - path: ${APP_ENV_FILE:-.env}
       required: false
   environment:
-    DB_HOST: ${DB_HOST:-mysql}
+    DB_HOST: ${DB_HOST:-postgres}
     REDIS_HOST: ${REDIS_HOST:-redis}
   volumes:
     - app_storage:/var/www/html/storage
+    # spatie/laravel-backup writes its archives to /backups and includes the
+    # deployment env file. That file must be mounted because compose `env_file`
+    # injects variables and never places the file itself in the container.
+    # Set both to absolute paths in deployment: a relative default resolves
+    # inside the CI runner's checkout, which is wiped on every deploy.
+    - ${BACKUP_DIR:-./backups}:/backups
+    - ${APP_ENV_FILE:-.env}:/etc/recruivo/deployment.env:ro
   depends_on:
     mysql:
+      condition: service_healthy
+      required: false
+    postgres:
       condition: service_healthy
       required: false
     redis:
@@ -80,6 +90,63 @@ services:
       retries: 36
       start_period: 3m
 
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["infra"]
+    networks:
+      default:
+        aliases:
+          - postgres
+    env_file:
+      - path: ${APP_ENV_FILE:-.env}
+        required: false
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-recruivo_db}
+      POSTGRES_USER: ${DB_USERNAME:-recruivo}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 30s
+
+  backup:
+    image: offen/docker-volume-backup:v2.49.0
+    restart: unless-stopped
+    logging: *default-logging
+    # Deliberately NOT under the `infra` profile that production enables: backups
+    # are taken by spatie/laravel-backup in the `scheduler` service. This service
+    # is kept as the ready-made offsite path (SSH/S3 destinations, GPG, pruning)
+    # for when a copy has to leave this host. Enable it with
+    # COMPOSE_PROFILES=infra,offsite and point it at the spatie archive directory.
+    profiles: ["offsite"]
+    environment:
+      BACKUP_CRON_EXPRESSION: ${BACKUP_CRON_EXPRESSION:-30 3 * * *}
+      BACKUP_FILENAME: ${BACKUP_FILENAME:-recruivo-db-%Y-%m-%dT%H-%M-%S.{{ .Extension }}}
+      BACKUP_PRUNING_PREFIX: ${BACKUP_PRUNING_PREFIX:-recruivo-db-}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_COMPRESSION: ${BACKUP_COMPRESSION:-gz}
+      GPG_PASSPHRASE: ${BACKUP_GPG_PASSPHRASE:-}
+      NOTIFICATION_URLS: ${BACKUP_NOTIFICATION_URLS:-}
+      SSH_HOST_NAME: ${BACKUP_SSH_HOST:-}
+      SSH_PORT: ${BACKUP_SSH_PORT:-22}
+      SSH_USER: ${BACKUP_SSH_USER:-}
+      SSH_REMOTE_PATH: ${BACKUP_SSH_PATH:-}
+      AWS_S3_BUCKET_NAME: ${BACKUP_S3_BUCKET:-}
+      AWS_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      AWS_ENDPOINT: ${BACKUP_S3_ENDPOINT:-s3.amazonaws.com}
+    volumes:
+      - ${BACKUP_STAGING_DIR:-./backups/staging}:/backup/db:ro
+      - ${BACKUP_ARCHIVE_DIR:-./backups/archive}:/archive
+      - ${BACKUP_SSH_KEY_DIR:-./backups/ssh}:/root/.ssh:ro
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -123,6 +190,7 @@ services:
       disable: true
 volumes:
   mysql_data:
+  postgres_data:
   redis_data:
   app_storage:
 

@@ -10,7 +10,8 @@
         "spatie/laravel-permission": "^6.0",
         "spatie/laravel-translatable": "^6.0",
         "fakerphp/faker": "^1.23",
-        "inertiajs/inertia-laravel": "^3.0"
+        "inertiajs/inertia-laravel": "^3.0",
+        "spatie/laravel-backup": "^10.0"
     },
     "require-dev": {
         "laravel/pint": "^1.13",

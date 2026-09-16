@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
 
             // Translatable fields stored as JSON
-            $table->json('title');
-            $table->json('slug');
-            $table->json('content');
+            $table->jsonb('title');
+            $table->jsonb('slug');
+            $table->jsonb('content');
 
             // Non-translatable fields
             $table->string('featured_image')->nullable();
