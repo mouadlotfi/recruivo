@@ -385,3 +385,40 @@ If a future base image change drops the file capability, the container fails fas
 with `bind: permission denied` on :80 - the healthcheck never goes green and the
 deploy rolls back. In that case either re-add the capability or move the internal
 port to 8080 and update the compose port mapping and both healthchecks.
+
+### /tmp is a tmpfs, not the image's directory
+
+Every application service, plus `mysql` and `postgres`, mounts a tmpfs over `/tmp`
+with an explicit mode:
+
+```yaml
+    tmpfs:
+      - /tmp:mode=1777
+```
+
+This is not decoration. `/tmp` has to be world-writable, and on a host where
+containerd runs **rootless** it is not: image layers are extracted owned by that
+user (uid 1000) with mode 775 instead of `root:root 1777`. MySQL 8 then aborts at
+startup -
+
+```
+[ERROR] [MY-012576] [InnoDB] Unable to create temporary file inside "/tmp"; errno: 13
+```
+
+- the healthcheck never goes green, and the workflow rolls back. PHP fails the
+same way one step later, when a candidate uploads a resume.
+
+An explicit `mode` makes the stack independent of how the host extracts layers.
+The short form `--tmpfs /tmp` inherits the host's default and reproduces the same
+775, so the mode is not optional.
+
+Diagnose a host with:
+
+```bash
+docker run --rm --entrypoint sh mysql:8.0 -c 'stat -c "%u:%g mode=%a" /tmp'
+# good: 0:0 mode=1777        bad: 1000:1000 mode=775
+ls -ld /mnt/hdd2-data/containerd    # owner 1000 means rootless containerd
+```
+
+The real fix is host-side: run containerd as root, or disable the containerd image
+store so layers extract as root. The tmpfs keeps the stack correct meanwhile.

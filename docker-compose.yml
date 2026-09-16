@@ -18,6 +18,12 @@ x-laravel-service: &laravel-service
   image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-latest}}
   restart: unless-stopped
   logging: *default-logging
+  # /tmp must be explicitly world-writable. On the deploy host containerd runs
+  # rootless, so image layers are extracted owned by its user with mode 775 and
+  # the image's /tmp stops being 1777 - PHP then cannot write upload temp files.
+  # An explicit mode makes the stack independent of how the host extracts layers.
+  tmpfs:
+    - /tmp:mode=1777
   # Lets Caddy proxy the analytics endpoint to a container on this host
   # (UMAMI_UPSTREAM=host.docker.internal:<port>). Harmless when unused.
   extra_hosts:
@@ -69,6 +75,10 @@ services:
     restart: unless-stopped
     logging: *default-logging
     profiles: ["infra"]
+    # InnoDB creates its temporary files in /tmp and aborts at startup when that
+    # directory is not world-writable. See the note on the service anchor.
+    tmpfs:
+      - /tmp:mode=1777
     networks:
       default:
         aliases:
@@ -95,6 +105,10 @@ services:
     restart: unless-stopped
     logging: *default-logging
     profiles: ["infra"]
+    # PostgreSQL sorts and hashes large results through /tmp. See the note on the
+    # service anchor for why its mode cannot be relied on from the image.
+    tmpfs:
+      - /tmp:mode=1777
     networks:
       default:
         aliases:
