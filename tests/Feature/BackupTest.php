@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schedule as ScheduleFacade;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
@@ -95,6 +97,34 @@ class BackupTest extends TestCase
         $this->assertSame(['backups'], config('backup.backup.destination.disks'));
         $this->assertSame('local', config('filesystems.disks.backups.driver'));
         $this->assertNotEmpty(config('filesystems.disks.backups.root'));
+    }
+
+    public function test_the_backups_disk_writes_archives_the_deploy_host_can_read(): void
+    {
+        // Archives land in a `<backup name>/` subdirectory, and Flysystem creates
+        // directories 0700 by default. The directory then belongs to the
+        // container's www-data, and the host's operator - a different user with a
+        // different group - cannot list a single archive without sudo. The mode
+        // on disk is what decides that, so this writes for real rather than
+        // asserting the config that is meant to produce it.
+        $root = storage_path('framework/testing/backups-disk');
+
+        File::deleteDirectory($root);
+        Config::set('filesystems.disks.backups.root', $root);
+        Storage::forgetDisk('backups');
+
+        $disk = Storage::disk('backups');
+        $disk->put('Recruivo/archive.zip', 'contents');
+
+        $directory = dirname($disk->path('Recruivo/archive.zip'));
+        $archive = $disk->path('Recruivo/archive.zip');
+        clearstatcache();
+
+        // The 0005 / 0004 bits are the ones the operator outside www-data needs.
+        $this->assertSame(0005, fileperms($directory) & 0005, 'The archive directory is not traversable by the host operator.');
+        $this->assertSame(0004, fileperms($archive) & 0004, 'The archive is not readable by the host operator.');
+
+        File::deleteDirectory($root);
     }
 
     public function test_the_mysql_connection_is_fully_defined(): void

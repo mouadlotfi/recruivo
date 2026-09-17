@@ -39,10 +39,24 @@ return [
         /*
          * Backup archives. The root is bind-mounted from the host so artifacts
          * survive container rebuilds and stay readable without Docker.
+         *
+         * spatie writes every archive into a `<backup name>/` subdirectory, and
+         * Flysystem creates directories 0700 by default. The container writes
+         * them as its own www-data user, which leaves the host's operator
+         * neither the owner nor a member of the owning group - so being able to
+         * read the archives rests on the 0755 / 0644 bits. Both mappings are set
+         * to those because which one Flysystem picks at write time is not
+         * obvious from the outside, and because neither is touched by a 002 or
+         * 022 umask, so the mode that lands on disk is the mode written here.
+         * An archive nobody can read is not a backup.
          */
         'backups' => [
             'driver' => 'local',
             'root' => env('BACKUP_DISK_ROOT', storage_path('app/backups')),
+            'permissions' => [
+                'file' => ['public' => 0644, 'private' => 0644],
+                'dir' => ['public' => 0755, 'private' => 0755],
+            ],
             'throw' => false,
         ],
 
