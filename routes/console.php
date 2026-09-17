@@ -1,9 +1,8 @@
 <?php
 
-use App\Console\Commands\QueueHealth;
+use App\Jobs\QueueHeartbeat;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -45,8 +44,8 @@ if (config('backup.backup.enabled') && ! app()->environment('demo')) {
 
 // Queue health, which is the quieter failure of the two. A queue that has stopped
 // looks exactly like a quiet one: nothing errors, nothing arrives. The heartbeat
-// has to be dispatched rather than run, so that it executes on the worker being
-// watched - a worker that has stopped stops stamping it.
+// is a job rather than a call, so that it runs on the worker being watched - a
+// worker that has stopped stops stamping it.
 //
 // It keeps its own log rather than appending to the backups' one, because the
 // failure email sends whatever file the event points at: sharing a file would
@@ -55,11 +54,7 @@ if (config('backup.backup.enabled') && ! app()->environment('demo')) {
 // Not in the Demo, whose queued work is disposable and whose failures nobody
 // needs telling about.
 if (! app()->environment('demo')) {
-    Schedule::call(fn () => dispatch(fn () => Cache::put(
-        QueueHealth::HEARTBEAT_KEY,
-        now(),
-        now()->addDay(),
-    )))->everyFiveMinutes();
+    Schedule::job(new QueueHeartbeat)->everyFiveMinutes();
 
     Schedule::command('queue:health')
         ->hourly()

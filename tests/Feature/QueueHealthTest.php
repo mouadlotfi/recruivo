@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Console\Commands\QueueHealth;
+use App\Jobs\QueueHeartbeat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +60,20 @@ class QueueHealthTest extends TestCase
         $this->failJob();
 
         $this->artisan('queue:health')->assertFailed();
+    }
+
+    public function test_the_heartbeat_job_stamps_the_heartbeat(): void
+    {
+        // The write has to land on the worker, which is why this is a job and not
+        // a closure on the schedule. It replaced a closure that dispatched another
+        // closure: both sat on one expression, serializable-closure resolved the
+        // queued job back to the outer one, and it dispatched itself forever.
+        Cache::forget(QueueHealth::HEARTBEAT_KEY);
+
+        (new QueueHeartbeat)->handle();
+
+        $this->assertNotNull(Cache::get(QueueHealth::HEARTBEAT_KEY));
+        $this->artisan('queue:health')->assertSuccessful();
     }
 
     public function test_a_worker_that_has_never_run_is_reported(): void
