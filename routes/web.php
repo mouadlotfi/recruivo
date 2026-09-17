@@ -18,6 +18,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Recruiter\NoteTemplateController;
+use App\Http\Controllers\SeoController;
 use App\Http\Middleware\SetLocale;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
@@ -40,6 +41,11 @@ Route::get('/', function (Request $request) {
 
 // Locale switching route (redirects to same page in new locale)
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
+
+// Crawler endpoints. Deliberately not localized: a crawler asks for one canonical
+// path, and the sitemap enumerates every locale itself.
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('seo.robots');
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');
 
 // ALL routes are localized with language prefix
 Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(SetLocale::class)->group(function () {

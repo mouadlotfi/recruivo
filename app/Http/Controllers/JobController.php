@@ -9,6 +9,7 @@ use App\Services\SmartSearchService;
 use App\Support\CompanyCardSerializer;
 use App\Support\JobCardSerializer;
 use App\Support\JobDescriptionFormatter;
+use App\Support\JobPostingSchema;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
@@ -20,6 +21,7 @@ class JobController extends Controller
     public function __construct(
         private readonly JobCardSerializer $jobCards,
         private readonly CompanyCardSerializer $companyCards,
+        private readonly JobPostingSchema $jobPosting,
     ) {}
 
     /**
@@ -206,6 +208,14 @@ class JobController extends Controller
             'isDemoCandidate' => $isDemoCandidate,
             'hasProfileResume' => (bool) ($user?->candidateProfile?->resume_path),
             'applicationSubmissionToken' => $applicationSubmissionToken,
+            // Feeds Google's jobs experience. Only the structured data is sent:
+            // supplying a title or description here would replace the root
+            // shell's own derivation for this page rather than add to it.
+            'meta' => [
+                'structured_data' => [
+                    $this->jobPosting->build($job),
+                ],
+            ],
             'labels' => [
                 ...collect(self::SHOW_PAGE_LABEL_KEYS)->mapWithKeys(
                     fn (string $key) => [$key => __("jobs.$key")]

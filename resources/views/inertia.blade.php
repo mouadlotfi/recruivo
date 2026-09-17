@@ -103,6 +103,16 @@
             @endforeach
             <link rel="alternate" hreflang="x-default" href="{{ localized_route($currentRoute, $routeParams, config('locales.default', 'en')) }}" />
         @endif
+
+        {{-- Structured data. Rendered from the server because crawlers read the
+             initial HTML: Google indexes JSON-LD from the response, not from
+             anything assembled by a script afterwards. Slashes are deliberately
+             left escaped by json_encode - a job title containing "</script>"
+             would otherwise close this tag and inject markup. A page opts in by
+             supplying meta.structured_data. --}}
+        @foreach($suppliedMeta['structured_data'] ?? [] as $structuredData)
+            <script type="application/ld+json">{!! json_encode($structuredData, JSON_UNESCAPED_UNICODE) !!}</script>
+        @endforeach
     </x-inertia::head>
 
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
