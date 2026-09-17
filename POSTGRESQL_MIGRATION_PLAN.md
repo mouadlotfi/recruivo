@@ -1,5 +1,12 @@
 # MySQL → PostgreSQL, zero data loss
 
+> **Status: complete.** The cutover ran on 2026-09-17 and the MySQL service was
+> retired in `3d53c16`. Both environments serve from PostgreSQL, and every backup
+> dumps with `pg_dump`. The rollback path is now the artifact rather than a running
+> server: `/mnt/hdd2-data/backups/mysql-final-20260917T120055Z.sql.gz`, which holds
+> both databases, all 40 tables, and the production row. This document is kept as
+> the record of why the work was staged the way it was.
+
 ## Context
 
 Recruivo runs on MySQL 8.0 (`docker-compose.yml:57-80`), and production must move to PostgreSQL without losing a row. The production database holds one account; the demo database (68 users, 69 jobs, 47 applications) is a seeded dataset that every demo deploy rebuilds via `demo:reset` (`app/Console/Commands/DemoReset.php:74` → `migrate:fresh --seed`).

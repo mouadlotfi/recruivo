@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
@@ -18,7 +19,7 @@ use Tests\TestCase;
 class BackupTest extends TestCase
 {
     /**
-     * Re-run routes/console.php and return the Artisan commands it schedules.
+     * Re-run routes/console.php and return the events it schedules.
      *
      * The console kernel loads the route file inside createApplication(), before
      * any test method runs, so a config or environment change made in a test has
@@ -26,17 +27,27 @@ class BackupTest extends TestCase
      * Schedule and re-requiring the file records what the real rules produce,
      * rather than asserting on a copy of them.
      *
-     * @return array<int, string>
+     * @return array<int, Event>
      */
-    private function scheduledCommands(): array
+    private function scheduledEvents(): array
     {
         $schedule = new Schedule;
         ScheduleFacade::swap($schedule);
 
         require base_path('routes/console.php');
 
-        return collect($schedule->events())
-            ->map(function ($event) {
+        return $schedule->events();
+    }
+
+    /**
+     * The artisan command each scheduled event runs.
+     *
+     * @return array<int, string>
+     */
+    private function scheduledCommands(): array
+    {
+        return collect($this->scheduledEvents())
+            ->map(function (Event $event) {
                 // Events hold the whole invocation, e.g.
                 // "'/usr/local/bin/php' 'artisan' backup:run".
                 $parts = is_string($event->command) ? explode(' ', $event->command) : [];
@@ -74,6 +85,27 @@ class BackupTest extends TestCase
 
         $this->assertNotContains('backup:run', $commands);
         $this->assertContains('demo:reset', $commands);
+    }
+
+    public function test_every_scheduled_command_writes_a_log(): void
+    {
+        // A scheduled command's output is redirected to /dev/null unless the event
+        // says otherwise, and that redirect takes stderr with it - so a command
+        // which exits non-zero leaves nothing behind, not even its error. A backup
+        // did fail that way and went unnoticed; this is what makes the next one
+        // visible. backup:monitor would go quiet in the same way, which would undo
+        // the only thing watching the backups.
+        $events = $this->scheduledEvents();
+
+        $this->assertNotEmpty($events);
+
+        foreach ($events as $event) {
+            $this->assertSame(
+                storage_path('logs/schedule.log'),
+                $event->output,
+                "The [{$event->command}] event writes its output nowhere, so a failure would be silent."
+            );
+        }
     }
 
     public function test_the_backup_covers_uploads_and_not_the_codebase(): void

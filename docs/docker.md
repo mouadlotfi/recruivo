@@ -168,6 +168,20 @@ env file - everything a restore onto a fresh host needs.
 All three are defined in `routes/console.php`, next to the Demo environment's
 nightly `demo:reset`.
 
+Every scheduled command appends its output, stderr included, to
+`storage/logs/schedule.log` inside the app container:
+
+```bash
+docker exec recruivo-app-1 tail -50 storage/logs/schedule.log
+```
+
+That is not a nicety. Laravel redirects a scheduled command's output to
+`/dev/null` unless the event says otherwise, and the redirect carries stderr with
+it, so a command that exits non-zero leaves nothing behind - not even its error.
+`backup:monitor` is scheduled the same way, so the one thing watching the backups
+would have gone quiet in exactly the way it exists to catch. A failing backup did
+go unnoticed until someone went looking, which is what this file prevents.
+
 ### Two off switches
 
 A backup is skipped when either of these is true:
