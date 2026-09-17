@@ -112,9 +112,14 @@ class BackupTest extends TestCase
 
     public function test_the_mysql_connection_skips_ssl_when_dumping(): void
     {
-        // Debian ships MariaDB's mysqldump, which aborts against the server's
-        // self-signed certificate ("TLS/SSL error"). Without this the MySQL
-        // backup - the database production serves from today - fails.
-        $this->assertTrue(config('database.connections.mysql.dump.skip_ssl'));
+        // MySQL is the rollback path after the PostgreSQL cutover, and its backup
+        // must still work. Debian ships MariaDB's mysqldump, which verifies the
+        // server's self-signed certificate and aborts - and it rejects the
+        // `ssl-mode=DISABLED` spelling that `skip_ssl` alone emits, because that
+        // is MySQL's syntax. So the MariaDB spelling is pinned too.
+        $dump = config('database.connections.mysql.dump');
+
+        $this->assertTrue($dump['skip_ssl']);
+        $this->assertSame('skip-ssl', $dump['ssl_flag']);
     }
 }

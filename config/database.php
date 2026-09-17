@@ -42,10 +42,14 @@ return [
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
             'dump' => [
-                // Debian ships MariaDB's mysqldump, which verifies the server's
-                // self-signed certificate and aborts; the connection never leaves
-                // the compose network, so certificate checking is not the control.
+                // Debian ships MariaDB's mysqldump. It verifies the server's
+                // self-signed certificate and aborts, so ssl must be off - and it
+                // rejects the `ssl-mode=DISABLED` spelling that `skip_ssl` alone
+                // emits, because that is MySQL's syntax. `skip-ssl` is the MariaDB
+                // spelling. The connection never leaves the compose network, so
+                // certificate verification is not the control here.
                 'skip_ssl' => true,
+                'ssl_flag' => 'skip-ssl',
                 'useSingleTransaction' => true,
             ],
         ],
