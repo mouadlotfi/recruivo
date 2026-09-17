@@ -2,7 +2,10 @@
 
 use Spatie\Backup\Notifications\Notifiable;
 use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
 use Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification;
+use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification;
 use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
 use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
@@ -239,17 +242,27 @@ return [
      */
     'notifications' => [
         /*
-         * Failures only. The success notifications are deliberately absent: a
-         * nightly "it worked" is noise, and a backup that stops running altogether
-         * is already reported as UnhealthyBackupWasFound by backup:monitor, which
-         * is the alarm that matters. Empty when no recipient is configured, so
-         * nothing is sent and nothing is attempted.
+         * Every event spatie can raise has to be listed here, including the ones
+         * that lead nowhere. A notification resolves its channels by indexing this
+         * map with its own class name, and a missing key is an "undefined array
+         * key" warning, which Laravel turns into an exception - so leaving one out
+         * takes the command down rather than silencing it. Omitting the successes
+         * would break backup:run on the nights it worked and backup:monitor on a
+         * healthy morning, which is the opposite of what an alert is for.
+         *
+         * The successes are listed with no channels instead: array_filter() empties
+         * that to nothing, so they are silent without being absent. Only the three
+         * failures carry a channel, and only once a recipient is configured.
          */
-        'notifications' => $backupAlertMailTo ? [
-            BackupHasFailedNotification::class => ['mail'],
-            UnhealthyBackupWasFoundNotification::class => ['mail'],
-            CleanupHasFailedNotification::class => ['mail'],
-        ] : [],
+        'notifications' => [
+            BackupHasFailedNotification::class => $backupAlertMailTo ? ['mail'] : [],
+            UnhealthyBackupWasFoundNotification::class => $backupAlertMailTo ? ['mail'] : [],
+            CleanupHasFailedNotification::class => $backupAlertMailTo ? ['mail'] : [],
+
+            BackupWasSuccessfulNotification::class => [],
+            HealthyBackupWasFoundNotification::class => [],
+            CleanupWasSuccessfulNotification::class => [],
+        ],
 
         /*
          * Here you can specify the notifiable to which the notifications should be sent. The default

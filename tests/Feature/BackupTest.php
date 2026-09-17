@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Schedule as ScheduleFacade;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
 use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
+use Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification;
+use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification;
 use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
 use Tests\TestCase;
 
@@ -192,6 +195,32 @@ class BackupTest extends TestCase
         $this->assertSame([config('database.default')], config('backup.backup.source.databases'));
     }
 
+    public function test_every_notification_spatie_can_raise_has_an_entry(): void
+    {
+        // spatie resolves a notification's channels by indexing this map with the
+        // notification's own class name, so a missing key is an undefined-array-key
+        // exception, not a silent no-op. Leaving the successes out took
+        // backup:monitor down on a healthy morning, and would have taken backup:run
+        // down on the nights it worked - breaking the backups in order to add
+        // alerting to them.
+        $map = (require base_path('config/backup.php'))['notifications']['notifications'];
+
+        foreach ([
+            BackupHasFailedNotification::class,
+            BackupWasSuccessfulNotification::class,
+            CleanupHasFailedNotification::class,
+            CleanupWasSuccessfulNotification::class,
+            UnhealthyBackupWasFoundNotification::class,
+            HealthyBackupWasFoundNotification::class,
+        ] as $notification) {
+            $this->assertArrayHasKey(
+                $notification,
+                $map,
+                "spatie raises [{$notification}], so reaching it without an entry here throws."
+            );
+        }
+    }
+
     public function test_backup_failures_are_emailed_to_the_configured_recipient(): void
     {
         // The config computes this from the environment every time it loads, so it
@@ -204,13 +233,18 @@ class BackupTest extends TestCase
             putenv('BACKUP_NOTIFICATION_MAIL_TO');
         }
 
-        $this->assertSame(['mail'], $notifications['notifications'][BackupHasFailedNotification::class]);
-        $this->assertSame(['mail'], $notifications['notifications'][UnhealthyBackupWasFoundNotification::class]);
+        $map = $notifications['notifications'];
 
-        // Successes are deliberately not reported: a nightly "it worked" is noise,
-        // and a backup that stopped running altogether arrives as
-        // UnhealthyBackupWasFound instead.
-        $this->assertArrayNotHasKey(BackupWasSuccessfulNotification::class, $notifications['notifications']);
+        $this->assertSame(['mail'], $map[BackupHasFailedNotification::class]);
+        $this->assertSame(['mail'], $map[UnhealthyBackupWasFoundNotification::class]);
+        $this->assertSame(['mail'], $map[CleanupHasFailedNotification::class]);
+
+        // A nightly "it worked" is noise, and a backup that stopped running
+        // altogether arrives as UnhealthyBackupWasFound instead - so the successes
+        // are listed with no channel.
+        $this->assertSame([], $map[BackupWasSuccessfulNotification::class]);
+        $this->assertSame([], $map[HealthyBackupWasFoundNotification::class]);
+        $this->assertSame([], $map[CleanupWasSuccessfulNotification::class]);
 
         $this->assertSame('alerts@example.com', $notifications['mail']['to']);
     }
@@ -219,8 +253,8 @@ class BackupTest extends TestCase
     {
         // spatie builds its config on every backup command and throws when the
         // recipient is not a valid address. An unset variable must therefore leave
-        // a real address behind and empty the notification list instead - the other
-        // way round would break backups in order to silence their alerts.
+        // a real address behind and take the channels away - the other way round
+        // would break backups in order to silence their alerts.
         putenv('BACKUP_NOTIFICATION_MAIL_TO');
 
         try {
@@ -229,7 +263,14 @@ class BackupTest extends TestCase
             putenv('BACKUP_NOTIFICATION_MAIL_TO');
         }
 
-        $this->assertSame([], $notifications['notifications']);
+        // Every entry stays. Emptying the map would break each command that raises
+        // a notification, which is most of them.
+        $this->assertCount(6, $notifications['notifications']);
+
+        foreach ($notifications['notifications'] as $class => $channels) {
+            $this->assertSame([], $channels, "[{$class}] would still be sent with no recipient configured.");
+        }
+
         $this->assertNotFalse(
             filter_var($notifications['mail']['to'], FILTER_VALIDATE_EMAIL),
             'An unvalidatable recipient would make spatie throw on every backup command.'
