@@ -225,6 +225,13 @@ var/www/html/storage/app/...           candidate resumes, company logos
 `verify_backup` opens the zip and confirms it holds files before the run claims
 success, and `backup:run` exits non-zero on failure so the schedule records it.
 
+That `<APP_NAME>/` level is created `0755`, holding `0644` archives, by the
+`permissions` block on the `backups` disk in `config/filesystems.php`. It matters:
+spatie nests every archive one level down, Flysystem defaults a directory to
+`0700`, and the container writes it as its own `www-data` user. The operator on
+the host is neither that user nor in its group, so without the block the archives
+sit behind a directory they cannot list.
+
 ### Restore
 
 spatie/laravel-backup v10 has no restore command, so `scripts/restore.sh` does it.
@@ -232,11 +239,19 @@ It accepts either a spatie archive (`.zip`) or a `scripts/backup.sh` directory:
 
 ```bash
 APP_ENV_FILE=/path/to/containers/recruivo/.env \
-  ./scripts/restore.sh --force /mnt/hdd2-data/backups/recruivo/recruivo-2026-09-16-10-59-06.zip
+  ./scripts/restore.sh --force /mnt/hdd2-data/backups/recruivo/Recruivo/recruivo-2026-09-16-10-59-06.zip
 ```
 
+Note the `<APP_NAME>` directory in that path.
+
 A `.zip` is extracted to a temporary directory and normalised into the directory
-layout the script works with. The restore is destructive and requires `--force`
+layout the script works with. Extraction happens in the application image rather
+than on the host: with `BACKUP_ARCHIVE_PASSWORD` set, spatie encrypts every entry
+with WinZip AES, and no stock host tool reads that - Info-ZIP's `unzip` knows only
+the legacy ZipCrypto, and Python's `zipfile` rejects the AES method outright. PHP's
+`ZipArchive` is backed by libzip, the same library that wrote the archive, so the
+script runs it in the image the running `app` container came from. Unencrypted
+archives go through the same path. The restore is destructive and requires `--force`
 (like `demo:reset`). It verifies the dump before deleting anything, then drops and
 recreates the database, reloads the dump, restores the uploaded files, and runs
 `php artisan migrate --force` so the schema matches the running image.

@@ -6,7 +6,10 @@
 #   APP_ENV_FILE=/path/to/containers/recruivo/.env \
 #       ./scripts/restore.sh --force ./backups/20260910T101500Z
 #   APP_ENV_FILE=/path/to/containers/recruivo/.env \
-#       ./scripts/restore.sh --force /mnt/hdd2-data/backups/recruivo/recruivo-2026-09-16-10-59-06.zip
+#       ./scripts/restore.sh --force /mnt/hdd2-data/backups/recruivo/Recruivo/recruivo-2026-09-17-12-11-08.zip
+#
+# Note the <APP_NAME> directory: spatie nests every archive one level below the
+# configured root.
 #
 # DESTRUCTIVE: the current database (and, when the snapshot has one, the uploaded
 # files) are replaced. Both artifacts are verified before anything is deleted.
@@ -15,7 +18,8 @@
 #
 # Environment:
 #   COMPOSE_PROJECT_NAME  compose project to restore into (default: recruivo)
-#   APP_ENV_FILE          deployment env file; also passed to compose as --env-file
+#   APP_ENV_FILE          deployment env file; passed to compose as --env-file and
+#                         read for the archive password
 #   RESTORE_WORK_DIR      where a .zip is extracted (default: the system temp
 #                         directory). The archive's own directory is not usable:
 #                         the app owns it, so the operator cannot write there.
@@ -24,12 +28,106 @@ set -euo pipefail
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-recruivo}"
 
 if [ "${1:-}" != "--force" ]; then
-    echo "Usage: $0 --force <backup-directory>" >&2
+    echo "Usage: $0 --force <backup-directory|backup.zip>" >&2
     echo "Restoring replaces the current database and uploads; pass --force to proceed." >&2
     exit 1
 fi
 
 SOURCE="${2:-}"
+
+COMPOSE_ENV_ARGS=()
+if [ -n "${APP_ENV_FILE:-}" ] && [ -f "${APP_ENV_FILE}" ]; then
+    COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
+fi
+
+compose() {
+    docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" "$@"
+}
+
+# Where the archive password comes from - the same source the app reads it from.
+# APP_ENV_FILE is how the deploy host is documented to be restored; the repository
+# .env is the local development equivalent.
+ENV_FILE="${APP_ENV_FILE:-}"
+if [ -z "${ENV_FILE}" ] && [ -f .env ]; then
+    ENV_FILE=.env
+fi
+
+# The image the running app came from. Resolving it through compose would
+# re-evaluate APP_IMAGE and APP_TAG, which only CI exports, and fall back to
+# :latest - a tag that need not be the build running here, or even exist on this
+# host. The running container already knows its own image.
+app_image() {
+    compose ps -q app | head -n 1 | xargs -r docker inspect --format '{{.Config.Image}}'
+}
+
+# spatie encrypts every entry with WinZip AES as soon as BACKUP_ARCHIVE_PASSWORD is
+# set, and nothing on a stock host can read that format: Info-ZIP's unzip knows
+# only the legacy ZipCrypto, and Python's zipfile rejects AES (method 99)
+# outright. PHP's ZipArchive is backed by libzip - the same library that wrote the
+# archive - so the extraction runs in the app image. Unencrypted archives go
+# through the same path, so there is only one way in to keep correct.
+extract_archive() {
+    local archive="$1"
+    local destination="$2"
+    local password_file="${WORK_DIR}/archive-password.env"
+
+    # Only the password has to travel. Handing docker the deployment env file
+    # whole would mean it parsing a Laravel .env, which is not the format
+    # --env-file expects, and the extraction never touches the database.
+    : > "${password_file}"
+    if [ -n "${ENV_FILE}" ] && [ -f "${ENV_FILE}" ]; then
+        sed -n '/^BACKUP_ARCHIVE_PASSWORD=/p' "${ENV_FILE}" \
+            | tail -n 1 \
+            | sed 's/^BACKUP_ARCHIVE_PASSWORD="\(.*\)"$/BACKUP_ARCHIVE_PASSWORD=\1/' \
+            >> "${password_file}"
+    fi
+
+    mkdir -p "${destination}"
+
+    # --user 0 so the extraction can write into the temp directory the operator
+    # created and owns privately; the modes are handed back below.
+    docker run --rm --user 0 --entrypoint php \
+        --env-file "${password_file}" \
+        -e "RESTORE_ARCHIVE=$(basename "${archive}")" \
+        -v "$(cd "$(dirname "${archive}")" && pwd)":/restore/src:ro \
+        -v "${destination}":/restore/out \
+        "$(app_image)" -r '
+            $archive = "/restore/src/" . getenv("RESTORE_ARCHIVE");
+
+            $zip = new ZipArchive;
+
+            if ($zip->open($archive) !== true) {
+                fwrite(STDERR, "error: cannot open {$archive}\n");
+                exit(1);
+            }
+
+            $password = getenv("BACKUP_ARCHIVE_PASSWORD");
+
+            if (is_string($password) && $password !== "") {
+                $zip->setPassword($password);
+            }
+
+            if (! $zip->extractTo("/restore/out")) {
+                fwrite(STDERR, "error: cannot extract {$archive} - was it written with this BACKUP_ARCHIVE_PASSWORD?\n");
+                exit(1);
+            }
+
+            $zip->close();
+
+            // The extraction runs as root, so everything it writes is owned by
+            // root inside a directory the operator owns. Without handing the
+            // modes back, the cleanup trap leaves the whole tree behind in the
+            // temp directory, unremovable by the operator who created it.
+            $entries = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator("/restore/out", FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::SELF_FIRST
+            );
+
+            foreach ($entries as $entry) {
+                chmod($entry->getPathname(), $entry->isDir() ? 0777 : 0644);
+            }
+        '
+}
 
 # spatie/laravel-backup writes one zip holding db-dumps/<driver>-<database>.sql plus
 # the uploaded files under their absolute container paths. Normalise it into the
@@ -37,13 +135,11 @@ SOURCE="${2:-}"
 # same way and there is only one restore path to keep correct.
 WORK_DIR=""
 if [ -n "${SOURCE}" ] && [ -f "${SOURCE}" ]; then
-    command -v unzip >/dev/null || { echo "unzip is required to read ${SOURCE}" >&2; exit 1; }
-
     WORK_DIR="$(mktemp -d "${RESTORE_WORK_DIR:-${TMPDIR:-/tmp}}/recruivo-restore.XXXXXX")"
     trap 'rm -rf "${WORK_DIR}"' EXIT
 
     echo "Extracting $(basename "${SOURCE}")"
-    unzip -q "${SOURCE}" -d "${WORK_DIR}/extracted"
+    extract_archive "${SOURCE}" "${WORK_DIR}/extracted"
 
     DUMP_SQL="$(find "${WORK_DIR}/extracted/db-dumps" -maxdepth 1 -type f -name '*.sql' 2>/dev/null | head -n 1)"
     if [ -z "${DUMP_SQL}" ]; then
@@ -77,15 +173,6 @@ HAS_STORAGE=0
 if [ -s "${STORAGE_ARCHIVE}" ]; then
     HAS_STORAGE=1
 fi
-
-COMPOSE_ENV_ARGS=()
-if [ -n "${APP_ENV_FILE:-}" ] && [ -f "${APP_ENV_FILE}" ]; then
-    COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
-fi
-
-compose() {
-    docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" "$@"
-}
 
 # Verify before destroying anything.
 echo "Verifying ${SOURCE}"
