@@ -35,30 +35,11 @@ TARGET="${BACKUP_DIR}/${STAMP}"
 mkdir -p "${TARGET}"
 echo "Backing up project '${PROJECT_NAME}' into ${TARGET}"
 
-# Database. MySQL stays the source of truth until the cutover flips
-# DB_CONNECTION in the deployment env file, so the dump follows the configured
-# connection: dumping the (still empty) PostgreSQL service in that window would
-# produce a table-less artifact that passes the checks below and then prunes the
-# last real MySQL backups. MYSQL_PWD/PGPASSWORD keep the password out of the
-# container's process list.
-DB_CONNECTION="${DB_CONNECTION:-}"
-if [ -z "${DB_CONNECTION}" ] && [ -n "${APP_ENV_FILE:-}" ] && [ -f "${APP_ENV_FILE}" ]; then
-    DB_CONNECTION="$(sed -n 's/^[[:space:]]*DB_CONNECTION=//p' "${APP_ENV_FILE}" | tr -d ' "\r' | tail -n 1)"
-fi
-DB_CONNECTION="${DB_CONNECTION:-pgsql}"
-echo "  - database (${DB_CONNECTION})"
-case "${DB_CONNECTION}" in
-    mysql*)
-        compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump \
-            --single-transaction --routines --triggers --events --default-character-set=utf8mb4 \
-            --databases "$MYSQL_DATABASE"' | gzip -9 > "${TARGET}/database.sql.gz"
-        ;;
-    *)
-        compose exec -T postgres sh -c 'PGPASSWORD="$DB_PASSWORD" exec pg_dump \
-            --username="$DB_USERNAME" --dbname="$DB_DATABASE" --no-owner --no-acl' \
-            | gzip -9 > "${TARGET}/database.sql.gz"
-        ;;
-esac
+# Database. PGPASSWORD keeps the password out of the container's process list.
+echo "  - database (pgsql)"
+compose exec -T postgres sh -c 'PGPASSWORD="$DB_PASSWORD" exec pg_dump \
+    --username="$DB_USERNAME" --dbname="$DB_DATABASE" --no-owner --no-acl' \
+    | gzip -9 > "${TARGET}/database.sql.gz"
 
 # Candidate resumes, logos and private uploads; logs, caches and Redis (stale
 # sessions, expendable queue) are deliberately left out. Skipped entirely with
@@ -81,7 +62,7 @@ fi
 # awk reads to EOF, so `set -o pipefail` cannot see a SIGPIPE from an early exit.
 zcat "${TARGET}/database.sql.gz" \
     | awk '/^(CREATE TABLE|COPY )/ { found = 1 } END { exit found ? 0 : 1 }' \
-    || { echo "Database dump contains no tables - wrong DB_CONNECTION (${DB_CONNECTION})?" >&2; exit 1; }
+    || { echo "Database dump contains no tables - is the postgres service healthy?" >&2; exit 1; }
 echo "  - verified ($(du -sh "${TARGET}" | cut -f1))"
 
 if [ "${BACKUP_KEEP_DAYS}" -gt 0 ]; then

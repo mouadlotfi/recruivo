@@ -7,7 +7,7 @@ networks:
 name: ${COMPOSE_PROJECT_NAME:-recruivo}
 
 # Docker's json-file driver is unbounded by default, and these logs share a disk
-# with mysql_data and app_storage.
+# with postgres_data and app_storage.
 x-logging: &default-logging
   driver: json-file
   options:
@@ -45,9 +45,6 @@ x-laravel-service: &laravel-service
     - ${BACKUP_DIR:-./backups}:/backups
     - ${APP_ENV_FILE:-.env}:/etc/recruivo/deployment.env:ro
   depends_on:
-    mysql:
-      condition: service_healthy
-      required: false
     postgres:
       condition: service_healthy
       required: false
@@ -70,36 +67,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
-  mysql:
-    image: mysql:8.0
-    restart: unless-stopped
-    logging: *default-logging
-    profiles: ["infra"]
-    # InnoDB creates its temporary files in /tmp and aborts at startup when that
-    # directory is not world-writable. See the note on the service anchor.
-    tmpfs:
-      - /tmp:mode=1777
-    networks:
-      default:
-        aliases:
-          - mysql
-    env_file:
-      - path: ${APP_ENV_FILE:-.env}
-        required: false
-    environment:
-      MYSQL_DATABASE: ${DB_DATABASE:-recruivo_db}
-      MYSQL_USER: ${DB_USERNAME:-recruivo}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-${DB_PASSWORD:-secret}}
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
-      interval: 5s
-      timeout: 5s
-      retries: 36
-      start_period: 3m
-
   postgres:
     image: postgres:17
     restart: unless-stopped
@@ -203,7 +170,6 @@ services:
     healthcheck:
       disable: true
 volumes:
-  mysql_data:
   postgres_data:
   redis_data:
   app_storage:

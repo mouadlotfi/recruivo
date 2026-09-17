@@ -46,19 +46,16 @@ RUN install-php-extensions \
     mbstring \
     opcache \
     pcntl \
-    pdo_mysql \
     pdo_pgsql \
     zip \
     redis
 
-# Database clients for spatie/laravel-backup, which shells out to them locally.
+# The database client for spatie/laravel-backup, which shells out to it locally.
 # Debian trixie ships postgresql-client 17, matching the PostgreSQL 17 server;
 # a 15 client refuses to dump a 17 server ("server version mismatch").
-# default-mysql-client only covers the window until the PostgreSQL cutover.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         postgresql-client \
-        default-mysql-client \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html

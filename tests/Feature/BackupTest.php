@@ -127,29 +127,33 @@ class BackupTest extends TestCase
         File::deleteDirectory($root);
     }
 
-    public function test_the_mysql_connection_is_fully_defined(): void
+    public function test_the_default_connection_is_postgresql(): void
     {
-        // config/database.php redefines `mysql`, which Laravel otherwise merges in
+        // This is what decides both where the application connects and which
+        // database spatie dumps. Laravel merges the framework's own `mysql`
+        // connection back in whatever this application does, so its absence cannot
+        // be asserted here - the default is the thing that matters.
+        $this->assertSame('pgsql', config('database.default'));
+    }
+
+    public function test_the_postgresql_connection_is_fully_defined(): void
+    {
+        // config/database.php redefines `pgsql`, which Laravel otherwise merges in
         // from the framework with a shallow array_merge. A partial definition would
         // replace the framework's outright and leave the connection without a
         // driver - which is how production would break, silently, on deploy.
-        $connection = config('database.connections.mysql');
+        $connection = config('database.connections.pgsql');
 
-        foreach (['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'collation', 'prefix', 'strict'] as $key) {
-            $this->assertArrayHasKey($key, $connection, "The mysql connection lost its [{$key}] key.");
+        foreach (['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'prefix', 'search_path'] as $key) {
+            $this->assertArrayHasKey($key, $connection, "The pgsql connection lost its [{$key}] key.");
         }
     }
 
-    public function test_the_mysql_connection_skips_ssl_when_dumping(): void
+    public function test_the_backup_dumps_the_default_connection(): void
     {
-        // MySQL is the rollback path after the PostgreSQL cutover, and its backup
-        // must still work. Debian ships MariaDB's mysqldump, which verifies the
-        // server's self-signed certificate and aborts - and it rejects the
-        // `ssl-mode=DISABLED` spelling that `skip_ssl` alone emits, because that
-        // is MySQL's syntax. So the MariaDB spelling is pinned too.
-        $dump = config('database.connections.mysql.dump');
-
-        $this->assertTrue($dump['skip_ssl']);
-        $this->assertSame('skip-ssl', $dump['ssl_flag']);
+        // spatie dumps whatever connections this list names. A stray DB_CONNECTION
+        // would point the dump at a service that no longer exists, and nothing but
+        // PostgreSQL runs now, so there is no fallback to land on.
+        $this->assertSame([config('database.default')], config('backup.backup.source.databases'));
     }
 }

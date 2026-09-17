@@ -19,14 +19,10 @@ Host / Traefik Reverse Proxy (:80)
 
 ### Services
 - **`app`**: Unified FrankenPHP runtime serving static assets and executing PHP 8.4 requests in-process via embedded Caddy web server.
-- **`postgres`**: PostgreSQL 17 database engine.
-- **`mysql`**: MySQL 8.0, retained while it is still the source of truth (and as
-  the rollback path) until the `mysql` service is deleted; it starts on every
-  `up` under the `infra` profile, so the database serving the app depends on
-  `DB_CONNECTION`, not on which containers are running.
+- **`postgres`**: PostgreSQL 17 database engine, and the only one.
 - **`redis`**: Redis 7 cache, session, and queue backend.
 - **`queue`**: Background queue worker processing asynchronous jobs.
-- **`backup`**: Scheduled archiver for the database dump (see [§7](#7-backups--restore)); runs under the `infra` profile, like `postgres`/`mysql`/`redis`.
+- **`backup`**: Ready-made offsite archiver (see [§7](#7-backups--restore)). Off by default, enabled with `COMPOSE_PROFILES=offsite`: the scheduled backups are taken by the `scheduler` service, and this is the path for pushing a copy off the host.
 - **`scheduler`**: Executes Laravel scheduled tasks.
 - **`migrate`**: Runs one-shot database migrations on stack startup.
 
@@ -44,7 +40,6 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 - **Web Application**: `http://localhost:8000`
 - **Vite HMR Server**: `http://localhost:5173`
 - **PostgreSQL Direct Access**: `localhost:5432` (User: `recruivo` / Pass: `secret`)
-- **MySQL Direct Access** (legacy, still serving until the cutover): `localhost:3306`
 - **Redis Direct Access**: `localhost:6379`
 
 ### Development Commands
@@ -217,7 +212,7 @@ directory unless `RESTORE_WORK_DIR` says otherwise.
 One zip per run, at `<BACKUP_DIR>/<APP_NAME>/recruivo-<date>.zip`:
 
 ```
-db-dumps/postgresql-recruivo_db.sql    the dump (mysqldump or pg_dump, per DB_CONNECTION)
+db-dumps/postgresql-recruivo_db.sql    the dump (pg_dump)
 etc/recruivo/deployment.env            the deployment env file
 var/www/html/storage/app/...           candidate resumes, company logos
 ```
@@ -403,8 +398,8 @@ port to 8080 and update the compose port mapping and both healthchecks.
 
 ### /tmp is a tmpfs, not the image's directory
 
-Every application service, plus `mysql` and `postgres`, mounts a tmpfs over `/tmp`
-with an explicit mode:
+Every application service, plus `postgres`, mounts a tmpfs over `/tmp` with an
+explicit mode:
 
 ```yaml
     tmpfs:
@@ -413,15 +408,10 @@ with an explicit mode:
 
 This is not decoration. `/tmp` has to be world-writable, and on a host where
 containerd runs **rootless** it is not: image layers are extracted owned by that
-user (uid 1000) with mode 775 instead of `root:root 1777`. MySQL 8 then aborts at
-startup -
-
-```
-[ERROR] [MY-012576] [InnoDB] Unable to create temporary file inside "/tmp"; errno: 13
-```
-
-- the healthcheck never goes green, and the workflow rolls back. PHP fails the
-same way one step later, when a candidate uploads a resume.
+user (uid 1000) with mode 775 instead of `root:root 1777`. PHP then fails when a
+candidate uploads a resume, and a database server fails at startup the same way -
+MySQL 8 aborted with `Unable to create temporary file inside "/tmp"; errno: 13`
+the first time this host met it, which is what took the stack down.
 
 An explicit `mode` makes the stack independent of how the host extracts layers.
 The short form `--tmpfs /tmp` inherits the host's default and reproduces the same
@@ -430,7 +420,7 @@ The short form `--tmpfs /tmp` inherits the host's default and reproduces the sam
 Diagnose a host with:
 
 ```bash
-docker run --rm --entrypoint sh mysql:8.0 -c 'stat -c "%u:%g mode=%a" /tmp'
+docker run --rm --entrypoint sh postgres:17 -c 'stat -c "%u:%g mode=%a" /tmp'
 # good: 0:0 mode=1777        bad: 1000:1000 mode=775
 ls -ld /mnt/hdd2-data/containerd    # owner 1000 means rootless containerd
 ```
