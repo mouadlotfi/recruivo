@@ -177,10 +177,13 @@ docker exec recruivo-app-1 tail -50 storage/logs/schedule.log
 
 That is not a nicety. Laravel redirects a scheduled command's output to
 `/dev/null` unless the event says otherwise, and the redirect carries stderr with
-it, so a command that exits non-zero leaves nothing behind - not even its error.
-`backup:monitor` is scheduled the same way, so the one thing watching the backups
-would have gone quiet in exactly the way it exists to catch. A failing backup did
-go unnoticed until someone went looking, which is what this file prevents.
+it. Laravel still records *that* a scheduled command failed, and spatie records
+its own reasons, but the failing process's own error - the line from the dump tool
+naming what was wrong - only existed on that discarded stream. The first failed
+backup here could be seen, in the log, to have failed, without saying why.
+
+Being told is the other half, and it is not this file's job: a failure, a stale
+backup set or a failed cleanup is emailed to `BACKUP_NOTIFICATION_MAIL_TO`.
 
 ### Two off switches
 

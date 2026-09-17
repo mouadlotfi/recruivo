@@ -24,11 +24,15 @@ if (config('app.demo_scheduled_reset') || app()->environment('demo')) {
 //
 // Every one of them writes to the same log, and so does demo:reset. A scheduled
 // command's output is redirected to /dev/null unless the event says otherwise,
-// and the redirect carries stderr with it - so a command that exits non-zero
-// leaves nothing behind, not even its error. backup:monitor is scheduled the same
-// way, so the one thing watching the backups would go quiet in exactly the way it
-// exists to catch. That is not hypothetical: it is how a failing backup went
-// unnoticed, and why `tail storage/logs/schedule.log` is now worth knowing about.
+// and the redirect takes stderr with it. Laravel still records that a scheduled
+// command failed, and spatie records its own reasons, but the underlying
+// process's own error - the one line from the dump tool saying what was actually
+// wrong - only ever existed on that discarded stream. The first failed backup
+// here could be seen to have failed, in the log, without saying why.
+//
+// Being told is the other half and it is not this file's job: failures are
+// emailed to BACKUP_NOTIFICATION_MAIL_TO, which is what turns a line in a log
+// into something someone notices.
 if (config('backup.backup.enabled') && ! app()->environment('demo')) {
     $scheduleLog = storage_path('logs/schedule.log');
 
