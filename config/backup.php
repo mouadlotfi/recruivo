@@ -2,14 +2,20 @@
 
 use Spatie\Backup\Notifications\Notifiable;
 use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
-use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
 use Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification;
-use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification;
-use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification;
 use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
 use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
+
+/*
+ * Where a failed or stale backup is reported. spatie validates this as an email
+ * address whenever it builds its config, which is on every backup command, and
+ * throws when it is not one - so the address can never be left empty. When no
+ * recipient is configured it is the notification list below that goes empty, and
+ * that is what stops any mail being attempted.
+ */
+$backupAlertMailTo = env('BACKUP_NOTIFICATION_MAIL_TO');
 
 return [
 
@@ -232,14 +238,18 @@ return [
      * the `Spatie\Backup\Notifications\Notifications` classes.
      */
     'notifications' => [
-        'notifications' => [
+        /*
+         * Failures only. The success notifications are deliberately absent: a
+         * nightly "it worked" is noise, and a backup that stops running altogether
+         * is already reported as UnhealthyBackupWasFound by backup:monitor, which
+         * is the alarm that matters. Empty when no recipient is configured, so
+         * nothing is sent and nothing is attempted.
+         */
+        'notifications' => $backupAlertMailTo ? [
             BackupHasFailedNotification::class => ['mail'],
             UnhealthyBackupWasFoundNotification::class => ['mail'],
             CleanupHasFailedNotification::class => ['mail'],
-            BackupWasSuccessfulNotification::class => ['mail'],
-            HealthyBackupWasFoundNotification::class => ['mail'],
-            CleanupWasSuccessfulNotification::class => ['mail'],
-        ],
+        ] : [],
 
         /*
          * Here you can specify the notifiable to which the notifications should be sent. The default
@@ -248,7 +258,11 @@ return [
         'notifiable' => Notifiable::class,
 
         'mail' => [
-            'to' => 'your@example.com',
+            // Never empty: spatie refuses to build its config around an address
+            // that does not validate, and that happens on every backup command, so
+            // an unset recipient would take the backups down rather than just
+            // silence the alerts. The sender is a real mailbox and a valid address.
+            'to' => $backupAlertMailTo ?: env('MAIL_FROM_ADDRESS', 'hello@example.com'),
 
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),

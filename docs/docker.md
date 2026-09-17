@@ -200,6 +200,18 @@ A backup is skipped when either of these is true:
 | `BACKUP_DISK_ROOT` | Where inside the container laravel-backup writes; must match the mount (`/backups`) |
 | `BACKUP_ARCHIVE_PASSWORD` | Encrypts every archive. **Keep a copy in a password manager**: the archive contains the deployment env file, so losing this password loses the copy of `APP_KEY` that was taken alongside the data |
 | `BACKUP_ENV_FILE` | The deployment env file, mounted read-only at `/etc/recruivo/deployment.env`. Compose `env_file` injects variables but never puts the file itself in the container, so it has to be mounted to be included. Leave it empty and it is skipped |
+| `BACKUP_NOTIFICATION_MAIL_TO` | Where a failed backup, a stale one, or a failed cleanup is emailed. Leave it empty for no alerts |
+
+Alerts are **failures only**: `backup:run` failing, `backup:monitor` finding the
+newest backup too old, or `backup:clean` failing. The success notifications are
+deliberately not enabled - a nightly "it worked" is noise, and a backup that
+stopped running altogether arrives as the monitor's staleness alert instead.
+
+An empty `BACKUP_NOTIFICATION_MAIL_TO` disables the notifications rather than
+emptying the address. That distinction matters: spatie validates the recipient
+whenever it builds its config, which is on every backup command, and throws when
+it is not a valid address - so an empty recipient would break the backups, not
+just their alerts.
 
 Retention and the file list live in `config/backup.php`. The included files are
 deliberately **not** `base_path()`, which is the package default and would put

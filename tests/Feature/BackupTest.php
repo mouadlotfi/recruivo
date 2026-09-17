@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schedule as ScheduleFacade;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
+use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
 use Tests\TestCase;
 
 /**
@@ -187,5 +190,49 @@ class BackupTest extends TestCase
         // would point the dump at a service that no longer exists, and nothing but
         // PostgreSQL runs now, so there is no fallback to land on.
         $this->assertSame([config('database.default')], config('backup.backup.source.databases'));
+    }
+
+    public function test_backup_failures_are_emailed_to_the_configured_recipient(): void
+    {
+        // The config computes this from the environment every time it loads, so it
+        // is re-required here rather than read from the copy loaded at boot.
+        putenv('BACKUP_NOTIFICATION_MAIL_TO=alerts@example.com');
+
+        try {
+            $notifications = (require base_path('config/backup.php'))['notifications'];
+        } finally {
+            putenv('BACKUP_NOTIFICATION_MAIL_TO');
+        }
+
+        $this->assertSame(['mail'], $notifications['notifications'][BackupHasFailedNotification::class]);
+        $this->assertSame(['mail'], $notifications['notifications'][UnhealthyBackupWasFoundNotification::class]);
+
+        // Successes are deliberately not reported: a nightly "it worked" is noise,
+        // and a backup that stopped running altogether arrives as
+        // UnhealthyBackupWasFound instead.
+        $this->assertArrayNotHasKey(BackupWasSuccessfulNotification::class, $notifications['notifications']);
+
+        $this->assertSame('alerts@example.com', $notifications['mail']['to']);
+    }
+
+    public function test_a_missing_alert_recipient_disables_the_alerts_not_the_backup(): void
+    {
+        // spatie builds its config on every backup command and throws when the
+        // recipient is not a valid address. An unset variable must therefore leave
+        // a real address behind and empty the notification list instead - the other
+        // way round would break backups in order to silence their alerts.
+        putenv('BACKUP_NOTIFICATION_MAIL_TO');
+
+        try {
+            $notifications = (require base_path('config/backup.php'))['notifications'];
+        } finally {
+            putenv('BACKUP_NOTIFICATION_MAIL_TO');
+        }
+
+        $this->assertSame([], $notifications['notifications']);
+        $this->assertNotFalse(
+            filter_var($notifications['mail']['to'], FILTER_VALIDATE_EMAIL),
+            'An unvalidatable recipient would make spatie throw on every backup command.'
+        );
     }
 }
