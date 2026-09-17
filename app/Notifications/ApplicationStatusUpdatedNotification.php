@@ -55,6 +55,16 @@ class ApplicationStatusUpdatedNotification extends Notification implements Shoul
             ->action('Review your application', $applicationsUrl)
             ->line('Thank you for trusting Recruivo with your job search.');
 
+        // The copy above invites a reply, so it has to be able to go somewhere:
+        // replies to noreply@recruivo.work bounce, since the domain has no MX
+        // record. The company's published contact address is where a candidate's
+        // question belongs. Companies without one keep the previous behaviour.
+        $companyEmail = $job->company?->email;
+
+        if (filled($companyEmail)) {
+            $mailMessage->replyTo($companyEmail, $companyName);
+        }
+
         return $mailMessage;
     }
 

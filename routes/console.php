@@ -1,7 +1,9 @@
 <?php
 
+use App\Console\Commands\QueueHealth;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -39,4 +41,28 @@ if (config('backup.backup.enabled') && ! app()->environment('demo')) {
     Schedule::command('backup:clean')->dailyAt('01:00')->appendOutputTo($scheduleLog);
     Schedule::command('backup:run')->dailyAt('01:30')->withoutOverlapping()->appendOutputTo($scheduleLog);
     Schedule::command('backup:monitor')->dailyAt('03:00')->appendOutputTo($scheduleLog);
+}
+
+// Queue health, which is the quieter failure of the two. A queue that has stopped
+// looks exactly like a quiet one: nothing errors, nothing arrives. The heartbeat
+// has to be dispatched rather than run, so that it executes on the worker being
+// watched - a worker that has stopped stops stamping it.
+//
+// It keeps its own log rather than appending to the backups' one, because the
+// failure email sends whatever file the event points at: sharing a file would
+// mail the whole backup history along with the queue problem.
+//
+// Not in the Demo, whose queued work is disposable and whose failures nobody
+// needs telling about.
+if (! app()->environment('demo')) {
+    Schedule::call(fn () => dispatch(fn () => Cache::put(
+        QueueHealth::HEARTBEAT_KEY,
+        now(),
+        now()->addDay(),
+    )))->everyFiveMinutes();
+
+    Schedule::command('queue:health')
+        ->hourly()
+        ->sendOutputTo(storage_path('logs/queue-health.log'))
+        ->emailOutputOnFailure(config('mail.operations_address'));
 }

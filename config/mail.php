@@ -33,4 +33,9 @@ return [
     // Contact-page messages land here and the legal pages publish it: a monitored
     // mailbox, not a noreply address.
     'contact_address' => env('MAIL_CONTACT_ADDRESS', 'mouad.lotfi.work@gmail.com'),
+
+    // Where the system reports trouble with itself, as opposed to mail being
+    // sent: currently a queue that has stopped moving. Defaults to the contact
+    // mailbox so it reaches a human with no extra setup.
+    'operations_address' => env('MAIL_OPERATIONS_ADDRESS', env('MAIL_CONTACT_ADDRESS', 'mouad.lotfi.work@gmail.com')),
 ];

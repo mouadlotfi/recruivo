@@ -96,21 +96,38 @@ class BackupTest extends TestCase
     public function test_every_scheduled_command_writes_a_log(): void
     {
         // A scheduled command's output is redirected to /dev/null unless the event
-        // says otherwise, and that redirect takes stderr with it - so a command
+        // says otherwise, and that redirect carries stderr with it - so a command
         // which exits non-zero leaves nothing behind, not even its error. A backup
-        // did fail that way and went unnoticed; this is what makes the next one
-        // visible. backup:monitor would go quiet in the same way, which would undo
-        // the only thing watching the backups.
-        $events = $this->scheduledEvents();
+        // failed that way and went unnoticed, which is what this guards.
+        //
+        // Commands only: the schedule also carries one closure, which dispatches the
+        // queue heartbeat rather than running anything, and whose silence is exactly
+        // what queue:health exists to notice.
+        $commands = collect($this->scheduledEvents())
+            ->filter(fn (Event $event): bool => str_contains((string) $event->command, 'artisan'));
 
-        $this->assertNotEmpty($events);
+        $this->assertNotEmpty($commands);
 
-        foreach ($events as $event) {
-            $this->assertSame(
-                storage_path('logs/schedule.log'),
+        foreach ($commands as $event) {
+            $this->assertNotSame(
+                $event->getDefaultOutput(),
                 $event->output,
                 "The [{$event->command}] event writes its output nowhere, so a failure would be silent."
             );
+        }
+    }
+
+    public function test_the_backup_commands_share_one_log(): void
+    {
+        // The failure email sends whatever file its event points at, so sharing one
+        // is the point: a backup alert should carry the backup history with it.
+        $backups = collect($this->scheduledEvents())
+            ->filter(fn (Event $event): bool => str_contains((string) $event->command, 'backup:'));
+
+        $this->assertCount(3, $backups);
+
+        foreach ($backups as $event) {
+            $this->assertSame(storage_path('logs/schedule.log'), $event->output);
         }
     }
 

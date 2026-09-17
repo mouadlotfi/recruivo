@@ -21,6 +21,8 @@ class NewApplicationNotification extends Notification implements ShouldQueue
 
     public function toMail($notifiable): MailMessage
     {
+        $this->application->loadMissing(['job', 'candidate']);
+
         $job = $this->application->job;
         $applicationsUrl = localized_route('recruiter.jobs.applications', ['job' => $job->id], config('app.locale', 'en'));
 
@@ -28,6 +30,10 @@ class NewApplicationNotification extends Notification implements ShouldQueue
             ->subject('New application for '.$job->title)
             ->greeting('Hello '.$notifiable->name)
             ->line($this->application->candidate->name.' has applied to '.$job->title)
+            // Without this a recruiter hitting Reply writes to noreply@recruivo.work,
+            // which has no MX record and bounces without a trace. It points at the
+            // candidate, whose address the recruiter already sees on the application.
+            ->replyTo($this->application->candidate->email, $this->application->candidate->name)
             ->action('View application', $applicationsUrl)
             ->line('Log in to review the candidate.');
     }
