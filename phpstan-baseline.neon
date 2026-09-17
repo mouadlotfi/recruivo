@@ -947,3 +947,9 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Support/JobCardSerializer.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Job\:\:\$company\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Support/JobPostingSchema.php
