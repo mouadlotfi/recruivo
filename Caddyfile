@@ -1,0 +1,53 @@
+{
+	frankenphp
+	order php_server before file_server
+	# analytics must be handled before the PHP catch-all
+	order handle_path before php_server
+}
+
+:80 {
+	root * /var/www/html/public
+	encode zstd br gzip
+
+	# Security headers
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=()"
+	}
+
+	# Static asset caching: hashed build assets are immutable, storage files are not
+	@cache_assets {
+		path /build/* *.css *.js *.jpg *.jpeg *.gif *.png *.svg *.ico *.webp *.woff *.woff2 *.ttf *.map
+	}
+	header @cache_assets Cache-Control "public, max-age=31536000, immutable"
+
+	@cache_storage {
+		path /storage/*
+	}
+	header @cache_storage Cache-Control "public, max-age=3600"
+
+	# Block sensitive and hidden files
+	@blocked {
+		path /.*
+		not path /.well-known/*
+	}
+	error @blocked 404
+
+	@sensitive {
+		path /composer.* /package*.json /vite.config.* /.env*
+	}
+	error @sensitive 404
+
+	# Analytics (Umami): proxied under our own origin, which keeps the browser
+	# talking only to this site - no third-party request, no CORS, and the
+	# content security policy stays at 'self'. Set UMAMI_UPSTREAM where Umami runs.
+	handle_path /u/* {
+		reverse_proxy {$UMAMI_UPSTREAM:host.docker.internal:3000}
+	}
+
+	php_server {
+		try_files {path} /index.php
+	}
+}

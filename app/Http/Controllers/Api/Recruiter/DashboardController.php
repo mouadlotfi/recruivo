@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Controllers\Api\Recruiter;
+
+use App\Enums\ApplicationStatus;
+use App\Http\Controllers\Controller;
+use App\Models\Application;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class DashboardController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
+        $jobs = $request->user()->jobs()->withCount([
+            'applications as pending_applications_count' => function ($query) {
+                $query->where('status', ApplicationStatus::Pending->value);
+            },
+            'applications',
+        ])->latest()->paginate(10);
+
+        $jobsBuilder = $request->user()->jobs();
+
+        $metrics = [
+            'active' => (clone $jobsBuilder)->published()->count(),
+            'drafts' => (clone $jobsBuilder)->where('status', 'draft')->count(),
+            'total_applicants' => Application::whereHas(
+                'job',
+                fn ($query) => $query->where('recruiter_id', $request->user()->id)
+            )->count(),
+        ];
+
+        return response()->json([
+            'data' => [
+                'jobs' => $jobs,
+                'metrics' => $metrics,
+            ],
+        ]);
+    }
+}

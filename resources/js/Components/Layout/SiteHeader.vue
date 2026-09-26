@@ -1,0 +1,144 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { Link, usePage } from '@inertiajs/vue3'
+import type { PageProps } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
+import Navigation from './Navigation.vue'
+import SearchModal from './SearchModal.vue'
+import NotificationCenter from './NotificationCenter.vue'
+import UserDropdown from './UserDropdown.vue'
+import ThemeToggle from './ThemeToggle.vue'
+import LanguageToggle from './LanguageToggle.vue'
+
+defineProps<{
+    /** Where the logo points; each layout resolves it for its audience. */
+    logoHref: string
+    /** App pages keep the public navigation out of an admin's way; the admin shell has its own. */
+    hideNavigationForAdmin?: boolean
+    /** Guest pages have no account menu for admins, so they sign out from the header instead. */
+    signOutForAdmin?: boolean
+}>()
+
+const page = usePage<PageProps>()
+const { t } = useTranslation()
+const user = computed(() => page.props.auth.user)
+const isRecruiter = computed(() => user.value?.roles.includes('Recruiter') ?? false)
+const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
+const localeUrl = (path: string) => `/${page.props.locale}${path}`
+
+const searchOpen = ref(false)
+const searchTrigger = ref<HTMLButtonElement | null>(null)
+</script>
+
+<template>
+    <header class="sticky top-0 z-[9999] border-b border-stone-200/60 bg-white/75 backdrop-blur-xl dark:border-stone-800/70 dark:bg-stone-950/80">
+        <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+            <div class="flex h-full items-center gap-6 lg:gap-8">
+                <div class="flex items-center gap-2.5">
+                    <Link :href="logoHref" class="group flex items-center gap-2.5 text-lg font-semibold">
+                        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center transition group-hover:scale-105">
+                            <svg viewBox="0 0 48 48" fill="none" class="h-9 w-9" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="logo-amber" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#F59E0B" />
+                                        <stop offset="100%" stop-color="#D97706" />
+                                    </linearGradient>
+                                    <linearGradient id="logo-teal" x1="100%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="#14B8A6" />
+                                        <stop offset="100%" stop-color="#0F766E" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M8 24C8 15.163 15.163 8 24 8" stroke="url(#logo-amber)" stroke-width="6" stroke-linecap="round" />
+                                <path d="M40 24C40 32.837 32.837 40 24 40" stroke="url(#logo-teal)" stroke-width="6" stroke-linecap="round" />
+                                <circle cx="24" cy="24" r="5" fill="url(#logo-amber)" />
+                            </svg>
+                        </span>
+                        <span class="font-semibold tracking-tight text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
+                            Recruivo
+                        </span>
+                    </Link>
+                    <component
+                        :is="page.props.productionUrl ? 'a' : 'span'"
+                        v-if="page.props.isDemoEnvironment"
+                        :href="page.props.productionUrl ?? undefined"
+                        :target="page.props.productionUrl ? '_blank' : undefined"
+                        :rel="page.props.productionUrl ? 'noopener noreferrer' : undefined"
+                        class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
+                        :class="page.props.productionUrl ? 'transition hover:bg-amber-500/20 dark:hover:bg-amber-400/20' : ''"
+                        :title="t('demo_environment_notice')"
+                    >
+                        {{ t('demo_environment_badge') }}
+                        <svg v-if="page.props.productionUrl" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                    </component>
+                </div>
+                <Navigation v-if="!hideNavigationForAdmin || !isAdmin" />
+            </div>
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <button
+                    v-if="!isAdmin"
+                    ref="searchTrigger"
+                    id="mobile-search-toggle"
+                    type="button"
+                    aria-haspopup="dialog"
+                    :aria-expanded="searchOpen"
+                    :aria-label="t('search')"
+                    class="inline-flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 dark:focus-visible:ring-offset-stone-950"
+                    @click="searchOpen = true"
+                >
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                    <span class="sr-only">{{ t('search') }}</span>
+                </button>
+
+                <template v-if="user">
+                    <Link
+                        v-if="isRecruiter"
+                        :href="localeUrl('/recruiter/jobs/create')"
+                        class="hidden h-9 items-center justify-center whitespace-nowrap rounded-full bg-amber-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 xl:inline-flex dark:hover:bg-amber-500/90 dark:focus-visible:ring-offset-stone-950"
+                    >
+                        {{ t('post_job') }}
+                    </Link>
+                    <template v-if="!isAdmin">
+                        <NotificationCenter />
+                        <UserDropdown />
+                    </template>
+                    <Link
+                        v-else-if="signOutForAdmin"
+                        :href="localeUrl('/logout')"
+                        method="post"
+                        as="button"
+                        class="inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-200 dark:hover:bg-stone-800"
+                    >
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                        </svg>
+                        <span class="hidden sm:inline">{{ t('sign_out') }}</span>
+                    </Link>
+                    <UserDropdown v-else />
+                </template>
+                <template v-else>
+                    <Link
+                        :href="localeUrl('/login')"
+                        class="hidden h-9 items-center justify-center whitespace-nowrap rounded-full border border-stone-200/80 px-4 text-sm font-semibold text-stone-600 transition hover:border-amber-300 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 sm:inline-flex dark:border-stone-700 dark:text-stone-200 dark:hover:border-amber-400 dark:hover:text-amber-300"
+                    >
+                        {{ t('log_in') }}
+                    </Link>
+                    <Link
+                        :href="localeUrl('/register')"
+                        class="hidden h-9 items-center justify-center whitespace-nowrap rounded-full bg-amber-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 sm:inline-flex dark:hover:bg-amber-500/90 dark:focus-visible:ring-offset-stone-950"
+                    >
+                        {{ t('sign_up') }}
+                    </Link>
+                </template>
+
+                <LanguageToggle />
+                <ThemeToggle />
+            </div>
+        </div>
+    </header>
+
+    <template v-if="!isAdmin">
+        <SearchModal v-model:open="searchOpen" :trigger="searchTrigger" />
+    </template>
+</template>

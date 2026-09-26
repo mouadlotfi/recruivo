@@ -1,0 +1,81 @@
+# Local development compose overlay.
+# Run with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# Every Laravel service must build the `development` target: the base file points
+# them at the private GHCR image, which cannot be pulled without credentials.
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-laravel-service-dev: &laravel-service-dev
+  image: ${APP_IMAGE:-recruivo:development}
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: development
+  volumes:
+    - .:/var/www/html
+    - vendor_data:/var/www/html/vendor
+    - app_storage:/var/www/html/storage
+
+services:
+  app:
+    <<: *laravel-service-dev
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+
+  queue:
+    <<: *laravel-service-dev
+
+  scheduler:
+    <<: *laravel-service-dev
+
+  # Runs migrations against the working tree, not a published image.
+  migrate:
+    <<: *laravel-service-dev
+
+  postgres:
+    ports:
+      - "${POSTGRES_FORWARD_PORT:-5432}:5432"
+
+  redis:
+    ports:
+      - "${REDIS_FORWARD_PORT:-6379}:6379"
+
+  # Catches every message the application sends locally, so nothing can reach a
+  # real inbox from a development machine or from an agent driving one. SMTP
+  # listens on 1025; the web UI - and the REST API used to read messages - on
+  # 8025. It needs no credentials, so no mail secret lives in the working tree.
+  mailpit:
+    image: axllent/mailpit:v1.31
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
+  vite:
+    image: node:22-bookworm-slim
+    init: true
+    restart: unless-stopped
+    logging: *default-logging
+    working_dir: /var/www/html
+    env_file:
+      - ${APP_ENV_FILE:-.env}
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      VITE_HMR_HOST: ${VITE_HMR_HOST:-localhost}
+    command: ["sh", "-c", "if [ ! -x node_modules/.bin/vite ]; then npm ci --prefer-offline --no-audit; fi; exec npm run dev -- --host 0.0.0.0"]
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+
+volumes:
+  vendor_data:
+  node_modules:

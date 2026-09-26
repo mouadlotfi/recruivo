@@ -1,0 +1,370 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\ApplicationStatus;
+use App\Models\Application;
+use App\Models\Company;
+use App\Models\Job;
+use App\Models\User;
+use App\Notifications\ApplicationStatusUpdatedNotification;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\File;
+use Inertia\Testing\AssertableInertia;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+class RecruiterInterviewDetailsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+
+        foreach (['Candidate', 'Recruiter'] as $role) {
+            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
+        }
+    }
+
+    private function makeInterviewContext(): array
+    {
+        $company = Company::factory()->create();
+        $recruiter = User::factory()->for($company)->create(['email_verified_at' => now()]);
+        $recruiter->assignRole('Recruiter');
+        $candidate = User::factory()->create(['email_verified_at' => now()]);
+        $candidate->assignRole('Candidate');
+        $job = Job::factory()->for($company)->for($recruiter, 'recruiter')->create(['title' => 'Backend Engineer']);
+        $application = Application::factory()->for($candidate, 'candidate')->for($job)->create([
+            'status' => ApplicationStatus::Pending->value,
+        ]);
+
+        return [$recruiter, $candidate, $application];
+    }
+
+    public function test_interview_fields_persist_and_interview_at_casts_to_carbon(): void
+    {
+        [, , $application] = $this->makeInterviewContext();
+
+        $application->update([
+            'status' => ApplicationStatus::Interview->value,
+            'interview_at' => '2026-09-01 10:00:00',
+            'interview_location' => 'Casablanca HQ',
+            'interview_url' => 'https://meet.example.com/abc',
+            'interview_instructions' => 'Bring your laptop.',
+        ]);
+
+        $fresh = $application->fresh();
+
+        $this->assertInstanceOf(Carbon::class, $fresh->interview_at);
+        $this->assertSame('2026-09-01 10:00:00', $fresh->interview_at->format('Y-m-d H:i:s'));
+        $this->assertSame('Casablanca HQ', $fresh->interview_location);
+        $this->assertSame('https://meet.example.com/abc', $fresh->interview_url);
+        $this->assertSame('Bring your laptop.', $fresh->interview_instructions);
+    }
+
+    public function test_moving_to_interview_without_interview_at_fails_validation(): void
+    {
+        [$recruiter, , $application] = $this->makeInterviewContext();
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Interview->value,
+                'interview_location' => 'Casablanca HQ',
+            ])
+            ->assertSessionHasErrors('interview_at');
+    }
+
+    // Interview requires a location for onsite (default) or a URL for online
+    public function test_moving_to_interview_requires_location_or_url(): void
+    {
+        [$recruiter, , $application] = $this->makeInterviewContext();
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Interview->value,
+                'interview_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
+            ])
+            ->assertSessionHasErrors('interview_location');
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Interview->value,
+                'interview_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
+                'interview_mode' => 'online',
+            ])
+            ->assertSessionHasErrors('interview_url');
+    }
+
+    public function test_moving_to_interview_rejects_malformed_or_non_http_url(): void
+    {
+        [$recruiter, , $application] = $this->makeInterviewContext();
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Interview->value,
+                'interview_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
+                'interview_url' => 'ftp://files.example.com/meeting',
+            ])
+            ->assertSessionHasErrors('interview_url');
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Interview->value,
+                'interview_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
+                'interview_url' => 'not a url',
+            ])
+            ->assertSessionHasErrors('interview_url');
+    }
+
+    public function test_moving_to_interview_with_date_and_location_succeeds(): void
+    {
+        [$recruiter, , $application] = $this->makeInterviewContext();
+
+        $interviewAt = now()->addDays(2)->format('Y-m-d H:i:s');
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Interview->value,
+                'interview_at' => $interviewAt,
+                'interview_location' => 'Casablanca HQ, Room 4',
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('applications', [
+            'id' => $application->id,
+            'status' => ApplicationStatus::Interview->value,
+            'interview_at' => $interviewAt,
+            'interview_location' => 'Casablanca HQ, Room 4',
+            'interview_url' => null,
+        ]);
+    }
+
+    // Interview with date + online mode + https url is accepted
+    public function test_moving_to_interview_with_date_and_https_url_succeeds(): void
+    {
+        [$recruiter, , $application] = $this->makeInterviewContext();
+
+        $interviewAt = now()->addDays(2)->format('Y-m-d H:i:s');
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Interview->value,
+                'interview_mode' => 'online',
+                'interview_at' => $interviewAt,
+                'interview_url' => 'https://meet.example.com/interview',
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('applications', [
+            'id' => $application->id,
+            'status' => ApplicationStatus::Interview->value,
+            'interview_at' => $interviewAt,
+            'interview_url' => 'https://meet.example.com/interview',
+            'interview_location' => null,
+        ]);
+    }
+
+    public function test_interview_instructions_are_optional_and_persist(): void
+    {
+        [$recruiter, , $application] = $this->makeInterviewContext();
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Interview->value,
+                'interview_mode' => 'online',
+                'interview_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
+                'interview_url' => 'https://meet.example.com/interview',
+                'interview_instructions' => 'Bring your laptop and be on time.',
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('applications', [
+            'id' => $application->id,
+            'interview_instructions' => 'Bring your laptop and be on time.',
+        ]);
+    }
+
+    public function test_moving_away_from_interview_clears_interview_fields(): void
+    {
+        [$recruiter, , $application] = $this->makeInterviewContext();
+
+        $application->update([
+            'status' => ApplicationStatus::Interview->value,
+            'interview_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
+            'interview_location' => 'Casablanca HQ',
+            'interview_url' => 'https://meet.example.com/abc',
+            'interview_instructions' => 'Bring your laptop.',
+        ]);
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Pending->value,
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('applications', [
+            'id' => $application->id,
+            'status' => ApplicationStatus::Pending->value,
+            'interview_at' => null,
+            'interview_location' => null,
+            'interview_url' => null,
+            'interview_instructions' => null,
+        ]);
+    }
+
+    public function test_recruiter_review_form_renders_interview_fields_with_alpine_wiring(): void
+    {
+        [$recruiter, , $application] = $this->makeInterviewContext();
+
+        $response = $this->actingAs($recruiter)
+            ->get("/en/recruiter/jobs/{$application->job_id}/applications");
+
+        $response->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Recruiter/Applications/Index', false)
+                ->has('applications', 1)
+            );
+
+        $review = File::get(resource_path('js/Components/Applications/ApplicationReviewPanel.vue'));
+        $this->assertStringContainsString("form.status === 'interview'", $review);
+        $this->assertStringContainsString('name="interview_at"', $review);
+        $this->assertStringContainsString('type="datetime-local"', $review);
+        $this->assertStringContainsString('name="interview_location"', $review);
+        $this->assertStringContainsString('name="interview_url"', $review);
+        $this->assertStringContainsString('type="url"', $review);
+        $this->assertStringContainsString('name="interview_instructions"', $review);
+    }
+
+    public function test_candidate_sees_interview_panel_with_details_only_for_scheduled_interviews(): void
+    {
+        [, $candidate, $application] = $this->makeInterviewContext();
+
+        $interviewAt = now()->addDays(2);
+        $application->update([
+            'status' => ApplicationStatus::Interview->value,
+            'interview_at' => $interviewAt->format('Y-m-d H:i:s'),
+            'interview_location' => 'Casablanca HQ',
+            'interview_url' => 'https://meet.example.com/interview',
+            'interview_instructions' => "Bring your laptop.\nBe on time.",
+        ]);
+
+        $otherJob = Job::factory()->create(['title' => 'Other Position']);
+        Application::factory()->for($candidate, 'candidate')->for($otherJob)->create([
+            'status' => ApplicationStatus::Pending->value,
+        ]);
+
+        $response = $this->actingAs($candidate)->get('/en/candidate/applications');
+        $response->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Candidate/Applications', false)
+                ->has('applications', 2)
+                ->where('applications.0.interview.location', 'Casablanca HQ')
+                ->where('applications.0.interview.url', 'https://meet.example.com/interview')
+                ->where('applications.0.interview.instructions', "Bring your laptop.\nBe on time.")
+            );
+
+        $candidateCard = File::get(resource_path('js/Components/Applications/CandidateApplicationCard.vue'));
+        $this->assertStringContainsString('interview_scheduled', $candidateCard);
+        $this->assertStringContainsString('application.interview.formatted_at', $candidateCard);
+        $this->assertStringContainsString('target="_blank"', $candidateCard);
+    }
+
+    public function test_interview_notification_contains_interview_details_in_mail_and_array(): void
+    {
+        [, $candidate, $application] = $this->makeInterviewContext();
+
+        $interviewAt = now()->addDays(2);
+        $application->update([
+            'status' => ApplicationStatus::Interview->value,
+            'interview_at' => $interviewAt->format('Y-m-d H:i:s'),
+            'interview_location' => 'Casablanca HQ',
+            'interview_url' => 'https://meet.example.com/interview',
+            'interview_instructions' => 'Bring your laptop.',
+        ]);
+
+        $candidate->notify(new ApplicationStatusUpdatedNotification($application));
+
+        $stored = $candidate->fresh()->notifications()->first()->data;
+        $this->assertSame('interview', $stored['status']);
+        $this->assertSame($interviewAt->format('Y-m-d H:i'), $stored['interview_at']);
+        $this->assertSame('Casablanca HQ', $stored['interview_location']);
+        $this->assertSame('https://meet.example.com/interview', $stored['interview_url']);
+        $this->assertSame('Bring your laptop.', $stored['interview_instructions']);
+
+        $mail = (new ApplicationStatusUpdatedNotification($application))->toMail($candidate);
+        $lines = implode(' ', $mail->introLines);
+        $this->assertStringContainsString('Interview scheduled for', $lines);
+        $this->assertStringContainsString('Location: Casablanca HQ', $lines);
+        $this->assertStringContainsString('Meeting link: https://meet.example.com/interview', $lines);
+        $this->assertStringContainsString('Bring your laptop.', $lines);
+    }
+
+    public function test_notification_center_renders_interview_title_for_interview_updates(): void
+    {
+        [, $candidate, $application] = $this->makeInterviewContext();
+
+        $application->update([
+            'status' => ApplicationStatus::Interview->value,
+            'interview_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
+            'interview_location' => 'Casablanca HQ',
+        ]);
+
+        $candidate->notify(new ApplicationStatusUpdatedNotification($application));
+
+        $response = $this->actingAs($candidate)
+            ->get('/en/candidate/dashboard')
+            ->assertOk();
+
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Candidate/Dashboard', false)
+            ->where('notificationCount', 1)
+        );
+
+        $notification = File::get(resource_path('js/Components/Layout/NotificationCenter.vue'));
+        $this->assertStringContainsString('data-notification-center', $notification);
+    }
+
+    public function test_moving_to_interview_with_a_past_date_fails_validation(): void
+    {
+        [$recruiter, , $application] = $this->makeInterviewContext();
+
+        $this->actingAs($recruiter)
+            ->patch("/en/recruiter/applications/{$application->id}", [
+                'status' => ApplicationStatus::Interview->value,
+                'interview_at' => now()->subDay()->format('Y-m-d H:i:s'),
+                'interview_location' => 'Casablanca HQ',
+            ])
+            ->assertSessionHasErrors('interview_at');
+    }
+
+    public function test_notes_only_update_on_an_interview_application_preserves_interview_details(): void
+    {
+        [, , $application] = $this->makeInterviewContext();
+
+        $application->update([
+            'status' => ApplicationStatus::Interview->value,
+            'interview_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
+            'interview_location' => 'Casablanca HQ',
+            'interview_url' => 'https://meet.example.com/interview',
+            'interview_instructions' => 'Bring your laptop.',
+        ]);
+
+        $application->applyStatusUpdate(['notes' => 'A quick note without a status change.']);
+
+        $fresh = $application->fresh();
+        $this->assertSame(ApplicationStatus::Interview->value, $fresh->status->value);
+        $this->assertNotNull($fresh->interview_at);
+        $this->assertSame('Casablanca HQ', $fresh->interview_location);
+        $this->assertSame('https://meet.example.com/interview', $fresh->interview_url);
+        $this->assertSame('Bring your laptop.', $fresh->interview_instructions);
+
+        // Same-status re-PATCH keeps interview data too.
+        $application->applyStatusUpdate(['status' => ApplicationStatus::Interview->value]);
+        $this->assertSame('Casablanca HQ', $application->fresh()->interview_location);
+    }
+}

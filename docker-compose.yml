@@ -1,0 +1,216 @@
+# Production and local compose (parameterized via environment variables).
+
+
+networks:
+  default:
+    name: recruivo_network
+name: ${COMPOSE_PROJECT_NAME:-recruivo}
+
+# Docker's json-file driver is unbounded by default, and these logs share a disk
+# with postgres_data and app_storage.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-laravel-service: &laravel-service
+  image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-latest}}
+  restart: unless-stopped
+  logging: *default-logging
+  # /tmp must be explicitly world-writable. On the deploy host containerd runs
+  # rootless, so image layers are extracted owned by its user with mode 775 and
+  # the image's /tmp stops being 1777 - PHP then cannot write upload temp files.
+  # An explicit mode makes the stack independent of how the host extracts layers.
+  tmpfs:
+    - /tmp:mode=1777
+  # Lets Caddy proxy the analytics endpoint to a container on this host
+  # (UMAMI_UPSTREAM=host.docker.internal:<port>). Harmless when unused.
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  working_dir: /var/www/html
+  env_file:
+    - path: ${APP_ENV_FILE:-.env}
+      required: false
+  environment:
+    DB_HOST: ${DB_HOST:-postgres}
+    REDIS_HOST: ${REDIS_HOST:-redis}
+  volumes:
+    - app_storage:/var/www/html/storage
+    # spatie/laravel-backup writes its archives to /backups and includes the
+    # deployment env file. That file must be mounted because compose `env_file`
+    # injects variables and never places the file itself in the container.
+    # Set both to absolute paths in deployment: a relative default resolves
+    # inside the CI runner's checkout, which is wiped on every deploy.
+    - ${BACKUP_DIR:-./backups}:/backups
+    - ${APP_ENV_FILE:-.env}:/etc/recruivo/deployment.env:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+      required: false
+    redis:
+      condition: service_healthy
+      required: false
+    # The demo stack runs its own Redis (see the redis-demo service); every other
+    # stack resolves this to nothing and `required: false` keeps it optional.
+    redis-demo:
+      condition: service_healthy
+      required: false
+
+services:
+  app:
+    <<: *laravel-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-production}
+    ports:
+      - "${APP_BIND_IP:-0.0.0.0}:${APP_PORT:-8085}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["infra"]
+    # PostgreSQL sorts and hashes large results through /tmp. See the note on the
+    # service anchor for why its mode cannot be relied on from the image.
+    tmpfs:
+      - /tmp:mode=1777
+    networks:
+      default:
+        aliases:
+          - postgres
+    env_file:
+      - path: ${APP_ENV_FILE:-.env}
+        required: false
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-recruivo_db}
+      POSTGRES_USER: ${DB_USERNAME:-recruivo}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 30s
+
+  backup:
+    image: offen/docker-volume-backup:v2.49.0
+    restart: unless-stopped
+    logging: *default-logging
+    # Deliberately NOT under the `infra` profile that production enables: backups
+    # are taken by spatie/laravel-backup in the `scheduler` service. This service
+    # is kept as the ready-made offsite path (SSH/S3 destinations, GPG, pruning)
+    # for when a copy has to leave this host. Enable it with
+    # COMPOSE_PROFILES=infra,offsite and point it at the spatie archive directory.
+    profiles: ["offsite"]
+    environment:
+      BACKUP_CRON_EXPRESSION: ${BACKUP_CRON_EXPRESSION:-30 3 * * *}
+      BACKUP_FILENAME: ${BACKUP_FILENAME:-recruivo-db-%Y-%m-%dT%H-%M-%S.{{ .Extension }}}
+      BACKUP_PRUNING_PREFIX: ${BACKUP_PRUNING_PREFIX:-recruivo-db-}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_COMPRESSION: ${BACKUP_COMPRESSION:-gz}
+      GPG_PASSPHRASE: ${BACKUP_GPG_PASSPHRASE:-}
+      NOTIFICATION_URLS: ${BACKUP_NOTIFICATION_URLS:-}
+      SSH_HOST_NAME: ${BACKUP_SSH_HOST:-}
+      SSH_PORT: ${BACKUP_SSH_PORT:-22}
+      SSH_USER: ${BACKUP_SSH_USER:-}
+      SSH_REMOTE_PATH: ${BACKUP_SSH_PATH:-}
+      AWS_S3_BUCKET_NAME: ${BACKUP_S3_BUCKET:-}
+      AWS_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      AWS_ENDPOINT: ${BACKUP_S3_ENDPOINT:-s3.amazonaws.com}
+    volumes:
+      - ${BACKUP_STAGING_DIR:-./backups/staging}:/backup/db:ro
+      - ${BACKUP_ARCHIVE_DIR:-./backups/archive}:/archive
+      - ${BACKUP_SSH_KEY_DIR:-./backups/ssh}:/root/.ssh:ro
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["infra"]
+    networks:
+      default:
+        aliases:
+          - redis
+    env_file:
+      - path: ${APP_ENV_FILE:-.env}
+        required: false
+    command: ["sh", "-c", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then exec redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes --appendfsync everysec; else exec redis-server --protected-mode no --appendonly yes --appendfsync everysec; fi"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping >/dev/null 2>&1 || exit 1; else redis-cli ping >/dev/null 2>&1 || exit 1; fi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  # The demo stack's own Redis, enabled by COMPOSE_PROFILES=infra-demo.
+  #
+  # The demo shares a PostgreSQL server with production and is isolated there per
+  # database role, but Redis has no equivalent: an ACL user's key patterns are
+  # global across logical databases, so a shared instance cannot both allow the
+  # demo to run `cache:clear` (FLUSHDB) and stop it from flushing production's
+  # databases. A separate instance makes that question disappear.
+  #
+  # Deliberately a second service rather than a second profile on `redis`: both
+  # projects pin the same network name, so two containers answering to the same
+  # alias would collide in DNS. This one answers to `redis-demo`.
+  redis-demo:
+    image: redis:7-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["infra-demo"]
+    networks:
+      default:
+        aliases:
+          - redis-demo
+    env_file:
+      - path: ${APP_ENV_FILE:-.env}
+        required: false
+    command: ["sh", "-c", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then exec redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes --appendfsync everysec; else exec redis-server --protected-mode no --appendonly yes --appendfsync everysec; fi"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_demo_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping >/dev/null 2>&1 || exit 1; else redis-cli ping >/dev/null 2>&1 || exit 1; fi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  queue:
+    <<: *laravel-service
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600", "--memory=128", "--timeout=${QUEUE_WORKER_TIMEOUT:-60}", "--no-interaction"]
+    healthcheck:
+      disable: true
+
+  scheduler:
+    <<: *laravel-service
+    command: ["php", "artisan", "schedule:work", "--no-interaction"]
+    healthcheck:
+      disable: true
+
+  migrate:
+    <<: *laravel-service
+    command: ${MIGRATE_COMMAND:-php artisan migrate --force --no-interaction}
+    restart: "no"
+    healthcheck:
+      disable: true
+volumes:
+  postgres_data:
+  redis_data:
+  redis_demo_data:
+  app_storage:
+

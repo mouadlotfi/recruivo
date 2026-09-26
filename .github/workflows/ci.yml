@@ -1,0 +1,476 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions: {}
+
+env:
+  REGISTRY: ghcr.io
+  APP_IMAGE: ghcr.io/${{ github.repository_owner }}/recruivo
+
+jobs:
+  backend:
+    name: Backend tests + lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: recruivo_test
+          POSTGRES_USER: recruivo
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U recruivo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_pgsql, bcmath, zip, gd, redis
+          coverage: none
+          tools: composer:v2
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Audit Composer dependencies
+        run: composer audit
+
+      - name: Create storage and build directories
+        run: |
+          mkdir -p storage/framework/{cache/data,sessions,views,testing} storage/logs bootstrap/cache public/build
+          echo '{"resources/js/app.ts":{"file":"assets/app.js","isEntry":true,"src":"resources/js/app.ts"},"resources/css/app.css":{"file":"assets/app.css","src":"resources/css/app.css"}}' > public/build/manifest.json
+
+      - name: Lint (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Static analysis (Larastan)
+        run: vendor/bin/phpstan analyse --memory-limit=512M --no-progress
+
+      - name: Run tests (PHPUnit)
+        run: php artisan test --parallel --compact
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:7f9E2k8nZ3vB5cX7mA9pQ1wE3rT5yU7iO9pA1sD3fG5=
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: recruivo_test
+          DB_USERNAME: recruivo
+          DB_PASSWORD: secret
+          CACHE_DRIVER: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          MAIL_MAILER: array
+
+  frontend:
+    name: Frontend typecheck + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Build
+        run: bun run build
+
+  docker-build-check:
+    name: Docker build check (production)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build production target
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: production
+          push: false
+          cache-from: type=gha,scope=app
+
+  build-images:
+    name: Build and push (production)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: production
+          push: true
+          tags: |
+            ${{ env.APP_IMAGE }}:sha-${{ github.sha }}
+            ${{ env.APP_IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,mode=max,scope=app
+
+  deploy-production:
+    name: Deploy (Production)
+    runs-on: [self-hosted, Linux, X64, recruivo]
+    timeout-minutes: 15
+    needs: [build-images]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment:
+      name: production
+      url: https://recruivo.work
+    permissions:
+      contents: read
+      packages: read
+    env:
+      APP_TAG: sha-${{ github.sha }}
+      APP_PORT: ${{ vars.APP_PORT || '8085' }}
+      APP_ENV_FILE: ${{ vars.APP_ENV_FILE }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Production
+        run: |
+          set -euo pipefail
+
+          PROJECT_NAME="recruivo"
+          TARGET_TAG="${APP_TAG}"
+
+          # The job-level APP_IMAGE is an untagged repository, and being set it
+          # wins over the compose default that would append APP_TAG - every
+          # deploy silently pulled :latest and the rollback below could not pin
+          # an older build. Pin this build's reference explicitly instead.
+          APP_IMAGE="${APP_IMAGE}:${TARGET_TAG}"
+          export APP_IMAGE
+          HEALTH_TIMEOUT=120
+          MIGRATE_TIMEOUT=300
+          POLL_INTERVAL=3
+          HTTP_PORT="${APP_PORT##*:}"
+
+          # `env_file:` only injects into the container; compose interpolation
+          # (`${DB_HOST:-postgres}`, `${COMPOSE_PROFILES}`, ...) reads the shell or an
+          # `--env-file` - pass the deployment env file to both.
+          COMPOSE_ENV_ARGS=()
+          # Host-specific, so it is not a path in this repository: set the
+          # APP_ENV_FILE variable on this environment (production/demo).
+          if [ ! -f "${APP_ENV_FILE:-}" ]; then
+            echo "::error::APP_ENV_FILE is not set, or is not a file - set the APP_ENV_FILE variable on this environment"
+            exit 1
+          fi
+          COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
+
+          PREV_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
+          PREV_TAG=""
+          if [ -n "${PREV_CID}" ]; then
+            PREV_REF=$(docker inspect --format '{{.Config.Image}}' "${PREV_CID}" 2>/dev/null || true)
+            PREV_TAG="${PREV_REF##*:}"
+            # An untagged reference yields no tag: leave it empty to skip the rollback.
+            if [ "${PREV_TAG}" = "${PREV_REF}" ]; then
+              PREV_TAG=""
+            fi
+          fi
+
+          echo "Pulling images for tag ${TARGET_TAG}..."
+          if ! APP_TAG="${TARGET_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" pull; then
+            echo "::error::Failed to pull images for tag ${TARGET_TAG}"
+            exit 1
+          fi
+
+          echo "Updating containers and running migrations..."
+          APP_TAG="${TARGET_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans
+
+          # `migrate` runs concurrently with `up -d`, so the app can answer the
+          # health probe before the schema is current: wait for its exit code.
+          echo "Waiting for migrations to complete..."
+          MIGRATE_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -a -q migrate 2>/dev/null || true)
+          MIGRATE_EXIT=1
+          if [ -n "${MIGRATE_CID}" ]; then
+            # `timeout` (124) keeps a hung migration from stalling the job until the
+            # workflow timeout, which would bypass the rollback below.
+            MIGRATE_EXIT=$(timeout "${MIGRATE_TIMEOUT}" docker wait "${MIGRATE_CID}" || echo 124)
+          fi
+
+          MIGRATE_FAILED=false
+          if [ -z "${MIGRATE_CID}" ]; then
+            MIGRATE_FAILED=true
+            echo "::error::migrate service container not found; migrations were not applied"
+          elif [ "${MIGRATE_EXIT}" != "0" ]; then
+            MIGRATE_FAILED=true
+            echo "::error::Migration container exited with status ${MIGRATE_EXIT}; skipping health checks"
+            docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" logs --tail=50 migrate || true
+          fi
+
+          echo "Waiting for services to become healthy..."
+          START_TIME=$(date +%s)
+          DEPLOY_OK=false
+
+          while [ "${MIGRATE_FAILED}" = "false" ]; do
+            ELAPSED=$(( $(date +%s) - START_TIME ))
+
+            APP_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
+            APP_HEALTH="starting"
+            if [ -n "${APP_CID}" ]; then
+              APP_HEALTH=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${APP_CID}" 2>/dev/null || echo "error")
+            fi
+
+            echo "Status (${ELAPSED}s): app=${APP_HEALTH}"
+
+            # Transiently unhealthy while migrations are applied: only the
+            # overall timeout decides failure.
+
+            if [ "${APP_HEALTH}" = "healthy" ]; then
+              HTTP_STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:${HTTP_PORT}/api/health" 2>/dev/null || true)
+              if [ "${HTTP_STATUS}" = "200" ]; then
+                echo "Smoke test passed (HTTP 200 from /api/health)"
+                DEPLOY_OK=true
+                break
+              fi
+            fi
+
+            if [ "${ELAPSED}" -ge "${HEALTH_TIMEOUT}" ]; then
+              echo "::error::Timed out after ${HEALTH_TIMEOUT}s waiting for containers to become healthy"
+              break
+            fi
+
+            sleep "${POLL_INTERVAL}"
+          done
+
+          if [ "${DEPLOY_OK}" = "true" ]; then
+            echo "Production deployment finished successfully."
+            exit 0
+          fi
+
+          echo "::error::Production deployment failed; fetching recent container logs"
+          docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" logs --tail=50 || true
+
+          if [ -n "${PREV_TAG}" ] && [ "${PREV_TAG}" != "${TARGET_TAG}" ]; then
+            echo "::warning::Rolling back to previous tag: ${PREV_TAG}"
+            APP_IMAGE="${APP_IMAGE%:*}:${PREV_TAG}" APP_TAG="${PREV_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans || {
+              echo "::error::Rollback to ${PREV_TAG} failed"
+            }
+          fi
+
+          exit 1
+
+  deploy-demo:
+    name: Deploy (Demo)
+    runs-on: [self-hosted, Linux, X64, recruivo]
+    timeout-minutes: 15
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment:
+      name: demo
+      url: https://demo.recruivo.work
+    permissions:
+      contents: read
+      packages: read
+    env:
+      APP_TAG: sha-${{ github.sha }}
+      APP_PORT: '8086'
+      APP_ENV_FILE: ${{ vars.APP_ENV_FILE }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Demo and Seed
+        run: |
+          set -euo pipefail
+
+          PROJECT_NAME="recruivo-demo"
+          TARGET_TAG="${APP_TAG}"
+
+          # The job-level APP_IMAGE is an untagged repository, and being set it
+          # wins over the compose default that would append APP_TAG - every
+          # deploy silently pulled :latest and the rollback below could not pin
+          # an older build. Pin this build's reference explicitly instead.
+          APP_IMAGE="${APP_IMAGE}:${TARGET_TAG}"
+          export APP_IMAGE
+          HEALTH_TIMEOUT=120
+          MIGRATE_TIMEOUT=300
+          POLL_INTERVAL=3
+          HTTP_PORT="${APP_PORT##*:}"
+
+          # See the production job: the deployment env file needs `--env-file` too.
+          COMPOSE_ENV_ARGS=()
+          # Host-specific, so it is not a path in this repository: set the
+          # APP_ENV_FILE variable on this environment (production/demo).
+          if [ ! -f "${APP_ENV_FILE:-}" ]; then
+            echo "::error::APP_ENV_FILE is not set, or is not a file - set the APP_ENV_FILE variable on this environment"
+            exit 1
+          fi
+          COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
+
+          PREV_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
+          PREV_TAG=""
+          if [ -n "${PREV_CID}" ]; then
+            PREV_REF=$(docker inspect --format '{{.Config.Image}}' "${PREV_CID}" 2>/dev/null || true)
+            PREV_TAG="${PREV_REF##*:}"
+            # An untagged reference yields no tag: leave it empty to skip the rollback.
+            if [ "${PREV_TAG}" = "${PREV_REF}" ]; then
+              PREV_TAG=""
+            fi
+          fi
+
+          echo "Pulling images for tag ${TARGET_TAG}..."
+          if ! APP_TAG="${TARGET_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" pull; then
+            echo "::error::Failed to pull images for tag ${TARGET_TAG}"
+            exit 1
+          fi
+
+          echo "Updating containers and running migrations..."
+          APP_TAG="${TARGET_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans
+
+          # See the production job: gate on the migration container's exit code.
+          echo "Waiting for migrations to complete..."
+          MIGRATE_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -a -q migrate 2>/dev/null || true)
+          MIGRATE_EXIT=1
+          if [ -n "${MIGRATE_CID}" ]; then
+            # `timeout` (124) keeps a hung migration from stalling the job until the
+            # workflow timeout, which would bypass the rollback below.
+            MIGRATE_EXIT=$(timeout "${MIGRATE_TIMEOUT}" docker wait "${MIGRATE_CID}" || echo 124)
+          fi
+
+          MIGRATE_FAILED=false
+          if [ -z "${MIGRATE_CID}" ]; then
+            MIGRATE_FAILED=true
+            echo "::error::migrate service container not found; migrations were not applied"
+          elif [ "${MIGRATE_EXIT}" != "0" ]; then
+            MIGRATE_FAILED=true
+            echo "::error::Migration container exited with status ${MIGRATE_EXIT}; skipping health checks"
+            docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" logs --tail=50 migrate || true
+          fi
+
+          echo "Waiting for services to become healthy..."
+          START_TIME=$(date +%s)
+          DEPLOY_OK=false
+
+          while [ "${MIGRATE_FAILED}" = "false" ]; do
+            ELAPSED=$(( $(date +%s) - START_TIME ))
+
+            APP_CID=$(docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" ps -q app 2>/dev/null || true)
+            APP_HEALTH="starting"
+            if [ -n "${APP_CID}" ]; then
+              APP_HEALTH=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${APP_CID}" 2>/dev/null || echo "error")
+            fi
+
+            echo "Status (${ELAPSED}s): app=${APP_HEALTH}"
+
+            # See the production job: only the timeout fails the deploy.
+
+            if [ "${APP_HEALTH}" = "healthy" ]; then
+              HTTP_STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:${HTTP_PORT}/api/health" 2>/dev/null || true)
+              if [ "${HTTP_STATUS}" = "200" ]; then
+                echo "Smoke test passed (HTTP 200 from /api/health)"
+                DEPLOY_OK=true
+                break
+              fi
+            fi
+
+            if [ "${ELAPSED}" -ge "${HEALTH_TIMEOUT}" ]; then
+              echo "::error::Timed out after ${HEALTH_TIMEOUT}s waiting for containers to become healthy"
+              break
+            fi
+
+            sleep "${POLL_INTERVAL}"
+          done
+
+          if [ "${DEPLOY_OK}" != "true" ]; then
+            echo "::error::Demo deployment failed; fetching recent container logs"
+            docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" logs --tail=50 || true
+
+            if [ -n "${PREV_TAG}" ] && [ "${PREV_TAG}" != "${TARGET_TAG}" ]; then
+              echo "::warning::Rolling back to previous tag: ${PREV_TAG}"
+              APP_IMAGE="${APP_IMAGE%:*}:${PREV_TAG}" APP_TAG="${PREV_TAG}" docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" up -d --remove-orphans || {
+                echo "::error::Rollback to ${PREV_TAG} failed"
+              }
+            fi
+            exit 1
+          fi
+
+          echo "Seeding/resetting demo dataset..."
+          docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" exec -T app php artisan demo:reset --force
+
+          docker image prune -f >/dev/null 2>&1 || true
+          echo "Demo deployment finished successfully."

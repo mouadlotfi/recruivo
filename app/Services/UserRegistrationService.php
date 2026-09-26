@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Services;
+
+use App\Exceptions\RegistrationDisabledException;
+use App\Models\CandidateProfile;
+use App\Models\Company;
+use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Hash;
+use RuntimeException;
+use Spatie\Permission\Models\Role;
+
+class UserRegistrationService
+{
+    /**
+     * Register a new user (candidate or recruiter).
+     *
+     * @param  array  $data  Validated registration data
+     * @param  UploadedFile|null  $resumeFile  Optional resume file for candidates
+     *
+     * @throws RegistrationDisabledException When registration is closed on the demo environment
+     */
+    public function register(array $data, ?UploadedFile $resumeFile = null): User
+    {
+        if (config('app.is_demo')) {
+            throw RegistrationDisabledException::onDemo();
+        }
+
+        $accountType = $data['account_type'];
+        $isCompanyAccount = $accountType === 'company';
+
+        $company = null;
+        if ($isCompanyAccount) {
+            $company = $this->createCompany($data['company'] ?? []);
+        }
+
+        $user = $this->createUser($data, $company?->id, $isCompanyAccount);
+
+        $this->assignRole($user, $isCompanyAccount);
+
+        if (! $isCompanyAccount && $resumeFile) {
+            $this->createCandidateProfile($user, $resumeFile);
+        }
+
+        return $user;
+    }
+
+    protected function createCompany(array $companyData): Company
+    {
+        $companyData = Arr::only($companyData, [
+            'name',
+            'tagline',
+            'location',
+            'website_url',
+            'linkedin_url',
+            'size',
+            'mission',
+            'culture',
+
+        ]);
+
+        $companyData = array_filter($companyData, fn ($value) => ! is_null($value) && $value !== '');
+
+        $companyName = $companyData['name'];
+
+        return Company::create(array_merge($companyData, [
+            'name' => $companyName,
+            'slug' => Company::generateUniqueSlug($companyName),
+        ]));
+    }
+
+    protected function createUser(array $data, ?int $companyId, bool $isRecruiter): User
+    {
+        $userData = [
+            'password' => Hash::make($data['password']),
+            'company_id' => $companyId,
+            'is_recruiter' => $isRecruiter,
+            'email_verified_at' => null, // Require email verification
+        ];
+
+        if ($isRecruiter) {
+            // Company accounts use the company identity instead of a personal name.
+            $userData['email'] = $data['email'];
+            $userData['name'] = Arr::get($data, 'company.name');
+            $userData['phone'] = null;
+            $userData['job_title'] = Arr::get($data, 'company.job_title');
+        } else {
+            $userData['name'] = $data['name'];
+            $userData['email'] = $data['email'];
+            $userData['phone'] = $data['phone'] ?? null;
+            $userData['job_title'] = null;
+        }
+
+        return User::create($userData);
+    }
+
+    protected function assignRole(User $user, bool $isRecruiter): void
+    {
+        $roleName = $isRecruiter ? 'Recruiter' : 'Candidate';
+        $role = Role::where('name', $roleName)->first();
+
+        if (! $role) {
+            // Skipping quietly here used to leave accounts with no role, which the
+            // navigation and every role middleware then treat as nobody. The
+            // ensure_default_roles_exist migration is what guarantees these rows.
+            throw new RuntimeException("Role [{$roleName}] does not exist; run the role seeder or migrate.");
+        }
+
+        $user->assignRole($role);
+    }
+
+    protected function createCandidateProfile(User $user, UploadedFile $resumeFile): CandidateProfile
+    {
+        $resumePath = $resumeFile->store('resumes', 'private');
+
+        return CandidateProfile::create([
+            'user_id' => $user->id,
+            'resume_path' => $resumePath,
+        ]);
+    }
+}
