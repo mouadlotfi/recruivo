@@ -155,7 +155,7 @@ Route::middleware('auth:sanctum')->group(function () {
             ->name('api.candidate.resume');
     });
 
-    Route::middleware('role:Admin')->prefix('admin')->group(function () {
+    Route::middleware(['role:Admin', RefuseDemoMutations::class])->prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index']);
         Route::get('/users', [AdminUserController::class, 'index']);
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);

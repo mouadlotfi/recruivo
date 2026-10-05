@@ -70,6 +70,15 @@ return [
 
     'demo_scheduled_reset' => (bool) env('DEMO_SCHEDULED_RESET', false),
 
+    // Canonical accounts the demo login page can autofill. UserSeeder and
+    // ApplicationSeeder read these so the seeded credentials cannot drift from
+    // the ones the login form offers.
+    'demo_accounts' => [
+        'candidate' => ['email' => 'candidate@recruivo.tech', 'password' => 'password'],
+        'recruiter' => ['email' => 'recruiter@recruivo.tech', 'password' => 'password'],
+        'admin' => ['email' => 'admin@recruivo.tech', 'password' => 'password'],
+    ],
+
     'production_url' => env('PRODUCTION_URL'),
 
     'debug' => (bool) env('APP_DEBUG', false),

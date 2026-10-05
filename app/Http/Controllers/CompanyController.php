@@ -33,7 +33,7 @@ class CompanyController extends Controller
      * @var array<int, string>
      */
     private const SHOW_PAGE_LABEL_KEYS = [
-        'back_to_companies', 'back_to_admin_users', 'founded', 'website', 'linkedin', 'our_mission',
+        'back_to_companies', 'back_to_admin_users', 'back_to_admin_jobs', 'founded', 'website', 'linkedin', 'our_mission',
         'company_culture', 'no_open_positions',
     ];
 
@@ -105,6 +105,7 @@ class CompanyController extends Controller
 
         return Inertia::render('Companies/Show', [
             'company' => $this->serializeCompanyDetail($company),
+            'adminBack' => $this->adminBack($locale),
             'labels' => [
                 ...collect(self::SHOW_PAGE_LABEL_KEYS)->mapWithKeys(
                     fn (string $key) => [$key => __("companies.$key")]
@@ -119,6 +120,28 @@ class CompanyController extends Controller
                 'no_positions_message' => __('companies.check_back_later', ['company' => $company->name]),
             ],
         ]);
+    }
+
+    /**
+     * Where the admin-only "back" link on a company page points. Company pages
+     * are reached from two admin lists, so the jobs list tags its links with
+     * ?from=admin_jobs and the page follows that hint; every other entry point
+     * (including the users list) keeps the historical users link, which the view
+     * renders when this is null. The query value is a fixed allowlist rather
+     * than a redirect target.
+     *
+     * @return array{url: string, label: string}|null
+     */
+    private function adminBack(string $locale): ?array
+    {
+        if (request()->string('from')->toString() !== 'admin_jobs') {
+            return null;
+        }
+
+        return [
+            'url' => "/{$locale}/admin/jobs",
+            'label' => __('companies.back_to_admin_jobs'),
+        ];
     }
 
     /**

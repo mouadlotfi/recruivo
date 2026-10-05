@@ -35,6 +35,10 @@ return [
     'create_account' => 'Créer un compte',
     'email_verified' => 'E-mail vérifié avec succès ! Vous pouvez maintenant vous connecter à votre compte.',
     'account_created' => 'Compte créé avec succès ! Vous pouvez maintenant vous connecter à votre compte.',
+    'demo_accounts' => 'Comptes de démonstration',
+    'demo_account_candidate' => 'Candidat',
+    'demo_account_recruiter' => 'Recruteur',
+    'demo_account_admin' => 'Administrateur',
 
     // Register page
     'register_title' => 'Créez votre compte',

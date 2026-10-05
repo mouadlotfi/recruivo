@@ -178,21 +178,54 @@ class DemoEnvironmentTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_login_page_offers_the_demo_accounts_on_the_demo(): void
+    {
+        App::detectEnvironment(fn () => 'demo');
+        Config::set('app.is_demo', true);
+
+        $response = $this->get('/en/login');
+
+        $response->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Auth/Login', false)
+                ->has('demoAccounts', 3)
+                ->where('demoAccounts.0.email', config('app.demo_accounts.candidate.email'))
+                ->where('demoAccounts.0.password', config('app.demo_accounts.candidate.password'))
+                ->where('demoAccounts.0.label', __('auth.demo_account_candidate'))
+                ->where('demoAccounts.1.email', config('app.demo_accounts.recruiter.email'))
+                ->where('demoAccounts.2.email', config('app.demo_accounts.admin.email'))
+            );
+    }
+
+    public function test_login_page_hides_the_demo_accounts_outside_the_demo(): void
+    {
+        App::detectEnvironment(fn () => 'production');
+        Config::set('app.is_demo', false);
+
+        $response = $this->get('/en/login');
+
+        $response->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Auth/Login', false)
+                ->has('demoAccounts', 0)
+            );
+    }
+
     public function test_demo_accounts_are_flagged_with_is_demo(): void
     {
         $this->artisan('db:seed', ['--force' => true]);
 
-        $admin = User::where('email', 'admin@recruivo.tech')->first();
+        $admin = User::where('email', config('app.demo_accounts.admin.email'))->first();
         $this->assertNotNull($admin);
         $this->assertTrue($admin->is_demo);
         $this->assertTrue($admin->hasRole('Admin'));
 
-        $recruiter = User::where('email', 'recruiter@recruivo.tech')->first();
+        $recruiter = User::where('email', config('app.demo_accounts.recruiter.email'))->first();
         $this->assertNotNull($recruiter);
         $this->assertTrue($recruiter->is_demo);
         $this->assertTrue($recruiter->hasRole('Recruiter'));
 
-        $candidate = User::where('email', 'candidate@recruivo.tech')->first();
+        $candidate = User::where('email', config('app.demo_accounts.candidate.email'))->first();
         $this->assertNotNull($candidate);
         $this->assertTrue($candidate->is_demo);
         $this->assertTrue($candidate->hasRole('Candidate'));

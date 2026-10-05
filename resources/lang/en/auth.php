@@ -35,6 +35,10 @@ return [
     'create_account' => 'Create an account',
     'email_verified' => 'Email verified successfully! You can now log in to your account.',
     'account_created' => 'Account created successfully! You can now log in to your account.',
+    'demo_accounts' => 'Demo accounts',
+    'demo_account_candidate' => 'Candidate',
+    'demo_account_recruiter' => 'Recruiter',
+    'demo_account_admin' => 'Administrator',
 
     // Register page
     'register_title' => 'Create Your Account',

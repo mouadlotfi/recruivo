@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -163,6 +164,45 @@ class AdminJobTest extends TestCase
                 ->where('statusOptions.0.label', 'Brouillon')
                 ->where('statusOptions.1.label', 'Publié')
             );
+    }
+
+    public function test_company_pages_opened_from_admin_jobs_point_back_at_admin_jobs(): void
+    {
+        $admin = $this->admin();
+        $company = Company::factory()->create(['name' => 'Hint Co', 'slug' => 'hint-co']);
+        $recruiter = User::factory()->for($company)->create();
+        $recruiter->assignRole('Recruiter');
+        Job::factory()->for($company)->for($recruiter, 'recruiter')->create(['status' => JobStatus::Published->value]);
+
+        $this->actingAs($admin)
+            ->get('/en/companies/hint-co?from=admin_jobs')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Companies/Show', false)
+                ->where('adminBack.url', '/en/admin/jobs')
+                ->where('adminBack.label', 'Back to Admin Jobs')
+            );
+
+        $this->actingAs($admin)
+            ->get('/fr/companies/hint-co?from=admin_jobs')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('adminBack.url', '/fr/admin/jobs')
+                ->where('adminBack.label', 'Retour aux offres Admin')
+            );
+
+        // Any other entry point - the users list, a job detail page, a bookmark -
+        // keeps the historical admin users link the view falls back to.
+        $this->actingAs($admin)
+            ->get('/en/companies/hint-co')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->component('Companies/Show', false)
+                ->where('adminBack', null)
+            );
+
+        $jobsPage = File::get(resource_path('js/Pages/Admin/Jobs.vue'));
+        $this->assertStringContainsString("'?from=admin_jobs'", $jobsPage);
     }
 
     private function admin(): User

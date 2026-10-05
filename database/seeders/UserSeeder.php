@@ -21,10 +21,12 @@ class UserSeeder extends Seeder
 
         $this->ensureSampleResumes();
 
-        $defaultPassword = bcrypt('password');
+        /** @var array<string, array{email: string, password: string}> $demoAccounts */
+        $demoAccounts = config('app.demo_accounts');
+        $defaultPassword = bcrypt($demoAccounts['candidate']['password']);
 
         $admin = User::firstOrCreate(
-            ['email' => 'admin@recruivo.tech'],
+            ['email' => $demoAccounts['admin']['email']],
             [
                 'name' => 'Demo Admin',
                 'password' => $defaultPassword,
@@ -42,7 +44,7 @@ class UserSeeder extends Seeder
         $firstCompany = $companies->firstWhere('slug', 'aetheris-dynamics') ?? $companies->first();
 
         $demoRecruiter = User::firstOrCreate(
-            ['email' => 'recruiter@recruivo.tech'],
+            ['email' => $demoAccounts['recruiter']['email']],
             [
                 'name' => 'Demo Recruiter',
                 'password' => $defaultPassword,
@@ -140,7 +142,7 @@ class UserSeeder extends Seeder
         $this->command->info('Recruiters synced for all companies.');
 
         $demoCandidate = User::firstOrCreate(
-            ['email' => 'candidate@recruivo.tech'],
+            ['email' => $demoAccounts['candidate']['email']],
             [
                 'name' => 'Demo Candidate',
                 'password' => $defaultPassword,

@@ -211,7 +211,7 @@ const statusClass = (jobStatus: string) => jobStatus === 'published'
                                 <td class="px-4 py-4">
                                     <Link
                                         v-if="job.company?.slug"
-                                        :href="localeUrl('/companies/' + job.company.slug)"
+                                        :href="localeUrl('/companies/' + job.company.slug + '?from=admin_jobs')"
                                         class="font-medium text-amber-700 transition hover:text-amber-800 hover:underline dark:text-amber-400 dark:hover:text-amber-300"
                                     >
                                         {{ job.company.name }}

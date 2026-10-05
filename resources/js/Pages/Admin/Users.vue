@@ -32,6 +32,9 @@ const props = defineProps<{
 
 const page = usePage<PageProps>()
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
+// The shared demo admin may browse the back office but never mutate it; the
+// middleware refuses the request server-side, this only mirrors the promise.
+const isDemoAdmin = computed(() => page.props.auth.user?.is_demo === true)
 const items = ref<AdminUser[]>([...props.users])
 const search = ref(props.filters.search)
 const role = ref(props.filters.role)
@@ -74,6 +77,7 @@ const deleteDialogOpen = computed({
 const { onKeydown } = useFocusTrap(deleteDialogOpen, deleteDialog, { lockScroll: false })
 
 const openDeleteDialog = (user: AdminUser) => {
+    if (isDemoAdmin.value) return
     selectedUser.value = user
 }
 
@@ -266,8 +270,12 @@ watch(selectedUser, (user) => {
                             <button
                                 v-if="!user.is_admin && !user.is_demo"
                                 type="button"
-                                class="inline-flex min-h-9 items-center justify-center rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
-                                :title="labels.delete_user"
+                                :aria-disabled="isDemoAdmin"
+                                class="inline-flex min-h-9 items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2"
+                                :class="isDemoAdmin
+                                    ? 'cursor-not-allowed bg-stone-100 text-stone-400 focus-visible:ring-stone-300 dark:bg-stone-800 dark:text-stone-500 dark:focus-visible:ring-stone-600'
+                                    : 'bg-red-100 text-red-700 hover:bg-red-200 focus-visible:ring-red-400 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20'"
+                                :title="isDemoAdmin ? labels.demo_read_only : labels.delete_user"
                                 @click="openDeleteDialog(user)"
                             >
                                 <svg class="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

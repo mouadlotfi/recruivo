@@ -27,7 +27,9 @@ class LoginController extends Controller
                 'email_verified' => __('auth.email_verified'),
                 'account_created' => __('auth.account_created'),
                 'toggle_password_visibility' => __('common.toggle_password_visibility'),
+                'demo_accounts' => __('auth.demo_accounts'),
             ],
+            'demoAccounts' => $this->demoAccounts(),
             'messages' => [
                 'verified' => session('verified'),
                 'registered' => session('registered'),
@@ -38,6 +40,31 @@ class LoginController extends Controller
                 'email' => old('email', ''),
             ],
         ]);
+    }
+
+    /**
+     * @return array<int, array{email: string, password: string, label: string}>
+     */
+    private function demoAccounts(): array
+    {
+        if (! app()->environment('demo') && ! config('app.is_demo')) {
+            return [];
+        }
+
+        /** @var array<string, array{email: string, password: string}> $configured */
+        $configured = config('app.demo_accounts', []);
+
+        $accounts = [];
+
+        foreach ($configured as $role => $account) {
+            $accounts[] = [
+                'email' => $account['email'],
+                'password' => $account['password'],
+                'label' => __('auth.demo_account_'.$role),
+            ];
+        }
+
+        return $accounts;
     }
 
     public function login(Request $request)
