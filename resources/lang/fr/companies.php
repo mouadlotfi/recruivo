@@ -19,6 +19,7 @@ return [
     'total_jobs' => ':count emploi(s)',
     'back_to_companies' => 'Retour aux entreprises',
     'back_to_admin_users' => 'Retour aux utilisateurs Admin',
+    'back_to_admin_jobs' => 'Retour aux offres Admin',
     'our_mission' => 'Notre mission',
     'company_culture' => 'Culture d\'entreprise',
     'linkedin' => 'LinkedIn',

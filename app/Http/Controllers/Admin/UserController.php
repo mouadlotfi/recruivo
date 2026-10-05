@@ -100,6 +100,7 @@ class UserController extends Controller
                 'delete_user_confirm' => __('admin.delete_user_confirm'),
                 'delete_user_confirmation' => __('admin.delete_user_confirmation'),
                 'demo_account' => __('common.demo_account'),
+                'demo_read_only' => __('common.demo_account_read_only'),
                 'loading_more' => __('common.loading_more'),
                 'cancel' => __('common.cancel'),
                 'show_more' => __('common.show_more'),

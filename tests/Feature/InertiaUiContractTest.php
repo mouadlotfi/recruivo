@@ -167,7 +167,13 @@ class InertiaUiContractTest extends TestCase
         $this->assertStringContainsString('localeUrl(\'/admin/dashboard\')', $appLayout);
         $this->assertStringContainsString('adminDashboardUrl', $userDropdown);
         $this->assertStringContainsString('localeUrl(\'/admin/jobs\')', $jobShow);
+        $this->assertMatchesRegularExpression(
+            '/v-if="!isAdmin"\s*\n\s*:href="localeUrl\(\'\/jobs\'\)"/',
+            $jobShow,
+            'Admins must not see the public jobs back link next to the admin one.',
+        );
         $this->assertStringContainsString('localeUrl(\'/admin/users\')', $companyShow);
+        $this->assertStringContainsString('adminBack?.url', $companyShow);
         $this->assertStringContainsString('backHref', $profilePreview);
     }
 }

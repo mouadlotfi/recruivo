@@ -8,6 +8,7 @@ import JobCard from '../../Components/Jobs/JobCard.vue'
 const props = defineProps<{
     company: CompanyDetail
     labels: Record<string, string>
+    adminBack: { url: string; label: string } | null
 }>()
 
 const page = usePage<PageProps>()
@@ -38,13 +39,13 @@ const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 
                 <Link
                     v-if="isAdmin"
-                    :href="localeUrl('/admin/users')"
+                    :href="adminBack?.url ?? localeUrl('/admin/users')"
                     class="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
                 >
                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
                     </svg>
-                    {{ labels.back_to_admin_users || 'Back to Admin Users' }}
+                    {{ adminBack?.label ?? (labels.back_to_admin_users || 'Back to Admin Users') }}
                 </Link>
             </div>
             <div class="rounded-xl border border-stone-200/60 bg-white/80 p-8 backdrop-blur dark:border-stone-700/60 dark:bg-stone-900/60">

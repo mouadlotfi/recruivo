@@ -52,7 +52,12 @@ const remoteTypeLabel = computed(() => {
 const searchUrl = computed(() => localeUrl('/search'))
 const applyUrl = computed(() => localeUrl(`/jobs/${props.job.id}/apply`))
 const saveUrl = computed(() => localeUrl(`/candidate/saved-jobs/${props.job.id}`))
-const companyUrl = computed(() => (props.job.company ? localeUrl(`/companies/${props.job.company.slug}`) : null))
+// Admins reach this page from the admin jobs list, so the company link carries the
+// same origin hint the list links do: the company page's back link then returns to
+// admin jobs instead of the admin users list.
+const companyUrl = computed(() => (props.job.company
+    ? localeUrl(`/companies/${props.job.company.slug}${isAdmin.value ? '?from=admin_jobs' : ''}`)
+    : null))
 
 // Single-use session token prevents duplicate application submissions.
 const form = useForm<{
@@ -100,6 +105,7 @@ const toggleSaved = () => {
         <div class="space-y-8">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <Link
+                    v-if="!isAdmin"
                     :href="localeUrl('/jobs')"
                     class="inline-flex items-center gap-2 text-sm font-medium text-stone-600 transition hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400"
                 >

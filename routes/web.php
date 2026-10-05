@@ -168,7 +168,7 @@ Route::prefix('{locale}')->where(['locale' => 'en|fr'])->middleware(SetLocale::c
             Route::delete('/note-templates/{template}', [NoteTemplateController::class, 'destroy'])->name('note-templates.destroy');
         });
 
-        Route::middleware('role:Admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::middleware(['role:Admin', RefuseDemoMutations::class])->prefix('admin')->name('admin.')->group(function () {
             Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
             Route::get('/jobs', [App\Http\Controllers\Admin\JobController::class, 'index'])->name('jobs');
             Route::get('/users', [UserController::class, 'index'])->name('users');

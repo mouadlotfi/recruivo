@@ -6,7 +6,9 @@ use App\Models\CandidateProfile;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
+use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -106,5 +108,46 @@ class AdminUserTest extends TestCase
         $this->actingAs($admin)
             ->get('/en/companies')
             ->assertRedirect('/en/admin/dashboard');
+    }
+
+    public function test_demo_admin_cannot_delete_users_and_sees_the_control_disabled(): void
+    {
+        $admin = User::factory()->create(['name' => 'Demo Admin', 'is_demo' => true]);
+        $admin->assignRole('Admin');
+        $target = User::factory()->create();
+        $target->assignRole('Candidate');
+
+        $this->actingAs($admin)
+            ->delete("/en/admin/users/{$target->id}")
+            ->assertSessionHasErrors('demo');
+
+        $this->assertDatabaseHas('users', ['id' => $target->id]);
+
+        $this->actingAs($admin)
+            ->get('/en/admin/users')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('auth.user.is_demo', true)
+                ->where('labels.demo_read_only', __('common.demo_account_read_only'))
+            );
+
+        $users = File::get(resource_path('js/Pages/Admin/Users.vue'));
+        $this->assertStringContainsString(':aria-disabled="isDemoAdmin"', $users);
+        $this->assertStringContainsString('if (isDemoAdmin.value) return', $users);
+    }
+
+    public function test_demo_admin_cannot_delete_users_through_the_api(): void
+    {
+        $admin = User::factory()->create(['is_demo' => true]);
+        $admin->assignRole('Admin');
+        $target = User::factory()->create();
+        $target->assignRole('Candidate');
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson("/api/admin/users/{$target->id}")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('demo');
+
+        $this->assertDatabaseHas('users', ['id' => $target->id]);
     }
 }

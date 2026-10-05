@@ -19,6 +19,7 @@ return [
     'total_jobs' => ':count job(s)',
     'back_to_companies' => 'Back to companies',
     'back_to_admin_users' => 'Back to Admin Users',
+    'back_to_admin_jobs' => 'Back to Admin Jobs',
     'our_mission' => 'Our Mission',
     'company_culture' => 'Company Culture',
     'linkedin' => 'LinkedIn',
