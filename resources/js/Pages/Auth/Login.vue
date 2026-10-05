@@ -3,13 +3,28 @@ import { computed, ref } from 'vue'
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
 import GuestLayout from '../../Layouts/GuestLayout.vue'
+import { useDismiss } from '../../composables/useDismiss'
 
-const props = defineProps<{ labels: Record<string, string>; old: { email: string }; messages: Record<string, string | boolean | null> }>()
+interface DemoAccount {
+    email: string
+    password: string
+    label: string
+}
+
+const props = defineProps<{ labels: Record<string, string>; old: { email: string }; messages: Record<string, string | boolean | null>; demoAccounts: DemoAccount[] }>()
 const page = usePage<PageProps>()
 const form = useForm({ email: props.old.email, password: '' })
+const demoOpen = ref(false)
+const demoRoot = ref<HTMLElement | null>(null)
+useDismiss(demoOpen, demoRoot)
 const showPassword = ref(false)
 const errors = computed(() => Object.values(page.props.errors ?? {}))
 const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const selectDemoAccount = (account: DemoAccount) => {
+    form.email = account.email
+    form.password = account.password
+    demoOpen.value = false
+}
 const submit = () => form.post(localeUrl('/login'))
 </script>
 
@@ -28,7 +43,44 @@ const submit = () => form.post(localeUrl('/login'))
                 <div v-if="messages.registered" data-alert class="rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200" role="status"><div class="flex items-center gap-3"><div class="min-w-0 flex-1 text-sm leading-5 sm:text-base sm:leading-6"><div class="flex items-center"><svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>{{ labels.account_created }}</div></div></div></div>
                 <div v-if="errors.length" data-alert class="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200" role="alert"><div class="flex items-center gap-3"><div class="min-w-0 flex-1 text-sm leading-5 sm:text-base sm:leading-6"><div v-for="error in errors" :key="error">{{ error }}</div></div></div></div>
                 <form method="POST" class="space-y-6" @submit.prevent="submit">
-                    <div class="space-y-2"><label for="email" class="text-sm font-medium text-stone-700 dark:text-stone-200">{{ labels.email }}</label><input id="email" v-model="form.email" name="email" type="email" autocomplete="email" :placeholder="labels.email_placeholder" required class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500" /></div>
+                    <div class="space-y-2">
+                        <label for="email" class="text-sm font-medium text-stone-700 dark:text-stone-200">{{ labels.email }}</label>
+                        <div ref="demoRoot" class="relative">
+                            <input id="email" v-model="form.email" name="email" type="email" autocomplete="email" :placeholder="labels.email_placeholder" required class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 pr-12 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500" />
+                            <button
+                                v-if="demoAccounts.length"
+                                type="button"
+                                :aria-label="labels.demo_accounts"
+                                :title="labels.demo_accounts"
+                                aria-haspopup="menu"
+                                :aria-expanded="demoOpen"
+                                class="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-stone-400 transition hover:bg-stone-100 hover:text-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-500 dark:hover:bg-stone-800 dark:hover:text-amber-400"
+                                @click="demoOpen = !demoOpen"
+                            >
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                                </svg>
+                            </button>
+                            <div
+                                v-if="demoOpen && demoAccounts.length"
+                                role="menu"
+                                class="absolute right-0 top-full z-20 mt-2 w-full overflow-hidden rounded-2xl border border-stone-200 bg-white py-1 shadow-xl dark:border-stone-700 dark:bg-stone-900"
+                            >
+                                <p class="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">{{ labels.demo_accounts }}</p>
+                                <button
+                                    v-for="account in demoAccounts"
+                                    :key="account.email"
+                                    type="button"
+                                    role="menuitem"
+                                    class="flex w-full flex-col items-start px-4 py-2 text-left transition hover:bg-stone-100 dark:hover:bg-stone-800"
+                                    @click="selectDemoAccount(account)"
+                                >
+                                    <span class="text-sm font-medium text-stone-800 dark:text-stone-100">{{ account.label }}</span>
+                                    <span class="text-xs text-stone-500 dark:text-stone-400">{{ account.email }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="space-y-2"><div class="flex items-center justify-between text-sm"><label for="password" class="font-medium text-stone-700 dark:text-stone-200">{{ labels.password }}</label><Link :href="localeUrl('/reset-password')" class="font-semibold text-amber-600 transition hover:text-amber-500 dark:text-amber-300 dark:hover:text-amber-200">{{ labels.forgot_password }}</Link></div><div class="relative"><input id="password" v-model="form.password" name="password" :type="showPassword ? 'text' : 'password'" autocomplete="current-password" :placeholder="labels.password_placeholder" required class="w-full rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 pr-12 text-sm text-stone-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900/70 dark:text-stone-100 dark:focus:border-amber-500" /><button type="button" :aria-label="labels.toggle_password_visibility" class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300" @click="showPassword = !showPassword"><svg v-if="!showPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg><svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg></button></div></div>
                     <button type="submit" :disabled="form.processing" class="inline-flex w-full items-center justify-center rounded-2xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:opacity-50 dark:focus-visible:ring-offset-stone-950">{{ labels.submit }}</button>
                 </form>
