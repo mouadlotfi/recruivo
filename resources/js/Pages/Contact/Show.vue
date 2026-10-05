@@ -2,6 +2,7 @@
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
 import AppLayout from '../../Layouts/AppLayout.vue'
+import Alert from '../../Components/Layout/Alert.vue'
 
 const props = defineProps<{
     contact_email: string
@@ -41,14 +42,10 @@ const submit = () => {
                 class="space-y-6 rounded-3xl border border-stone-200/70 bg-white/80 p-6 shadow-sm sm:p-8 dark:border-stone-800/60 dark:bg-stone-900/60"
                 @submit.prevent="submit"
             >
-                <div
-                    v-if="page.props.flash?.success"
-                    role="status"
-                    class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200"
-                >
+                <Alert v-if="page.props.flash?.success" kind="success" data-alert>
                     <p class="font-semibold">{{ labels.sent }}</p>
                     <p class="mt-1">{{ labels.sent_description }}</p>
-                </div>
+                </Alert>
 
                 <!-- Honeypot, checked server-side. -->
                 <div class="hidden" aria-hidden="true">

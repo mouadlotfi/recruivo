@@ -127,8 +127,8 @@ outlier in the product.
   muted icons (empty states, metadata).
 - **Danger (`{colors.danger}`):** red-600 for destructive fills and error text; secondary error copy
   and error text in dark use red-400.
-- **Success (`{colors.success}`):** the green family. Success alerts and applied states pair a
-  green-50 surface with green-200 borders and green-800 text; badges use green-100 on green-700.
+- **Success (`{colors.success}`):** the green family. Success alerts pair the neutral alert surface with a
+  green-200 border (dark `green-800/70`) and a solid `green-600` badge; badges elsewhere use green-100 on green-700.
 - **Application statuses:** each status owns one flat family — a `*-100` background with a `*-700`
   text and a solid dot, inverting to `*-500/10` on `*-400` in dark. Pending is yellow, shortlisted
   blue, interview violet, accepted green, rejected red, withdrawn stone. Status color is data
@@ -256,10 +256,12 @@ font-semibold`, sized to match the frame.
 - **Chips:** amber tints (`bg-amber-100` / `dark:bg-amber-500/10` with amber-700 / amber-300 text) for
   job attributes and filters, `bg-stone-100 dark:bg-stone-800` for neutral tags, and an amber outline
   variant for active filter chips. All chips are `rounded-full` with amber-ringed focus.
-- **Alerts:** `rounded-xl border px-4 py-2.5` — success `border-green-200 bg-green-50 text-green-800`,
-  error `border-red-200 bg-red-50 text-red-800`, each with the `dark:border-{color}-800
-  dark:bg-{color}-900/20 dark:text-{color}-200` inversion and `role="status"`/`role="alert"`. Toasts
-  are fixed at the bottom with a 180 ms translateY transition.
+- **Alerts:** `rounded-xl border bg-white p-4 text-sm text-stone-800 shadow-sm dark:bg-stone-900
+  dark:text-stone-100` with a kind-tinted hairline (`success border-green-200 dark:border-green-800/70`, error
+  red, info blue, warning amber), an `h-8 w-8 rounded-full` solid badge (`bg-{green|red|blue}-600 text-white`,
+  warning `bg-amber-500 text-stone-900`) and `role="status"`/`role="alert"`. The bottom-centre toasts reuse the
+  same component with `rounded-xl shadow-xl shadow-stone-900/10 dark:shadow-black/40` and the existing 180 ms
+  translateY transition.
 - **Navigation:** the header is `sticky top-0` with `border-b border-stone-200/60 bg-white/75
   backdrop-blur-xl` (`dark:bg-stone-950/80`); links hover to amber, the active item takes
   `text-amber-600 dark:text-amber-400` plus a 2px `bg-amber-500` underline, and ghost controls use
