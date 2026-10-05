@@ -48,14 +48,14 @@ class DemoEnvironmentTest extends TestCase
     {
         App::detectEnvironment(fn () => 'demo');
         Config::set('app.is_demo', true);
-        Config::set('app.production_url', 'https://recruivo.work');
+        Config::set('app.production_url', 'https://recruivo.tech');
 
         $response = $this->get('/en');
 
         $response->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('isDemoEnvironment', true)
-                ->where('productionUrl', 'https://recruivo.work')
+                ->where('productionUrl', 'https://recruivo.tech')
                 ->has('translations.en.demo_production_link')
                 ->has('translations.fr.demo_production_link')
             );
@@ -65,7 +65,7 @@ class DemoEnvironmentTest extends TestCase
     {
         App::detectEnvironment(fn () => 'production');
         Config::set('app.is_demo', false);
-        Config::set('app.production_url', 'https://recruivo.work');
+        Config::set('app.production_url', 'https://recruivo.tech');
 
         $response = $this->get('/en');
 
@@ -182,17 +182,17 @@ class DemoEnvironmentTest extends TestCase
     {
         $this->artisan('db:seed', ['--force' => true]);
 
-        $admin = User::where('email', 'admin@recruivo.work')->first();
+        $admin = User::where('email', 'admin@recruivo.tech')->first();
         $this->assertNotNull($admin);
         $this->assertTrue($admin->is_demo);
         $this->assertTrue($admin->hasRole('Admin'));
 
-        $recruiter = User::where('email', 'recruiter@recruivo.work')->first();
+        $recruiter = User::where('email', 'recruiter@recruivo.tech')->first();
         $this->assertNotNull($recruiter);
         $this->assertTrue($recruiter->is_demo);
         $this->assertTrue($recruiter->hasRole('Recruiter'));
 
-        $candidate = User::where('email', 'candidate@recruivo.work')->first();
+        $candidate = User::where('email', 'candidate@recruivo.tech')->first();
         $this->assertNotNull($candidate);
         $this->assertTrue($candidate->is_demo);
         $this->assertTrue($candidate->hasRole('Candidate'));

@@ -9,7 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Outgoing mail comes from noreply@recruivo.work, and that domain has no MX
+ * Outgoing mail comes from noreply@recruivo.tech, and that domain has no MX
  * record - so anything a recipient sends back to it is refused at the far end,
  * silently, with neither side learning that it happened.
  *

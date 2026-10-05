@@ -15,9 +15,9 @@ return new class extends Migration
 
         DB::table('users')
             ->whereIn('email', [
-                'admin@recruivo.work',
-                'recruiter@recruivo.work',
-                'candidate@recruivo.work',
+                'admin@recruivo.tech',
+                'recruiter@recruivo.tech',
+                'candidate@recruivo.tech',
             ])
             ->update(['is_demo' => true]);
     }

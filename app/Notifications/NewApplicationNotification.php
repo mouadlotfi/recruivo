@@ -30,7 +30,7 @@ class NewApplicationNotification extends Notification implements ShouldQueue
             ->subject('New application for '.$job->title)
             ->greeting('Hello '.$notifiable->name)
             ->line($this->application->candidate->name.' has applied to '.$job->title)
-            // Without this a recruiter hitting Reply writes to noreply@recruivo.work,
+            // Without this a recruiter hitting Reply writes to noreply@recruivo.tech,
             // which has no MX record and bounces without a trace. It points at the
             // candidate, whose address the recruiter already sees on the application.
             ->replyTo($this->application->candidate->email, $this->application->candidate->name)

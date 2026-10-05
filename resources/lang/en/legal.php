@@ -19,7 +19,7 @@ return [
         'sections' => [
             [
                 'heading' => '1. Who this policy covers',
-                'body' => 'Recruivo is a job platform: candidates find and apply to jobs, recruiters publish jobs and manage applications, and administrators operate the platform. This policy explains how personal data is handled on recruivo.work and on the public demo at demo.recruivo.work. It applies to visitors, candidates, recruiters and administrators.',
+                'body' => 'Recruivo is a job platform: candidates find and apply to jobs, recruiters publish jobs and manage applications, and administrators operate the platform. This policy explains how personal data is handled on recruivo.tech and on the public demo at demo.recruivo.tech. It applies to visitors, candidates, recruiters and administrators.',
             ],
             [
                 'heading' => '2. Data you give us',
@@ -106,7 +106,7 @@ return [
             ],
             [
                 'heading' => '8. The demo environment',
-                'body' => 'demo.recruivo.work is a public demonstration filled with fictional people, companies and jobs. Its accounts are read-only and its data is reset periodically, so anything you enter there can disappear. Do not enter real personal data in the demo.',
+                'body' => 'demo.recruivo.tech is a public demonstration filled with fictional people, companies and jobs. Its accounts are read-only and its data is reset periodically, so anything you enter there can disappear. Do not enter real personal data in the demo.',
             ],
             [
                 'heading' => '9. Availability and changes to the service',

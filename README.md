@@ -16,8 +16,8 @@ Recruivo is a job board with a lightweight applicant-tracking system. Candidates
 jobs, recruiters publish them and run hiring pipelines, admins operate the marketplace.
 
 One Laravel codebase serves the web app and a JSON API. It runs in two places. The live site
-is [recruivo.work](https://recruivo.work), and a public demo anyone can log into is
-[demo.recruivo.work](https://demo.recruivo.work).
+is [recruivo.tech](https://recruivo.tech), and a public demo anyone can log into is
+[demo.recruivo.tech](https://demo.recruivo.tech).
 
 > [!NOTE]
 > The web app is the product. The JSON API runs alongside it on Sanctum and backs the public
@@ -67,9 +67,9 @@ Open **<http://localhost:8000>** and log in as any of the three roles:
 
 | Role | Email | Password | What you land on |
 | --- | --- | --- | --- |
-| **Admin** | `admin@recruivo.work` | `password` | Platform overview, job moderation, user administration |
-| **Recruiter** | `recruiter@recruivo.work` | `password` | Aetheris Dynamics pipeline, applicants, note templates |
-| **Candidate** | `candidate@recruivo.work` | `password` | A senior full-stack profile with live applications and saved jobs |
+| **Admin** | `admin@recruivo.tech` | `password` | Platform overview, job moderation, user administration |
+| **Recruiter** | `recruiter@recruivo.tech` | `password` | Aetheris Dynamics pipeline, applicants, note templates |
+| **Candidate** | `candidate@recruivo.tech` | `password` | A senior full-stack profile with live applications and saved jobs |
 
 Mail never leaves the machine under Docker. Mailpit catches every message at
 <http://localhost:8025>.
@@ -154,7 +154,7 @@ command is `migrate --force`.
 ```bash
 cp .env.example .env.demo
 # Set APP_ENV=demo, APP_IS_DEMO=true, DEMO_SCHEDULED_RESET=true,
-# PRODUCTION_URL=https://recruivo.work, COMPOSE_PROFILES=infra-demo, REDIS_HOST=redis-demo
+# PRODUCTION_URL=https://recruivo.tech, COMPOSE_PROFILES=infra-demo, REDIS_HOST=redis-demo
 
 APP_ENV_FILE=.env.demo docker compose --env-file .env.demo up -d --build
 APP_ENV_FILE=.env.demo docker compose --env-file .env.demo exec app php artisan migrate:fresh --seed --force

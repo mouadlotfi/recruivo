@@ -18,7 +18,7 @@ the API is a parallel surface that currently serves only the search autocomplete
 - **Candidate / Recruiter / Admin** — roles (`spatie/permission`). Candidates
   carry a `CandidateProfile` (resume, skills, preferences). Recruiters belong
   to a company.
-- **Demo environment** — a seeded, periodically reset demo (`demo.recruivo.work`)
+- **Demo environment** — a seeded, periodically reset demo (`demo.recruivo.tech`)
   with fictional data; production never seeds. Demo accounts are read-only where
   data changes would be destructive.
 

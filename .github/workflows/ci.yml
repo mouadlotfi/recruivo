@@ -185,7 +185,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     environment:
       name: production
-      url: https://recruivo.work
+      url: https://recruivo.tech
     permissions:
       contents: read
       packages: read
@@ -335,7 +335,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     environment:
       name: demo
-      url: https://demo.recruivo.work
+      url: https://demo.recruivo.tech
     permissions:
       contents: read
       packages: read

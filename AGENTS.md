@@ -9,7 +9,7 @@ Recruivo — a hosted job board and candidate-management platform. One Laravel c
 - Job board: public job/company browsing and search, candidate applications and profiles, recruiter job/application management, admin back office, notifications, demo mode, backups.
 - Three roles, spatie/laravel-permission: `Admin`, `Recruiter`, `Candidate`.
 - No billing or AI module. Search is hand-rolled in PHP (`SmartSearchService`) — Scout is **not** installed.
-- Two deployments from one image: production `recruivo.work` (`APP_ENV=production`) and demo `demo.recruivo.work` (`APP_ENV=demo`, mail logged, `APP_IS_DEMO=true`), isolated compose projects/volumes/Redis.
+- Two deployments from one image: production `recruivo.tech` (`APP_ENV=production`) and demo `demo.recruivo.tech` (`APP_ENV=demo`, mail logged, `APP_IS_DEMO=true`), isolated compose projects/volumes/Redis.
 - The compose files and CI workflow exist to run **this** service — `README.md:148` states "The project is a hosted service, not a self-hosting kit." Do not frame the stack as a supported way for third parties to self-host.
 
 ## Architecture & Data Flow

@@ -30,7 +30,7 @@ class ApplicationSeeder extends Seeder
             return;
         }
 
-        $demoCandidate = User::where('email', 'candidate@recruivo.work')->first();
+        $demoCandidate = User::where('email', 'candidate@recruivo.tech')->first();
         $candidates = User::where('is_recruiter', false)
             ->whereHas('roles', fn ($q) => $q->where('name', 'Candidate'))
             ->get();
@@ -213,8 +213,8 @@ class ApplicationSeeder extends Seeder
 
     private function seedDemoNotifications(): void
     {
-        $demoRecruiter = User::where('email', 'recruiter@recruivo.work')->first();
-        $demoCandidate = User::where('email', 'candidate@recruivo.work')->first();
+        $demoRecruiter = User::where('email', 'recruiter@recruivo.tech')->first();
+        $demoCandidate = User::where('email', 'candidate@recruivo.tech')->first();
 
         if ($demoRecruiter) {
             $recruiterApps = Application::whereHas('job', fn ($q) => $q->where('company_id', $demoRecruiter->company_id))

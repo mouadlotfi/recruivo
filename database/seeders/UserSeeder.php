@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
         $defaultPassword = bcrypt('password');
 
         $admin = User::firstOrCreate(
-            ['email' => 'admin@recruivo.work'],
+            ['email' => 'admin@recruivo.tech'],
             [
                 'name' => 'Demo Admin',
                 'password' => $defaultPassword,
@@ -36,13 +36,13 @@ class UserSeeder extends Seeder
             ]
         );
         $admin->syncRoles(['Admin']);
-        $this->command->info('Admin user ready: admin@recruivo.work / password');
+        $this->command->info('Admin user ready: admin@recruivo.tech / password');
 
         $companies = Company::query()->orderBy('id')->get();
         $firstCompany = $companies->firstWhere('slug', 'aetheris-dynamics') ?? $companies->first();
 
         $demoRecruiter = User::firstOrCreate(
-            ['email' => 'recruiter@recruivo.work'],
+            ['email' => 'recruiter@recruivo.tech'],
             [
                 'name' => 'Demo Recruiter',
                 'password' => $defaultPassword,
@@ -58,7 +58,7 @@ class UserSeeder extends Seeder
         );
         $demoRecruiter->syncRoles(['Recruiter']);
         $this->seedRecruiterTemplates($demoRecruiter);
-        $this->command->info('Demo recruiter ready: recruiter@recruivo.work / password');
+        $this->command->info('Demo recruiter ready: recruiter@recruivo.tech / password');
 
         $recruiterRoster = [
             'aetheris-dynamics' => [
@@ -140,7 +140,7 @@ class UserSeeder extends Seeder
         $this->command->info('Recruiters synced for all companies.');
 
         $demoCandidate = User::firstOrCreate(
-            ['email' => 'candidate@recruivo.work'],
+            ['email' => 'candidate@recruivo.tech'],
             [
                 'name' => 'Demo Candidate',
                 'password' => $defaultPassword,
@@ -214,7 +214,7 @@ class UserSeeder extends Seeder
                 'website_url' => 'https://johndoe.dev',
             ]
         );
-        $this->command->info('Demo candidate ready: candidate@recruivo.work / password');
+        $this->command->info('Demo candidate ready: candidate@recruivo.tech / password');
 
         $candidateRoster = [
             ['name' => 'Maya Lin', 'email' => 'maya.lin@example.com', 'location' => 'San Francisco, United States', 'track' => 'frontend', 'level' => 'senior'],

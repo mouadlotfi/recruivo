@@ -47,12 +47,12 @@ class AnalyticsTest extends TestCase
         // report to different websites. An unset value must not scope at all.
         config([
             'services.umami.website_id' => '11111111-2222-3333-4444-555555555555',
-            'services.umami.domains' => 'recruivo.work',
+            'services.umami.domains' => 'recruivo.tech',
         ]);
 
         $html = $this->get('/en')->assertOk()->getContent();
 
-        $this->assertStringContainsString('data-domains="recruivo.work"', $html);
+        $this->assertStringContainsString('data-domains="recruivo.tech"', $html);
     }
 
     public function test_the_tracker_url_stays_on_our_origin(): void

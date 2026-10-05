@@ -19,7 +19,7 @@ return [
         'sections' => [
             [
                 'heading' => '1. Champ d\'application',
-                'body' => 'Recruivo est une plateforme d\'emploi : les candidats trouvent des offres et postulent, les recruteurs publient des offres et gèrent les candidatures, et les administrateurs exploitent la plateforme. Cette politique décrit le traitement des données personnelles sur recruivo.work et sur la démo publique demo.recruivo.work. Elle concerne les visiteurs, les candidats, les recruteurs et les administrateurs.',
+                'body' => 'Recruivo est une plateforme d\'emploi : les candidats trouvent des offres et postulent, les recruteurs publient des offres et gèrent les candidatures, et les administrateurs exploitent la plateforme. Cette politique décrit le traitement des données personnelles sur recruivo.tech et sur la démo publique demo.recruivo.tech. Elle concerne les visiteurs, les candidats, les recruteurs et les administrateurs.',
             ],
             [
                 'heading' => '2. Données que vous nous fournissez',
@@ -106,7 +106,7 @@ return [
             ],
             [
                 'heading' => '8. Environnement de démonstration',
-                'body' => 'demo.recruivo.work est une démonstration publique peuplée de personnes, d\'entreprises et d\'offres fictives. Ses comptes sont en lecture seule et ses données sont réinitialisées périodiquement : ce que vous y saisissez peut disparaître. N\'y saisissez aucune donnée personnelle réelle.',
+                'body' => 'demo.recruivo.tech est une démonstration publique peuplée de personnes, d\'entreprises et d\'offres fictives. Ses comptes sont en lecture seule et ses données sont réinitialisées périodiquement : ce que vous y saisissez peut disparaître. N\'y saisissez aucune donnée personnelle réelle.',
             ],
             [
                 'heading' => '9. Disponibilité et évolution du service',
