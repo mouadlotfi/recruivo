@@ -51,8 +51,7 @@ class LoginController extends Controller
             return [];
         }
 
-        /** @var array<string, array{email: string, password: string}> $configured */
-        $configured = config('app.demo_accounts', []);
+        $configured = config('app.demo_accounts');
 
         $accounts = [];
 

@@ -9,7 +9,7 @@ const props = withDefaults(
         dismissLabel?: string
         elevated?: boolean
     }>(),
-    { role: 'status', dismissible: false, dismissLabel: 'dismiss', elevated: false },
+    { role: 'status', dismissible: false, elevated: false },
 )
 
 const emit = defineEmits<{ dismiss: [] }>()

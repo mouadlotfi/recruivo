@@ -21,7 +21,6 @@ class UserSeeder extends Seeder
 
         $this->ensureSampleResumes();
 
-        /** @var array<string, array{email: string, password: string}> $demoAccounts */
         $demoAccounts = config('app.demo_accounts');
         $defaultPassword = bcrypt($demoAccounts['candidate']['password']);
 
