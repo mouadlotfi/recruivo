@@ -7,6 +7,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -113,6 +114,19 @@ class DemoEnvironmentTest extends TestCase
                 ->where('isDemoEnvironment', true)
                 ->where('labels.registration_disabled_notice', __('auth.registration_disabled_on_demo'))
             );
+    }
+
+    public function test_demo_badge_is_a_label_and_password_reset_is_disabled(): void
+    {
+        // The badge names the environment; the only way back to production is the
+        // footer link, which has room to say where it goes. Password reset cannot
+        // work on the shared demo either - its mail is logged, never delivered.
+        $header = File::get(resource_path('js/Components/Layout/SiteHeader.vue'));
+        $this->assertStringContainsString("{{ t('demo_environment_badge') }}", $header);
+        $this->assertStringNotContainsString('productionUrl', $header);
+
+        $forgotPassword = File::get(resource_path('js/Pages/Auth/ForgotPassword.vue'));
+        $this->assertStringContainsString('form.processing || page.props.isDemoEnvironment', $forgotPassword);
     }
 
     public function test_registration_is_disabled_on_the_demo_api_route(): void

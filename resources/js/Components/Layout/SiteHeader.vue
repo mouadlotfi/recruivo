@@ -57,19 +57,13 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                             Recruivo
                         </span>
                     </Link>
-                    <component
-                        :is="page.props.productionUrl ? 'a' : 'span'"
+                    <span
                         v-if="page.props.isDemoEnvironment"
-                        :href="page.props.productionUrl ?? undefined"
-                        :target="page.props.productionUrl ? '_blank' : undefined"
-                        :rel="page.props.productionUrl ? 'noopener noreferrer' : undefined"
-                        class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
-                        :class="page.props.productionUrl ? 'transition hover:bg-amber-500/20 dark:hover:bg-amber-400/20' : ''"
+                        class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
                         :title="t('demo_environment_notice')"
                     >
                         {{ t('demo_environment_badge') }}
-                        <svg v-if="page.props.productionUrl" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
-                    </component>
+                    </span>
                 </div>
                 <Navigation v-if="!hideNavigationForAdmin || !isAdmin" />
             </div>
