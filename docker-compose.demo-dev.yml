@@ -1,0 +1,33 @@
+# Local "demo mode" development overlay:
+#
+#   ./scripts/dev.sh demo up
+#
+# APP_ENV stays `local`. app/Http/Middleware/SecurityHeaders.php skips the CSP for
+# local and testing only, and the demo environment's `script-src 'self'` /
+# `connect-src 'self'` would block the Vite dev server on :5173. Every demo
+# behaviour the product has - the isDemoEnvironment prop, demo login autofill,
+# refused registration, read-only demo accounts - keys off config('app.is_demo'),
+# which APP_IS_DEMO sets. DemoReset accepts `local` as a demo environment.
+#
+# No second PostgreSQL container, stack or volume: the demo database lives in the
+# same server and is created by docker/postgres/init with the same role, and
+# DemoReset's database guard only needs the name to identify itself as a demo
+# database. Redis databases 2 and 3 keep demo isolated in the shared instance,
+# because `demo:reset` runs cache:clear and flushing the default databases would
+# drop the non-demo stack's cache and sessions.
+x-demo-environment: &demo-environment
+  APP_ENV: local
+  APP_IS_DEMO: "true"
+  DB_DATABASE: recruivo_demo_db
+  REDIS_DB: "2"
+  REDIS_CACHE_DB: "3"
+
+services:
+  app:
+    environment: *demo-environment
+  queue:
+    environment: *demo-environment
+  scheduler:
+    environment: *demo-environment
+  migrate:
+    environment: *demo-environment
