@@ -13,19 +13,9 @@ return [
 
     'available' => [
         'en' => [
-            'name' => 'English',
-            'native' => 'English',
-            'flag' => '🇬🇧',
-            'script' => 'Latn',
-            'dir' => 'ltr',
             'enabled' => true,
         ],
         'fr' => [
-            'name' => 'French',
-            'native' => 'Français',
-            'flag' => '🇫🇷',
-            'script' => 'Latn',
-            'dir' => 'ltr',
             'enabled' => true,
         ],
     ],

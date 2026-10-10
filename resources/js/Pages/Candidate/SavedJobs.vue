@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Head, InfiniteScroll, Link, usePage } from '@inertiajs/vue3'
-import type { JobSummary, PageProps, ScrollPagination } from '../../types'
+import { Head, InfiniteScroll, Link } from '@inertiajs/vue3'
+import type { JobSummary, ScrollPagination } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import JobCard from '../../Components/Jobs/JobCard.vue'
 
@@ -10,9 +10,7 @@ const props = defineProps<{
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 function removeSavedJob(jobId: number): void {
     const index = props.jobs.data.findIndex((job) => job.id === jobId)

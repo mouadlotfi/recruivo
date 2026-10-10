@@ -238,16 +238,42 @@ class BackupTest extends TestCase
         }
     }
 
+    /**
+     * Set BACKUP_NOTIFICATION_MAIL_TO everywhere Laravel's env() looks, and return
+     * the value it had before so the caller can restore it.
+     *
+     * putenv() alone is not enough: a local .env populates $_ENV and $_SERVER at
+     * boot, and env() prefers those, so the config would ignore the change and read
+     * whatever the file supplied.
+     */
+    private function setAlertRecipient(?string $value): ?string
+    {
+        $original = $_ENV['BACKUP_NOTIFICATION_MAIL_TO'] ?? null;
+
+        if ($value === null) {
+            putenv('BACKUP_NOTIFICATION_MAIL_TO');
+            unset($_ENV['BACKUP_NOTIFICATION_MAIL_TO'], $_SERVER['BACKUP_NOTIFICATION_MAIL_TO']);
+
+            return $original;
+        }
+
+        putenv("BACKUP_NOTIFICATION_MAIL_TO={$value}");
+        $_ENV['BACKUP_NOTIFICATION_MAIL_TO'] = $value;
+        $_SERVER['BACKUP_NOTIFICATION_MAIL_TO'] = $value;
+
+        return $original;
+    }
+
     public function test_backup_failures_are_emailed_to_the_configured_recipient(): void
     {
         // The config computes this from the environment every time it loads, so it
         // is re-required here rather than read from the copy loaded at boot.
-        putenv('BACKUP_NOTIFICATION_MAIL_TO=alerts@example.com');
+        $original = $this->setAlertRecipient('alerts@example.com');
 
         try {
             $notifications = (require base_path('config/backup.php'))['notifications'];
         } finally {
-            putenv('BACKUP_NOTIFICATION_MAIL_TO');
+            $this->setAlertRecipient($original);
         }
 
         $map = $notifications['notifications'];
@@ -272,12 +298,12 @@ class BackupTest extends TestCase
         // recipient is not a valid address. An unset variable must therefore leave
         // a real address behind and take the channels away - the other way round
         // would break backups in order to silence their alerts.
-        putenv('BACKUP_NOTIFICATION_MAIL_TO');
+        $original = $this->setAlertRecipient(null);
 
         try {
             $notifications = (require base_path('config/backup.php'))['notifications'];
         } finally {
-            putenv('BACKUP_NOTIFICATION_MAIL_TO');
+            $this->setAlertRecipient($original);
         }
 
         // Every entry stays. Emptying the map would break each command that raises

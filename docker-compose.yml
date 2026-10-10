@@ -14,6 +14,19 @@ x-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 
+# Shared by `redis` and `redis-demo`: identical server command, password wiring
+# and healthcheck. Only the port profile, network alias and volume differ.
+x-redis: &redis-base
+  command: ["sh", "-c", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then exec redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes --appendfsync everysec; else exec redis-server --protected-mode no --appendonly yes --appendfsync everysec; fi"]
+  environment:
+    REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+  healthcheck:
+    test: ["CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then redis-cli -a \"$${REDIS_PASSWORD}\" ping >/dev/null 2>&1 || exit 1; else redis-cli ping >/dev/null 2>&1 || exit 1; fi"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 10s
+
 x-laravel-service: &laravel-service
   image: ${APP_IMAGE:-ghcr.io/mouadlotfi/recruivo:${APP_TAG:-latest}}
   restart: unless-stopped
@@ -24,10 +37,6 @@ x-laravel-service: &laravel-service
   # An explicit mode makes the stack independent of how the host extracts layers.
   tmpfs:
     - /tmp:mode=1777
-  # Lets Caddy proxy the analytics endpoint to a container on this host
-  # (UMAMI_UPSTREAM=host.docker.internal:<port>). Harmless when unused.
-  extra_hosts:
-    - "host.docker.internal:host-gateway"
   working_dir: /var/www/html
   env_file:
     - path: ${APP_ENV_FILE:-.env}
@@ -60,6 +69,11 @@ x-laravel-service: &laravel-service
 services:
   app:
     <<: *laravel-service
+    # Caddy runs in this container and proxies the analytics endpoint to a
+    # container on this host (UMAMI_UPSTREAM=host.docker.internal:<port>). Only
+    # `app` needs it; harmless when unused.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     build:
       context: .
       dockerfile: Dockerfile
@@ -145,17 +159,9 @@ services:
     env_file:
       - path: ${APP_ENV_FILE:-.env}
         required: false
-    command: ["sh", "-c", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then exec redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes --appendfsync everysec; else exec redis-server --protected-mode no --appendonly yes --appendfsync everysec; fi"]
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    <<: *redis-base
     volumes:
       - redis_data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping >/dev/null 2>&1 || exit 1; else redis-cli ping >/dev/null 2>&1 || exit 1; fi"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
   # The demo stack's own Redis, enabled by COMPOSE_PROFILES=infra-demo.
   #
   # The demo shares a PostgreSQL server with production and is isolated there per
@@ -179,17 +185,9 @@ services:
     env_file:
       - path: ${APP_ENV_FILE:-.env}
         required: false
-    command: ["sh", "-c", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then exec redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes --appendfsync everysec; else exec redis-server --protected-mode no --appendonly yes --appendfsync everysec; fi"]
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    <<: *redis-base
     volumes:
       - redis_demo_data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD:-}\" ] && [ \"$${REDIS_PASSWORD}\" != \"null\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping >/dev/null 2>&1 || exit 1; else redis-cli ping >/dev/null 2>&1 || exit 1; fi"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
   queue:
     <<: *laravel-service
     command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600", "--memory=128", "--timeout=${QUEUE_WORKER_TIMEOUT:-60}", "--no-interaction"]
@@ -204,7 +202,7 @@ services:
 
   migrate:
     <<: *laravel-service
-    command: ${MIGRATE_COMMAND:-php artisan migrate --force --no-interaction}
+    command: php artisan migrate --force --no-interaction
     restart: "no"
     healthcheck:
       disable: true

@@ -14,8 +14,7 @@ const props = defineProps<{
 }>()
 
 const page = usePage<PageProps>()
-const { t } = useTranslation()
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { t, localeUrl } = useTranslation()
 
 const sidebarOpen = ref(false)
 </script>

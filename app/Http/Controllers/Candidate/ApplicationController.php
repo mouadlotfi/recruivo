@@ -6,11 +6,16 @@ use App\Enums\ApplicationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Services\DemoAccountGuard;
+use App\Support\ApplicationTimelineSerializer;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ApplicationController extends Controller
 {
+    public function __construct(
+        private readonly ApplicationTimelineSerializer $timeline,
+    ) {}
+
     /**
      * Page-string keys rendered by Candidate/Applications.vue, resolved in the
      * current locale and passed as a flat `labels` prop (keeps the shell's
@@ -95,18 +100,6 @@ class ApplicationController extends Controller
         $job = $application->job;
         $company = $job->company;
 
-        $interview = null;
-        if ($application->status->value === ApplicationStatus::Interview->value && $application->interview_at) {
-            $interview = [
-                'at' => $application->interview_at->toIso8601String(),
-                'mode' => $application->interview_mode,
-                'location' => $application->interview_location,
-                'url' => $application->interview_url,
-                'instructions' => $application->interview_instructions,
-                'formatted_at' => $application->interview_at->translatedFormat('l, F j, Y \a\t g:i A'),
-            ];
-        }
-
         return [
             'id' => $application->id,
             'status' => $application->status->value,
@@ -120,7 +113,7 @@ class ApplicationController extends Controller
             'notes_added' => (bool) $application->notes_added,
             'created_at' => $application->created_at?->toIso8601String(),
             'applied_label' => __('applications.applied', ['time' => $application->created_at->diffForHumans()]),
-            'interview' => $interview,
+            'interview' => $this->timeline->interview($application),
             'job' => [
                 'id' => $job->id,
                 'title' => $job->title,
@@ -138,14 +131,7 @@ class ApplicationController extends Controller
                 'closes_at' => $job->closes_at?->toIso8601String(),
                 'is_closing_soon' => $job->isClosingSoon(),
             ],
-            'timeline' => $application->statusEvents->map(fn ($event) => [
-                'to_status' => $event->to_status,
-                'from_status' => $event->from_status,
-                'created_at' => $event->created_at->toIso8601String(),
-                'formatted_at' => $event->created_at->translatedFormat('M j, Y H:i'),
-                'label' => __("applications.status_{$event->to_status}"),
-                'changed_by_name' => $event->changedBy?->name,
-            ])->values()->all(),
+            'timeline' => $this->timeline->events($application),
         ];
     }
 }

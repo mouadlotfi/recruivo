@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import GuestLayout from '../../Layouts/GuestLayout.vue'
 import Alert from '../../Components/Layout/Alert.vue'
 
@@ -15,7 +16,7 @@ const form = useForm({
 const showPassword = ref(false)
 const showPasswordConfirmation = ref(false)
 const errors = computed(() => Object.values(page.props.errors ?? {}))
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { localeUrl } = useTranslation()
 const submit = () => form.post(localeUrl('/register'), { forceFormData: true })
 </script>
 

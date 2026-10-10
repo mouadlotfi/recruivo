@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Link, usePage } from '@inertiajs/vue3'
-import type { PageProps } from '../../types'
+import { Link } from '@inertiajs/vue3'
 import { useTranslation } from '../../composables/useTranslation'
 import { useDismiss } from '../../composables/useDismiss'
 
@@ -10,10 +9,7 @@ import { useDismiss } from '../../composables/useDismiss'
 // is passed in. Callers set their own `data-*` marker via attribute fallthrough.
 defineProps<{ buttonClass: string[] }>()
 
-const page = usePage<PageProps>()
-const { t } = useTranslation()
-
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { t, localeUrl } = useTranslation()
 
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)

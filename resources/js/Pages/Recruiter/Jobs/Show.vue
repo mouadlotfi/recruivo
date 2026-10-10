@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Head, Link, router, usePage } from '@inertiajs/vue3'
-import type { PageProps, RecruiterJobDetail } from '../../../types'
+import { Head, Link, router } from '@inertiajs/vue3'
+import type { RecruiterJobDetail } from '../../../types'
+import { useTranslation } from '../../../composables/useTranslation'
 import AppLayout from '../../../Layouts/AppLayout.vue'
+import { formatRemoteTypeLabel, formatSalaryRange } from '../../../utils/jobDisplay'
 
 const props = defineProps<{
     job: RecruiterJobDetail
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const jobApplicationsUrl = computed(() => localeUrl(`/recruiter/jobs/${props.job.id}/applications`))
 const jobEditUrl = computed(() => localeUrl(`/recruiter/jobs/${props.job.id}/edit`))
@@ -38,17 +38,9 @@ const badge = computed(() => {
     return { label: props.labels.draft, cls: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300' }
 })
 
-const salaryRange = computed(() => {
-    const { salary_min: min, salary_max: max } = props.job
-    if (!min && !max) return null
-    return `$${Number(min ?? 0).toLocaleString()} - $${Number(max ?? 0).toLocaleString()}`
-})
+const salaryRange = computed(() => formatSalaryRange(props.job.salary_min, props.job.salary_max))
 
-const remoteTypeLabel = computed(() => {
-    const type = props.job.remote_type
-    if (!type) return null
-    return props.labels[type.toLowerCase()] ?? type.charAt(0).toUpperCase() + type.slice(1)
-})
+const remoteTypeLabel = computed(() => formatRemoteTypeLabel(props.job.remote_type, props.labels))
 </script>
 
 <template>

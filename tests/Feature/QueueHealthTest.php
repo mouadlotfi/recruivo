@@ -30,7 +30,7 @@ class QueueHealthTest extends TestCase
         parent::setUp();
 
         // Nothing is wrong unless a test makes it so.
-        $this->beat();
+        Cache::put(QueueHealth::HEARTBEAT_KEY, now(), now()->addDay());
     }
 
     public function test_a_working_queue_is_healthy(): void
@@ -102,11 +102,6 @@ class QueueHealthTest extends TestCase
         Queue::shouldReceive('size')->andReturn(150);
 
         $this->artisan('queue:health', ['--max-pending' => 200])->assertSuccessful();
-    }
-
-    private function beat(): void
-    {
-        Cache::put(QueueHealth::HEARTBEAT_KEY, now(), now()->addDay());
     }
 
     private function failJob(): void

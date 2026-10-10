@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import AppLayout from '../../../Layouts/AppLayout.vue'
 import ExpandedTextarea from '../../../Components/Applications/ExpandedTextarea.vue'
-import type { PageProps, RecruiterNoteTemplate } from '../../../types'
+import type { RecruiterNoteTemplate } from '../../../types'
+import { useTranslation } from '../../../composables/useTranslation'
 
 interface TemplateFormData {
     name: string
@@ -16,9 +16,7 @@ const props = defineProps<{
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const createForm = useForm<TemplateFormData>({
     name: '',

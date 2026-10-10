@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Head, Link, usePage } from '@inertiajs/vue3'
-import type { PageProps } from '../../../types'
+import { Head, Link } from '@inertiajs/vue3'
+import { useTranslation } from '../../../composables/useTranslation'
 import AppLayout from '../../../Layouts/AppLayout.vue'
 import JobForm from '../../../Components/Recruiter/JobForm.vue'
 
@@ -10,9 +9,7 @@ defineProps<{
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 </script>
 
 <template>

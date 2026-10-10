@@ -93,9 +93,7 @@ export interface RecruiterNoteTemplate {
 export interface CompanyCardSummary extends CompanySummary {
     tagline: string | null
     location: string | null
-    jobs_count: number
     jobs_count_label: string
-    latest_jobs: { id: number; title: string }[]
 }
 
 export interface JobSummary {
@@ -144,12 +142,9 @@ export interface JobFilters {
 }
 
 export interface TimelineEvent {
-    to_status: string
-    from_status: string | null
     created_at: string
     formatted_at: string
     label: string
-    changed_by_name: string | null
 }
 
 export interface CandidateApplication {
@@ -158,7 +153,6 @@ export interface CandidateApplication {
     status_label: string
     cover_letter: string | null
     notes: string | null
-    notes_added: boolean
     created_at: string | null
     applied_label: string
     interview: InterviewDetails | null
@@ -185,7 +179,6 @@ export interface StatusCount {
 }
 
 export interface Pagination {
-    total: number
     per_page: number
     current_page: number
     next_page_url: string | null
@@ -199,7 +192,6 @@ export interface Pagination {
 export interface ScrollPagination<T> {
     data: T[]
     meta: {
-        total: number
         per_page: number
         current_page: number
         next_page_url: string | null
@@ -208,13 +200,6 @@ export interface ScrollPagination<T> {
 
 // --- Recruiter/Applications page payload (serialized in Recruiter/ApplicationController) ---
 
-export interface RecruiterCandidateProfile {
-    headline: string | null
-    summary: string | null
-    skills: string | null
-    location: string | null
-}
-
 export interface RecruiterCandidate {
     id: number
     name: string
@@ -222,7 +207,6 @@ export interface RecruiterCandidate {
     phone: string | null
     has_resume: boolean
     resume_url: string | null
-    profile: RecruiterCandidateProfile | null
 }
 
 export interface RecruiterApplication {
@@ -232,8 +216,6 @@ export interface RecruiterApplication {
     candidate: RecruiterCandidate
     cover_letter: string | null
     notes: string | null
-    notes_added: boolean
-    status_changed_at: string | null
     created_at: string | null
     applied_label: string
     timeline: TimelineEvent[]

@@ -12,11 +12,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 class CandidateApplicationWithdrawalTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -30,10 +33,34 @@ class CandidateApplicationWithdrawalTest extends TestCase
         }
     }
 
-    public function test_candidate_can_withdraw_own_pending_application_and_row_is_not_deleted(): void
+    /**
+     * Every status a candidate may withdraw from, with the interview details set
+     * on the application that the withdrawal must clear.
+     *
+     * @return array<string, array{0: ApplicationStatus, 1: array<string, mixed>}>
+     */
+    public static function withdrawableApplications(): array
+    {
+        return [
+            'pending' => [ApplicationStatus::Pending, []],
+            'shortlisted' => [ApplicationStatus::Shortlisted, []],
+            'interview' => [ApplicationStatus::Interview, [
+                'interview_at' => now()->addDays(2),
+                'interview_location' => 'Casablanca HQ',
+                'interview_url' => 'https://meet.example.com/abc',
+                'interview_instructions' => 'Prepare a demo.',
+            ]],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $interviewDetails
+     */
+    #[DataProvider('withdrawableApplications')]
+    public function test_candidate_can_withdraw_own_application(ApplicationStatus $status, array $interviewDetails): void
     {
         $candidate = $this->makeCandidate();
-        $application = $this->makeApplication($candidate, ApplicationStatus::Pending);
+        $application = $this->makeApplication($candidate, $status, $interviewDetails);
 
         $response = $this->actingAs($candidate)
             ->patch("/en/candidate/applications/{$application->id}/withdraw");
@@ -42,110 +69,42 @@ class CandidateApplicationWithdrawalTest extends TestCase
         $response->assertSessionHas('success', __('applications.withdrawn_success'));
 
         $this->assertDatabaseCount('applications', 1);
-        $this->assertDatabaseHas('applications', [
+        $this->assertDatabaseHas('applications', array_merge([
             'id' => $application->id,
             'status' => ApplicationStatus::Withdrawn->value,
-        ]);
-    }
-
-    public function test_candidate_can_withdraw_own_shortlisted_application(): void
-    {
-        $candidate = $this->makeCandidate();
-        $application = $this->makeApplication($candidate, ApplicationStatus::Shortlisted);
-
-        $this->actingAs($candidate)
-            ->patch("/en/candidate/applications/{$application->id}/withdraw")
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('applications', [
-            'id' => $application->id,
-            'status' => ApplicationStatus::Withdrawn->value,
-        ]);
-    }
-
-    public function test_candidate_can_withdraw_own_interview_application_and_interview_fields_are_cleared(): void
-    {
-        $candidate = $this->makeCandidate();
-        $application = $this->makeApplication($candidate, ApplicationStatus::Interview, [
-            'interview_at' => now()->addDays(2),
-            'interview_location' => 'Casablanca HQ',
-            'interview_url' => 'https://meet.example.com/abc',
-            'interview_instructions' => 'Prepare a demo.',
-        ]);
-
-        $this->actingAs($candidate)
-            ->patch("/en/candidate/applications/{$application->id}/withdraw")
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('applications', [
-            'id' => $application->id,
-            'status' => ApplicationStatus::Withdrawn->value,
-            'interview_at' => null,
-            'interview_location' => null,
-            'interview_url' => null,
-            'interview_instructions' => null,
             'status_changed' => false,
-        ]);
+        ], array_fill_keys(array_keys($interviewDetails), null)));
     }
 
-    public function test_candidate_cannot_withdraw_accepted_application(): void
+    /**
+     * Statuses and ownership that must be refused, plus the status the row keeps.
+     *
+     * @return array<string, array{0: ApplicationStatus, 1: bool}>
+     */
+    public static function nonWithdrawableApplications(): array
     {
-        $candidate = $this->makeCandidate();
-        $application = $this->makeApplication($candidate, ApplicationStatus::Accepted);
-
-        $this->actingAs($candidate)
-            ->patch("/en/candidate/applications/{$application->id}/withdraw")
-            ->assertForbidden();
-
-        $this->assertDatabaseHas('applications', [
-            'id' => $application->id,
-            'status' => ApplicationStatus::Accepted->value,
-        ]);
+        return [
+            'accepted' => [ApplicationStatus::Accepted, false],
+            'rejected' => [ApplicationStatus::Rejected, false],
+            'already withdrawn' => [ApplicationStatus::Withdrawn, false],
+            'owned by another candidate' => [ApplicationStatus::Pending, true],
+        ];
     }
 
-    public function test_candidate_cannot_withdraw_rejected_application(): void
-    {
-        $candidate = $this->makeCandidate();
-        $application = $this->makeApplication($candidate, ApplicationStatus::Rejected);
-
-        $this->actingAs($candidate)
-            ->patch("/en/candidate/applications/{$application->id}/withdraw")
-            ->assertForbidden();
-
-        $this->assertDatabaseHas('applications', [
-            'id' => $application->id,
-            'status' => ApplicationStatus::Rejected->value,
-        ]);
-    }
-
-    public function test_candidate_cannot_withdraw_another_candidates_application(): void
+    #[DataProvider('nonWithdrawableApplications')]
+    public function test_candidate_cannot_withdraw_application(ApplicationStatus $status, bool $ownedByAnotherCandidate): void
     {
         $owner = $this->makeCandidate();
-        $other = $this->makeCandidate();
-        $application = $this->makeApplication($owner, ApplicationStatus::Pending);
+        $application = $this->makeApplication($owner, $status);
+        $actor = $ownedByAnotherCandidate ? $this->makeCandidate() : $owner;
 
-        $this->actingAs($other)
+        $this->actingAs($actor)
             ->patch("/en/candidate/applications/{$application->id}/withdraw")
             ->assertForbidden();
 
         $this->assertDatabaseHas('applications', [
             'id' => $application->id,
-            'status' => ApplicationStatus::Pending->value,
-        ]);
-    }
-
-    public function test_candidate_cannot_withdraw_an_already_withdrawn_application(): void
-    {
-        $candidate = $this->makeCandidate();
-        $application = $this->makeApplication($candidate, ApplicationStatus::Withdrawn);
-
-        $this->actingAs($candidate)
-            ->patch("/en/candidate/applications/{$application->id}/withdraw")
-            ->assertForbidden();
-
-        $this->assertDatabaseHas('applications', [
-            'id' => $application->id,
-            'status' => ApplicationStatus::Withdrawn->value,
+            'status' => $status->value,
         ]);
     }
 
@@ -228,7 +187,9 @@ class CandidateApplicationWithdrawalTest extends TestCase
             ->has('applications', 2)
         );
 
-        $this->assertSame(
+        // assertEquals, not assertSame: the page orders by created_at, and two
+        // fixtures created inside the same second can come back either way.
+        $this->assertEquals(
             [$pending->id => true, $accepted->id => false],
             collect($response->inertiaProps('applications'))
                 ->mapWithKeys(fn (array $application) => [$application['id'] => $application['status'] !== ApplicationStatus::Accepted->value])
@@ -340,14 +301,6 @@ class CandidateApplicationWithdrawalTest extends TestCase
         $this->assertStringContainsString('status=${tab.key}', $applicationsPage);
         $this->assertStringContainsString("key === 'all' ? props.labels.all_statuses : props.labels[key]", $applicationsPage);
         $this->assertStringContainsString("withdrawn: 'bg-stone-200 text-stone-700", $badge);
-    }
-
-    private function makeCandidate(array $attributes = []): User
-    {
-        $candidate = User::factory()->create(array_merge(['email_verified_at' => now()], $attributes));
-        $candidate->assignRole('Candidate');
-
-        return $candidate;
     }
 
     private function makeApplication(User $candidate, ApplicationStatus $status, array $extra = []): Application

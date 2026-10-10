@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Head, Link, usePage } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
 import AppLayout from '../../Layouts/AppLayout.vue'
-import type { CandidateDashboardApplication, PageProps, ProfileCompletion } from '../../types'
+import type { CandidateDashboardApplication, ProfileCompletion } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 
 const props = defineProps<{
     totalApplications: number
@@ -14,9 +14,7 @@ const props = defineProps<{
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const statusClasses: Record<string, string> = {
     pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',

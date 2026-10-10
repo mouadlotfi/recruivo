@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\JobStatus;
 use App\Models\Application;
-use App\Models\Company;
 use App\Models\Job;
 use App\Models\RecruiterNoteTemplate;
 use App\Models\User;
@@ -12,10 +11,12 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 class RecruiterNoteTemplateTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -27,15 +28,6 @@ class RecruiterNoteTemplateTest extends TestCase
         foreach (['Candidate', 'Recruiter'] as $role) {
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
-    }
-
-    private function makeRecruiter(): User
-    {
-        $company = Company::factory()->create();
-        $recruiter = User::factory()->for($company)->create();
-        $recruiter->assignRole('Recruiter');
-
-        return $recruiter;
     }
 
     public function test_recruiter_can_create_note_template(): void

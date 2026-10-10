@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import type { CompanyDetail, PageProps } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import JobCard from '../../Components/Jobs/JobCard.vue'
 
@@ -12,8 +13,7 @@ const props = defineProps<{
 }>()
 
 const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const companiesUrl = computed(() => localeUrl('/companies'))
 const initial = computed(() => props.company.name.charAt(0))

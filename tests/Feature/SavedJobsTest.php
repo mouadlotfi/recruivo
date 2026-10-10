@@ -12,10 +12,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 class SavedJobsTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -28,14 +30,6 @@ class SavedJobsTest extends TestCase
         }
     }
 
-    private function candidate(array $attributes = []): User
-    {
-        $candidate = User::factory()->create(array_merge(['email_verified_at' => now()], $attributes));
-        $candidate->assignRole('Candidate');
-
-        return $candidate;
-    }
-
     private function publishedJob(array $attributes = []): Job
     {
         return Job::factory()->create(array_merge(['status' => JobStatus::Published->value], $attributes));
@@ -43,7 +37,7 @@ class SavedJobsTest extends TestCase
 
     public function test_candidate_can_have_saved_jobs(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $job = $this->publishedJob();
 
         $candidate->savedJobs()->attach($job);
@@ -57,7 +51,7 @@ class SavedJobsTest extends TestCase
 
     public function test_same_job_cannot_be_saved_twice_by_the_same_candidate(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $job = $this->publishedJob();
 
         $candidate->savedJobs()->attach($job);
@@ -68,7 +62,7 @@ class SavedJobsTest extends TestCase
 
     public function test_candidate_can_save_a_published_job(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $job = $this->publishedJob();
 
         $this->from('/en/jobs')->actingAs($candidate)
@@ -84,7 +78,7 @@ class SavedJobsTest extends TestCase
 
     public function test_saving_the_same_job_twice_keeps_a_single_row(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $job = $this->publishedJob();
 
         $this->actingAs($candidate)->post("/en/candidate/saved-jobs/{$job->id}");
@@ -95,8 +89,8 @@ class SavedJobsTest extends TestCase
 
     public function test_candidate_can_remove_only_their_own_saved_job(): void
     {
-        $candidate = $this->candidate();
-        $otherCandidate = $this->candidate();
+        $candidate = $this->makeCandidate();
+        $otherCandidate = $this->makeCandidate();
         $job = $this->publishedJob();
 
         $candidate->savedJobs()->attach($job);
@@ -119,8 +113,8 @@ class SavedJobsTest extends TestCase
 
     public function test_saved_jobs_index_lists_only_the_candidates_saved_published_jobs(): void
     {
-        $candidate = $this->candidate();
-        $otherCandidate = $this->candidate();
+        $candidate = $this->makeCandidate();
+        $otherCandidate = $this->makeCandidate();
         $savedJob = $this->publishedJob(['title' => 'Saved Role']);
         $draftJob = Job::factory()->create(['status' => JobStatus::Draft->value, 'title' => 'Draft Role']);
         $otherJob = $this->publishedJob(['title' => 'Other Role']);
@@ -150,7 +144,7 @@ class SavedJobsTest extends TestCase
 
     public function test_demo_candidate_cannot_save_or_remove_jobs(): void
     {
-        $candidate = $this->candidate(['is_demo' => true]);
+        $candidate = $this->makeCandidate(['is_demo' => true]);
         $job = $this->publishedJob();
 
         $this->actingAs($candidate)
@@ -173,7 +167,7 @@ class SavedJobsTest extends TestCase
 
     public function test_draft_jobs_cannot_be_saved(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $draft = Job::factory()->create(['status' => JobStatus::Draft->value]);
 
         $this->actingAs($candidate)
@@ -185,7 +179,7 @@ class SavedJobsTest extends TestCase
 
     public function test_candidate_header_links_to_saved_jobs_but_recruiter_header_does_not(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
 
         $this->actingAs($candidate)->get('/en')
             ->assertOk()
@@ -210,7 +204,7 @@ class SavedJobsTest extends TestCase
 
     public function test_saved_jobs_page_has_an_accessible_heading_and_empty_state(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
 
         $response = $this->actingAs($candidate)->get('/en/candidate/saved-jobs')
             ->assertOk();
@@ -229,7 +223,7 @@ class SavedJobsTest extends TestCase
 
     public function test_saved_jobs_page_renders_saved_job_cards_with_the_native_scroll_component(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $job = $this->publishedJob(['title' => 'Bookmarked Role']);
         $candidate->savedJobs()->attach($job);
 
@@ -258,7 +252,7 @@ class SavedJobsTest extends TestCase
 
     public function test_candidate_job_cards_render_a_bookmark_control_with_an_accessible_44px_target(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $job = $this->publishedJob();
 
         $response = $this->actingAs($candidate)->get('/en/jobs')->assertOk();
@@ -276,7 +270,7 @@ class SavedJobsTest extends TestCase
 
     public function test_saved_job_cards_render_a_bookmark_control(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $job = $this->publishedJob();
         $candidate->savedJobs()->attach($job);
 
@@ -303,7 +297,7 @@ class SavedJobsTest extends TestCase
 
     public function test_job_detail_page_renders_the_bookmark_action_for_candidates(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $job = $this->publishedJob();
 
         $response = $this->actingAs($candidate)->get("/en/jobs/{$job->id}")->assertOk();
@@ -321,7 +315,7 @@ class SavedJobsTest extends TestCase
 
     public function test_demo_candidate_sees_a_disabled_bookmark_control_without_a_mutating_form(): void
     {
-        $candidate = $this->candidate(['is_demo' => true]);
+        $candidate = $this->makeCandidate(['is_demo' => true]);
         $job = $this->publishedJob();
 
         $response = $this->actingAs($candidate)->get('/en/jobs')->assertOk();
@@ -339,7 +333,7 @@ class SavedJobsTest extends TestCase
 
     public function test_job_cards_mark_saved_state_from_the_query_without_per_card_queries(): void
     {
-        $candidate = $this->candidate();
+        $candidate = $this->makeCandidate();
         $saved = $this->publishedJob(['title' => 'Saved One']);
         $unsaved = $this->publishedJob(['title' => 'Unsaved One']);
         $candidate->savedJobs()->attach($saved);

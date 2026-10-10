@@ -13,6 +13,7 @@ use App\Notifications\PasswordChangedNotification;
 use App\Services\ApplicationResumeService;
 use App\Services\DemoAccountGuard;
 use App\Services\UserAccountDeletionService;
+use App\Support\CandidateProfilePreview;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -125,47 +126,11 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function preview(Request $request)
+    public function preview(Request $request, CandidateProfilePreview $preview)
     {
-        $applicant = $request->user()->load('candidateProfile');
-
         return Inertia::render('Profile/Preview', [
-            'applicant' => [
-                'name' => $applicant->name,
-                'email' => $applicant->email,
-                'phone' => $applicant->phone,
-                'profile_summary' => $applicant->profile_summary,
-                'candidateProfile' => $applicant->candidateProfile ? [
-                    'headline' => $applicant->candidateProfile->headline,
-                    'skills' => $applicant->candidateProfile->skills,
-                    'languages_data' => $applicant->candidateProfile->languages_data ?? [],
-                    'profile_links' => $applicant->candidateProfile->profile_links ?? [],
-                    'experiences' => $applicant->candidateProfile->experiences ?? [],
-                    'educations' => $applicant->candidateProfile->educations ?? [],
-                ] : null,
-            ],
-            'labels' => [
-                'recruiter_preview' => __('profile.recruiter_preview'),
-                'back_to_profile_settings' => __('profile.back_to_profile_settings'),
-                'email_address' => __('profile.email_address'),
-                'phone_number' => __('profile.phone_number'),
-                'about' => __('profile.about'),
-                'present' => __('profile.present'),
-                'proficiency_beginner' => __('profile.proficiency_beginner'),
-                'proficiency_elementary' => __('profile.proficiency_elementary'),
-                'proficiency_intermediate' => __('profile.proficiency_intermediate'),
-                'proficiency_professional_working' => __('profile.proficiency_professional_working'),
-                'proficiency_fluent' => __('profile.proficiency_fluent'),
-                'proficiency_native_bilingual' => __('profile.proficiency_native_bilingual'),
-                'about_heading' => __('profile.about'),
-                'contact_information' => __('recruiter.contact_information'),
-                'not_provided' => __('recruiter.not_provided'),
-                'skills' => __('recruiter.skills'),
-                'languages' => __('recruiter.languages'),
-                'links' => __('profile.links'),
-                'experience' => __('recruiter.experience'),
-                'education' => __('recruiter.education'),
-            ],
+            'applicant' => $preview->applicant($request->user()),
+            'labels' => $preview->labels('profile.recruiter_preview', 'profile.back_to_profile_settings'),
         ]);
     }
 

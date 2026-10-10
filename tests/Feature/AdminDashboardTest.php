@@ -16,10 +16,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 class AdminDashboardTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -45,7 +47,7 @@ class AdminDashboardTest extends TestCase
         $recruiter->assignRole('Recruiter');
         $this->actingAs($recruiter)->get('/en/admin/dashboard')->assertForbidden();
 
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $this->actingAs($admin)
             ->get('/en/admin/dashboard')
             ->assertOk()
@@ -62,7 +64,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_dashboard_uses_real_platform_metrics_and_live_job_status(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $candidate = User::factory()->create(['created_at' => now()->subDays(3)]);
         $candidate->assignRole('Candidate');
         $company = Company::factory()->create();
@@ -105,7 +107,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_existing_admin_user_management_route_keeps_rendering_with_the_admin_layout(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $user = User::factory()->create();
         $user->assignRole('Candidate');
 
@@ -124,7 +126,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_date_range_filters_applications_and_comparison_uses_the_previous_equivalent_period(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
         $company = Company::factory()->create();
@@ -156,7 +158,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_jobs_without_applications_only_include_older_live_jobs(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
@@ -188,7 +190,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_application_pipeline_is_selected_period_stable_and_zero_filled_for_every_status(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
@@ -237,7 +239,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_marketplace_health_uses_live_recruiter_accounts_and_selected_candidate_cohort(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create();
         $liveRecruiter = User::factory()->for($company)->create();
         $liveRecruiter->assignRole('Recruiter');
@@ -279,7 +281,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_failed_jobs_are_a_separate_attention_item_and_share_the_system_health_count(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
@@ -318,7 +320,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_empty_installation_has_intentional_empty_states_and_no_fake_comparisons(): void
     {
-        $this->actingAs($this->admin())
+        $this->actingAs($this->makeAdmin())
             ->get('/en/admin/dashboard')
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->has('dashboard.attention', 0)
@@ -335,7 +337,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_dashboard_exposes_the_synchronized_recruiter_translation_key_in_both_locales(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
 
         $this->actingAs($admin)
             ->get('/en/admin/dashboard')
@@ -352,7 +354,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_attention_titles_use_singular_and_plural_translations(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
@@ -390,7 +392,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_analytics_cache_is_range_scoped_and_does_not_cache_attention_or_failed_jobs(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
@@ -437,7 +439,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_dashboard_query_count_does_not_scale_with_activity_rows(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $candidate = User::factory()->create();
         $candidate->assignRole('Candidate');
         $company = Company::factory()->create();
@@ -462,7 +464,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_jobs_without_applications_attention_links_to_admin_jobs_filtered_not_public_jobs(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
@@ -482,7 +484,7 @@ class AdminDashboardTest extends TestCase
 
     public function test_dashboard_kpi_cards_resolve_to_real_admin_destinations(): void
     {
-        $this->actingAs($this->admin())
+        $this->actingAs($this->makeAdmin())
             ->get('/en/admin/dashboard')
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('labels.users', 'Registered users')
@@ -500,13 +502,5 @@ class AdminDashboardTest extends TestCase
         $candidate->assignRole('Candidate');
         $this->actingAs($candidate)->get('/en/admin/users?role=Recruiter')->assertForbidden();
         $this->actingAs($candidate)->get('/en/admin/jobs?status=published')->assertForbidden();
-    }
-
-    private function admin(): User
-    {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
-
-        return $admin;
     }
 }

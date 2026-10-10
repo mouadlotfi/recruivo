@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Head, Link, router, usePage } from '@inertiajs/vue3'
-import type { PageProps, Pagination } from '../../types'
+import { Head, Link, router } from '@inertiajs/vue3'
+import type { Pagination } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import AdminLayout from '../../Components/Admin/AdminLayout.vue'
 import AdminBreadcrumb from '../../Components/Admin/AdminBreadcrumb.vue'
 import { useLoadMore } from '../../composables/useLoadMore'
@@ -43,8 +44,7 @@ const props = defineProps<{
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { localeUrl } = useTranslation()
 const items = ref<AdminJob[]>([...props.jobs])
 const search = ref(props.filters.search)
 const status = ref(props.filters.status)
@@ -100,7 +100,7 @@ const statusClass = (jobStatus: string) => jobStatus === 'published'
     <AdminLayout :labels="labels">
         <div class="space-y-6 sm:space-y-8">
             <header>
-                <AdminBreadcrumb :items="[{ label: labels.job_management_title }]" />
+                <AdminBreadcrumb :label="labels.job_management_title" />
                 <h1 class="mt-2 text-2xl font-semibold text-stone-900 dark:text-white sm:text-3xl">{{ labels.job_management_title }}</h1>
                 <p class="mt-2 max-w-2xl text-sm text-stone-600 dark:text-stone-400 sm:text-base">{{ labels.job_management_subtitle }}</p>
             </header>

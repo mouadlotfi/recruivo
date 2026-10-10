@@ -3,12 +3,12 @@
 namespace Tests\Feature\Api\Recruiter;
 
 use App\Enums\JobStatus;
-use App\Models\Company;
 use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 /**
@@ -18,6 +18,7 @@ use Tests\TestCase;
  */
 class JobUpdateTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -25,15 +26,6 @@ class JobUpdateTest extends TestCase
         parent::setUp();
 
         Role::firstOrCreate(['name' => 'Recruiter', 'guard_name' => 'web']);
-    }
-
-    private function recruiter(): User
-    {
-        $company = Company::factory()->create();
-        $recruiter = User::factory()->for($company)->create(['is_recruiter' => true]);
-        $recruiter->assignRole('Recruiter');
-
-        return $recruiter;
     }
 
     private function job(User $recruiter, JobStatus $status, ?string $publishedAt): Job
@@ -48,7 +40,7 @@ class JobUpdateTest extends TestCase
 
     public function test_an_update_without_a_status_keeps_the_job_published_and_publicly_listed(): void
     {
-        $recruiter = $this->recruiter();
+        $recruiter = $this->makeRecruiter(['is_recruiter' => true]);
         $job = $this->job($recruiter, JobStatus::Published, now()->subDay()->toDateTimeString());
 
         Sanctum::actingAs($recruiter);
@@ -69,7 +61,7 @@ class JobUpdateTest extends TestCase
 
     public function test_publishing_a_draft_stamps_the_publication_date(): void
     {
-        $recruiter = $this->recruiter();
+        $recruiter = $this->makeRecruiter(['is_recruiter' => true]);
         $job = $this->job($recruiter, JobStatus::Draft, null);
 
         Sanctum::actingAs($recruiter);
@@ -87,7 +79,7 @@ class JobUpdateTest extends TestCase
     {
         // Mirrors the web surface: the timestamp records when the job was first
         // published and is not rewritten on the way back to draft.
-        $recruiter = $this->recruiter();
+        $recruiter = $this->makeRecruiter(['is_recruiter' => true]);
         $publishedAt = now()->subDays(3)->startOfSecond();
         $job = $this->job($recruiter, JobStatus::Published, $publishedAt->toDateTimeString());
 

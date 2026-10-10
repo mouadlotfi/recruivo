@@ -1,13 +1,7 @@
 <?php
 
 use App\Jobs\QueueHeartbeat;
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
-
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
 
 // Scheduled tasks belong here: App\Console\Kernel is never resolved under
 // `Application::configure()`.

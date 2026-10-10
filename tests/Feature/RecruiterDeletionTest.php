@@ -11,6 +11,7 @@ use App\Models\Job;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 /**
@@ -20,6 +21,7 @@ use Tests\TestCase;
  */
 class RecruiterDeletionTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -31,26 +33,10 @@ class RecruiterDeletionTest extends TestCase
         }
     }
 
-    private function admin(): User
-    {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
-
-        return $admin;
-    }
-
-    private function recruiter(Company $company): User
-    {
-        $recruiter = User::factory()->for($company)->create(['is_recruiter' => true]);
-        $recruiter->assignRole('Recruiter');
-
-        return $recruiter;
-    }
-
     public function test_deleting_a_recruiter_orphans_their_jobs_and_preserves_candidate_history(): void
     {
         $company = Company::factory()->create();
-        $recruiter = $this->recruiter($company);
+        $recruiter = $this->makeRecruiter(['is_recruiter' => true], $company);
 
         $job = Job::factory()->for($company)->create([
             'recruiter_id' => $recruiter->id,
@@ -67,7 +53,7 @@ class RecruiterDeletionTest extends TestCase
             'created_at' => now(),
         ]);
 
-        $this->actingAs($this->admin())
+        $this->actingAs($this->makeAdmin())
             ->delete("/en/admin/users/{$recruiter->id}")
             ->assertRedirect();
 
@@ -89,13 +75,13 @@ class RecruiterDeletionTest extends TestCase
     public function test_other_recruiters_jobs_are_untouched_by_a_recruiter_deletion(): void
     {
         $company = Company::factory()->create();
-        $leaving = $this->recruiter($company);
-        $staying = $this->recruiter($company);
+        $leaving = $this->makeRecruiter(['is_recruiter' => true], $company);
+        $staying = $this->makeRecruiter(['is_recruiter' => true], $company);
 
         $orphanedJob = Job::factory()->for($company)->create(['recruiter_id' => $leaving->id]);
         $keptJob = Job::factory()->for($company)->create(['recruiter_id' => $staying->id]);
 
-        $this->actingAs($this->admin())
+        $this->actingAs($this->makeAdmin())
             ->delete("/en/admin/users/{$leaving->id}")
             ->assertRedirect();
 

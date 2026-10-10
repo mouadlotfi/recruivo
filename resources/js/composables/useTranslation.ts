@@ -21,5 +21,12 @@ export function useTranslation() {
         return text
     }
 
-    return { t }
+    /**
+     * Prefixes a path with the active locale, the one URL shape every page
+     * shares. `targetLocale` lets the language switcher link to the same path
+     * under another locale without duplicating the prefixing rule.
+     */
+    const localeUrl = (path: string, targetLocale: string = locale.value): string => `/${targetLocale}${path}`
+
+    return { t, localeUrl }
 }

@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { Link, usePage } from '@inertiajs/vue3'
-import type { PageProps } from '../../types'
+import { Link } from '@inertiajs/vue3'
 import { useTranslation } from '../../composables/useTranslation'
 import { acknowledgeNotice, consentOpen, openNoticeIfUnacknowledged } from '../../composables/useCookieConsent'
 
-const page = usePage<PageProps>()
-const { t } = useTranslation()
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { t, localeUrl } = useTranslation()
 
 onMounted(openNoticeIfUnacknowledged)
 </script>

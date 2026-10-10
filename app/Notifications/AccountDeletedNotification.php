@@ -38,11 +38,4 @@ class AccountDeletedNotification extends Notification implements ShouldQueue
             ->line('We appreciate the time you spent on Recruivo and you are welcome back any time.')
             ->salutation('— The Recruivo Team');
     }
-
-    public function toArray($notifiable): array
-    {
-        return [
-            'initiated_by_user' => $this->initiatedByUser,
-        ];
-    }
 }

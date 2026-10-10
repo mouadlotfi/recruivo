@@ -43,15 +43,4 @@ class ContactMessageReceived extends Notification implements ShouldQueue
             ->lines($lines)
             ->salutation('— Recruivo');
     }
-
-    /**
-     * @return array<string, string>
-     */
-    public function toArray(object $notifiable): array
-    {
-        return [
-            'sender_name' => $this->senderName,
-            'sender_email' => $this->senderEmail,
-        ];
-    }
 }

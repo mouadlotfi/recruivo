@@ -2,18 +2,18 @@
 
 namespace Tests\Feature;
 
-use App\Models\Company;
 use App\Models\Job;
-use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 class RecruiterJobCreationTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -118,14 +118,5 @@ class RecruiterJobCreationTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Recruiter/Jobs/Index', false)
             );
-    }
-
-    private function makeRecruiter(): User
-    {
-        $company = Company::factory()->create();
-        $recruiter = User::factory()->for($company)->create(['email_verified_at' => now()]);
-        $recruiter->assignRole('Recruiter');
-
-        return $recruiter;
     }
 }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Head, Link, router, usePage } from '@inertiajs/vue3'
-import type { PageProps, Pagination, RecruiterJobSummary } from '../../../types'
+import { Head, Link, router } from '@inertiajs/vue3'
+import type { Pagination, RecruiterJobSummary } from '../../../types'
+import { useTranslation } from '../../../composables/useTranslation'
 import AppLayout from '../../../Layouts/AppLayout.vue'
 import { useFocusTrap } from '../../../composables/useFocusTrap'
 import { useLoadMore } from '../../../composables/useLoadMore'
@@ -12,9 +13,7 @@ const props = defineProps<{
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 // Buckets loaded jobs by page number to reconcile status changes without losing pagination state.
 const pageItems = ref(new Map<number, RecruiterJobSummary[]>([

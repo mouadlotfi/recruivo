@@ -167,11 +167,6 @@ class User extends Authenticatable implements MustVerifyEmailContract
         ];
     }
 
-    public function isCandidate(): bool
-    {
-        return ! $this->isRecruiter() && $this->hasRole('Candidate');
-    }
-
     /**
      * For recruiters, use company name. For candidates, use personal name.
      */

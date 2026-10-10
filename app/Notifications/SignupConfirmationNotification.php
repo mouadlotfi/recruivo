@@ -46,12 +46,4 @@ class SignupConfirmationNotification extends Notification implements ShouldQueue
         return $mailMessage
             ->line('If you have any questions, feel free to reach out to our support team.');
     }
-
-    public function toArray($notifiable): array
-    {
-        return [
-            'user_id' => $this->user->id,
-            'account_type' => $this->user->hasRole('Recruiter') ? 'recruiter' : 'candidate',
-        ];
-    }
 }

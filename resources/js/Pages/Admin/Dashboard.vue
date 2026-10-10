@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import AdminLayout from '../../Components/Admin/AdminLayout.vue'
 import DashboardChart from '../../Components/Admin/DashboardChart.vue'
 
@@ -95,7 +96,7 @@ const props = defineProps<{
 
 const page = usePage<PageProps>()
 const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 const selectedRange = ref(String(props.dashboard.range))
 const activeMetric = ref<MetricKey>('applications')
 const isRefreshing = ref(false)

@@ -5,6 +5,7 @@ import type { PageProps, CandidateApplication } from '../../types'
 import ApplicationStatusBadge from './ApplicationStatusBadge.vue'
 import StatusTimeline from './StatusTimeline.vue'
 import CoverLetterDisclosure from './CoverLetterDisclosure.vue'
+import { formatRemoteTypeLabel, formatSalaryRange } from '../../utils/jobDisplay'
 
 const props = defineProps<{
     application: CandidateApplication
@@ -23,16 +24,11 @@ const companyInitial = computed(() =>
     props.application.job.company ? props.application.job.company.name.charAt(0) : 'J',
 )
 
-const remoteTypeLabel = computed(() => {
-    const type = props.application.job.remote_type
-    return type ? type.charAt(0).toUpperCase() + type.slice(1) : null
-})
+const remoteTypeLabel = computed(() => formatRemoteTypeLabel(props.application.job.remote_type, props.labels))
 
-const salaryRange = computed(() => {
-    const { salary_min: min, salary_max: max } = props.application.job
-    if (!min || !max) return null
-    return `$${Number(min).toLocaleString()} - $${Number(max).toLocaleString()}`
-})
+const salaryRange = computed(() =>
+    formatSalaryRange(props.application.job.salary_min, props.application.job.salary_max),
+)
 
 const interviewModeLabel = computed(() =>
     props.application.interview?.mode === 'online' ? props.labels.interview_online : props.labels.interview_onsite,

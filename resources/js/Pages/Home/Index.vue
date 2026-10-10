@@ -6,6 +6,7 @@ import JobCard from '../../Components/Jobs/JobCard.vue'
 import { useFocusTrap } from '../../composables/useFocusTrap'
 import { useLoadMore } from '../../composables/useLoadMore'
 import type { JobSummary, PageProps, Pagination } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 
 interface HomeMetrics {
     total_roles: number
@@ -31,8 +32,7 @@ const props = defineProps<{
 }>()
 
 const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 const user = computed(() => page.props.auth.user)
 const isCandidate = computed(() => user.value?.roles.includes('Candidate') ?? false)
 const isRecruiter = computed(() => user.value?.roles.includes('Recruiter') ?? false)

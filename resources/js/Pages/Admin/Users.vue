@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps, Pagination } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import AdminLayout from '../../Components/Admin/AdminLayout.vue'
 import AdminBreadcrumb from '../../Components/Admin/AdminBreadcrumb.vue'
 import { useFocusTrap } from '../../composables/useFocusTrap'
@@ -31,7 +32,7 @@ const props = defineProps<{
 }>()
 
 const page = usePage<PageProps>()
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { localeUrl } = useTranslation()
 // The shared demo admin may browse the back office but never mutate it; the
 // middleware refuses the request server-side, this only mirrors the promise.
 const isDemoAdmin = computed(() => page.props.auth.user?.is_demo === true)
@@ -97,7 +98,7 @@ watch(selectedUser, (user) => {
         <div class="space-y-8">
             <div class="flex items-center justify-between">
                 <div class="min-w-0">
-                    <AdminBreadcrumb :items="[{ label: labels.title }]" />
+                    <AdminBreadcrumb :label="labels.title" />
                     <h1 class="mt-2 text-2xl font-semibold text-stone-900 dark:text-white sm:text-3xl">{{ labels.title }}</h1>
                     <p class="mt-2 text-sm text-stone-600 dark:text-stone-400 sm:text-base">{{ labels.registered_users_count }}</p>
                 </div>

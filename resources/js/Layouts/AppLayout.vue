@@ -11,13 +11,12 @@ import Footer from '../Components/Layout/Footer.vue'
 import CookieConsent from '../Components/Layout/CookieConsent.vue'
 
 const page = usePage<PageProps>()
-const { t } = useTranslation()
+const { t, localeUrl } = useTranslation()
 
 const user = computed(() => page.props.auth.user)
 const isRecruiter = computed(() => user.value?.roles.includes('Recruiter') ?? false)
 const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
 const logoHref = computed(() => {
     if (isAdmin.value) return localeUrl('/admin/dashboard')
     if (isRecruiter.value) return localeUrl('/recruiter/dashboard')

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import type { PageProps, ProfilePreviewApplicant } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 
 const props = withDefaults(defineProps<{
     applicant: ProfilePreviewApplicant
@@ -14,7 +15,7 @@ const props = withDefaults(defineProps<{
 
 const page = usePage<PageProps>()
 const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 const profile = computed(() => props.applicant.candidateProfile)
 const backHref = computed(() => {
     if (!props.backUrl) return localeUrl('/profile')

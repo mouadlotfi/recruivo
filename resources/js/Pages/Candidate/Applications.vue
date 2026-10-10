@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Link, usePage } from '@inertiajs/vue3'
-import type { PageProps, CandidateApplication, Pagination, StatusCount } from '../../types'
+import { Link } from '@inertiajs/vue3'
+import type { CandidateApplication, Pagination, StatusCount } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import CandidateApplicationCard from '../../Components/Applications/CandidateApplicationCard.vue'
 import { useLoadMore } from '../../composables/useLoadMore'
@@ -14,9 +15,7 @@ const props = defineProps<{
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const TAB_KEYS = ['all', 'pending', 'shortlisted', 'interview', 'accepted', 'rejected', 'withdrawn'] as const
 

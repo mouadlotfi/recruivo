@@ -3,6 +3,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import { useFocusTrap } from '../../composables/useFocusTrap'
+import { useTranslation } from '../../composables/useTranslation'
 import type {
     CandidateProfileSettings,
     CompanyProfileSettings,
@@ -63,7 +64,7 @@ const props = defineProps<{
 
 const page = usePage<PageProps>()
 const locale = computed(() => page.props.locale)
-const localeUrl = (path: string, targetLocale = locale.value) => `/${targetLocale}${path}`
+const { localeUrl } = useTranslation()
 const isCandidate = computed(() => props.user.roles.includes('Candidate'))
 const isRecruiter = computed(() => props.user.roles.includes('Recruiter'))
 

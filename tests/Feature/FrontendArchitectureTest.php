@@ -20,11 +20,6 @@ class FrontendArchitectureTest extends TestCase
         return File::get(resource_path('js/app.ts'));
     }
 
-    private function rootShell(): string
-    {
-        return File::get(resource_path('views/inertia.blade.php'));
-    }
-
     private function tsconfig(): array
     {
         return json_decode(File::get(base_path('tsconfig.json')), true, 512, JSON_THROW_ON_ERROR);
@@ -78,7 +73,7 @@ class FrontendArchitectureTest extends TestCase
 
     public function test_inertia_root_uses_v3_components_and_the_app_entry(): void
     {
-        $root = $this->rootShell();
+        $root = File::get(resource_path('views/inertia.blade.php'));
 
         $this->assertMatchesRegularExpression('/<x-inertia::head>|<x-inertia:head>/', $root);
         $this->assertMatchesRegularExpression('/<x-inertia::app\s*\/?>|<x-inertia:app\s*\/?>/', $root);

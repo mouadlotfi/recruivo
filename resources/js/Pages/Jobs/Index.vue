@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { Head, InfiniteScroll, Link, usePage } from '@inertiajs/vue3'
 import type { JobFilters, JobSummary, PageProps, ScrollPagination } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import JobCard from '../../Components/Jobs/JobCard.vue'
 
@@ -13,8 +14,7 @@ const props = defineProps<{
 }>()
 
 const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const isRecruiter = computed(() => page.props.auth.user?.roles.includes('Recruiter') ?? false)
 const heading = computed(() => (isRecruiter.value ? props.labels.recruiter_explore_title : props.labels.find_opportunity))

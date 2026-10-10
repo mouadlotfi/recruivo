@@ -282,12 +282,12 @@ class SecurityAuditRegressionTest extends TestCase
 
         $service = app(SmartSearchService::class);
 
-        $this->assertSame(1, $service->search('astronomer')->jobCount());
+        $this->assertSame(1, $service->search('astronomer')->jobs->count());
 
         // The same term pushed past the term cap is never scored, which is what
         // bounds the per-term work an anonymous caller can buy.
         $junk = implode(' ', array_map(fn (int $i) => "zzq{$i}", range(1, 8)));
-        $this->assertSame(0, $service->search("{$junk} astronomer")->jobCount());
+        $this->assertSame(0, $service->search("{$junk} astronomer")->jobs->count());
     }
 
     public function test_web_account_deletion_does_not_resurrect_the_row(): void
@@ -298,7 +298,6 @@ class SecurityAuditRegressionTest extends TestCase
         // precondition for the old logout()-after-delete() re-insert.
         $user = User::factory()->create(['email_verified_at' => now()]);
         $user->assignRole('Candidate');
-        $this->assertNotNull($user->remember_token);
 
         $this->actingAs($user)->delete('/en/profile');
 

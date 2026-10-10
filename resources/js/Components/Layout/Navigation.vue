@@ -6,14 +6,13 @@ import { useTranslation } from '../../composables/useTranslation'
 import { useDismiss } from '../../composables/useDismiss'
 
 const page = usePage<PageProps>()
-const { t } = useTranslation()
+const { t, localeUrl } = useTranslation()
 
 const user = computed(() => page.props.auth.user)
 const isRecruiter = computed(() => user.value?.roles.includes('Recruiter') ?? false)
 const isCandidate = computed(() => user.value?.roles.includes('Candidate') ?? false)
 const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
 // Match pathname prefix so active states persist during filter or query changes.
 const isActive = (href: string) => {
     const path = page.url.split('?')[0]

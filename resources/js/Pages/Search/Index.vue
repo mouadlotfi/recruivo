@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Head, Link, router, usePage } from '@inertiajs/vue3'
-import type { CompanyCardSummary, JobSummary, PageProps, Pagination } from '../../types'
+import { Head, Link, router } from '@inertiajs/vue3'
+import type { CompanyCardSummary, JobSummary, Pagination } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import JobCard from '../../Components/Jobs/JobCard.vue'
 import CompanyCard from '../../Components/Companies/CompanyCard.vue'
@@ -26,9 +27,7 @@ const props = defineProps<{
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 const searchUrl = localeUrl('/search')
 
 const hasCriteria = computed(() => Boolean(props.searchQuery || props.remoteType || props.location))

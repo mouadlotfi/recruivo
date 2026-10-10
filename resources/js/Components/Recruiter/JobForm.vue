@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Link, useForm, usePage } from '@inertiajs/vue3'
-import type { JobFormData, PageProps, RecruiterJobDetail } from '../../types'
+import { Link, useForm } from '@inertiajs/vue3'
+import type { JobFormData, RecruiterJobDetail } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 
 const props = defineProps<{
     mode: 'create' | 'edit'
@@ -10,8 +11,7 @@ const props = defineProps<{
     labels: Record<string, string>
 }>()
 
-const page = usePage<PageProps>()
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { localeUrl } = useTranslation()
 
 // Allowed enum values validated by backend FormRequest.
 const REMOTE_TYPES = ['remote', 'hybrid', 'onsite'] as const

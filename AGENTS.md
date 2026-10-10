@@ -14,11 +14,11 @@ Recruivo — a hosted job board and candidate-management platform. One Laravel c
 
 ## Architecture & Data Flow
 
-- **No `app/Http/Kernel.php`, no `app/Console/Kernel.php`.** `bootstrap/app.php` owns routes, middleware, cookie encryption exceptions, trustProxies/Hosts and the `role`/`guest`/`verified` aliases; `routes/console.php` owns the entire schedule. Providers are listed explicitly in `config/app.php` (`AppServiceProvider`, `AuthServiceProvider`, `EventServiceProvider`).
+- **No `app/Http/Kernel.php`, no `app/Console/Kernel.php`.** `bootstrap/app.php` owns routes, middleware, cookie encryption exceptions, trustProxies/Hosts and the `role`/`guest`/`verified` aliases; `routes/console.php` owns the entire schedule. App providers are listed in `bootstrap/providers.php` (`AppServiceProvider`, `AuthServiceProvider`); the framework's own providers come from `ServiceProvider::defaultProviders()`, which a `config/app.php` list would replace rather than extend.
 - Web routes are locale-prefixed: `routes/web.php` wraps everything in a `{locale}` group (`en|fr` from `config/locales.php`). `app/Http/Middleware/SetLocale.php` is *prepended* and sets the unencrypted `locale` cookie; `HandleInertiaRequests` and `SecurityHeaders` are *appended* on the web group.
 - Controllers stay thin. Business logic lives in `app/Services`; Inertia card shapes live in `app/Support` (`JobCardSerializer`, `CompanyCardSerializer`). API responses use `app/Http/Resources`.
 - Web and API controller trees duplicate domain operations (recorded in `CONTEXT.md`, 2026-09-01). When changing a domain rule, update both trees.
-- Queues: no domain job is dispatched. All 9 `app/Notifications/*` implement `ShouldQueue`; `app/Jobs/QueueHeartbeat.php` is queued by the scheduler only. No custom events/listeners (`EventServiceProvider::$listen = []`, discovery off) — the only event is Laravel's `Verified` in `routes/web.php`.
+- Queues: no domain job is dispatched. All 9 `app/Notifications/*` implement `ShouldQueue`; `app/Jobs/QueueHeartbeat.php` is queued by the scheduler only. No custom events/listeners — the only event is Laravel's `Verified` in `routes/web.php`.
 - Schedule (`routes/console.php`): `demo:reset`, `backup:clean|run|monitor`, `QueueHeartbeat` every 5m, `queue:health`.
 
 ```mermaid
@@ -139,7 +139,7 @@ Ops / app commands: `php artisan demo:reset --force`, `php artisan make:admin --
 
 ## Testing & QA
 
-- PHPUnit `^12` (no Pest), Paratest available. `tests/TestCase.php` is stock (framework TestCase + `CreatesApplication`); there are **no** base test traits or custom assertions — each class declares `use RefreshDatabase;` itself and re-seeds roles in `setUp()` (`Role::firstOrCreate(['name' => 'Candidate', 'guard_name' => 'web'])`).
+- PHPUnit `^12` (no Pest), Paratest available. `tests/TestCase.php` is stock (framework TestCase + `CreatesApplication`); `tests/Concerns/CreatesRoleUsers.php` holds the shared role-user factories but there are **no** custom assertions — each class declares `use RefreshDatabase;` itself and re-seeds roles in `setUp()` (`Role::firstOrCreate(['name' => 'Candidate', 'guard_name' => 'web'])`).
 - Layout: `tests/Feature/{Auth,Api,Api/Recruiter,Admin,Candidate,Recruiter,…}` mirrors the route surface; contract tests (`FrontendArchitectureTest`, `InertiaUiContractTest`, `SecurityAuditRegressionTest`, `ProductionReadinessTest`) pin toolchain/files/security regressions. `tests/Unit/` is empty.
 - `phpunit.xml` forces `APP_ENV=testing`, `DB_CONNECTION=pgsql`, `DB_DATABASE=recruivo_test` (created by `docker/postgres/init/01-create-extra-databases.sql`), array cache/session/mail, `sync` queue, `BCRYPT_ROUNDS=4`. Never point it at a live database.
 - Run: `php artisan test --compact [path]`, `--filter=<name>` for a single test. Add `--parallel --compact` only in CI.

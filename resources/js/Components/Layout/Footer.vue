@@ -4,8 +4,7 @@ import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
 
 const page = usePage<PageProps>()
-const { t } = useTranslation()
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { t, localeUrl } = useTranslation()
 const year = new Date().getFullYear()
 
 const linkClasses = 'transition hover:text-amber-600 dark:hover:text-amber-400'

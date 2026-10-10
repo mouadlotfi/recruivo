@@ -6,6 +6,7 @@ use App\Enums\JobStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Job;
 use App\Services\DemoAccountGuard;
+use App\Support\JobCardSerializer;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
@@ -13,6 +14,10 @@ use Inertia\ScrollMetadata;
 
 class SavedJobController extends Controller
 {
+    public function __construct(
+        private readonly JobCardSerializer $jobCards,
+    ) {}
+
     public function index(Request $request)
     {
         $jobs = $request->user()->savedJobs()
@@ -59,45 +64,8 @@ class SavedJobController extends Controller
     private function serializedScroll(LengthAwarePaginator $paginator): array
     {
         return [
-            'data' => array_map(fn (Job $job) => $this->serializeJob($job), $paginator->items()),
-            'meta' => [
-                'total' => $paginator->total(),
-                'per_page' => $paginator->perPage(),
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'next_page_url' => $paginator->nextPageUrl(),
-                'prev_page_url' => $paginator->previousPageUrl(),
-            ],
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function serializeJob(Job $job): array
-    {
-        return [
-            'id' => $job->id,
-            'title' => $job->title,
-            'location' => $job->location,
-            'remote_type' => $job->remote_type,
-            'category' => $job->category,
-            'salary_min' => $job->salary_min,
-            'salary_max' => $job->salary_max,
-            'closes_at' => $job->closes_at?->toIso8601String(),
-            'is_closing_soon' => $job->isClosingSoon(),
-            'closes_label' => $job->closes_at
-                ? __('jobs.closes_on', ['date' => $job->closes_at->translatedFormat('M j, Y')])
-                : null,
-            'is_saved' => (bool) ($job->is_saved ?? false),
-            'has_applied' => (bool) ($job->has_applied ?? false),
-            'published_at' => $job->published_at?->toIso8601String(),
-            'company' => $job->company ? [
-                'id' => $job->company->id,
-                'name' => $job->company->name,
-                'slug' => $job->company->slug,
-                'logo_url' => $job->company->logo_url,
-            ] : null,
+            'data' => array_map(fn (Job $job) => $this->jobCards->serialize($job), $paginator->items()),
+            'meta' => pagination_payload($paginator),
         ];
     }
 

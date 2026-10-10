@@ -291,8 +291,8 @@ class JobController extends Controller
             ? $this->paginateCollection($envelope->companies, 12, 'companies_page', $request)
             : $this->paginateCollection(collect(), 12, 'companies_page', $request);
 
-        $jobsCount = $envelope->jobCount();
-        $companiesCount = $envelope->companyCount();
+        $jobsCount = $envelope->jobs->count();
+        $companiesCount = $envelope->companies->count();
 
         $suggestedCorrection = $envelope->suggestedCorrection;
 
@@ -329,22 +329,8 @@ class JobController extends Controller
             'suggestedCorrection' => $suggestedCorrection,
             'popularSearches' => $popularSearches->values()->all(),
             'locations' => $locations->values()->all(),
-            'jobsPagination' => [
-                'total' => $jobs->total(),
-                'per_page' => $jobs->perPage(),
-                'current_page' => $jobs->currentPage(),
-                'last_page' => $jobs->lastPage(),
-                'next_page_url' => $jobs->nextPageUrl(),
-                'prev_page_url' => $jobs->previousPageUrl(),
-            ],
-            'companiesPagination' => [
-                'total' => $companies->total(),
-                'per_page' => $companies->perPage(),
-                'current_page' => $companies->currentPage(),
-                'last_page' => $companies->lastPage(),
-                'next_page_url' => $companies->nextPageUrl(),
-                'prev_page_url' => $companies->previousPageUrl(),
-            ],
+            'jobsPagination' => pagination_payload($jobs),
+            'companiesPagination' => pagination_payload($companies),
             'labels' => [
                 ...collect(self::SEARCH_PAGE_LABEL_KEYS)->mapWithKeys(
                     fn (string $key) => [$key => __("common.$key")]
@@ -374,14 +360,7 @@ class JobController extends Controller
     {
         return [
             'data' => array_map(fn (Job $job) => $this->jobCards->serialize($job), $paginator->items()),
-            'meta' => [
-                'total' => $paginator->total(),
-                'per_page' => $paginator->perPage(),
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'next_page_url' => $paginator->nextPageUrl(),
-                'prev_page_url' => $paginator->previousPageUrl(),
-            ],
+            'meta' => pagination_payload($paginator),
         ];
     }
 

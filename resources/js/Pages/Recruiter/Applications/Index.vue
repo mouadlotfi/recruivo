@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import type { PageProps, Pagination, RecruiterApplication, RecruiterNoteTemplate, StatusCount } from '../../../types'
+import { useTranslation } from '../../../composables/useTranslation'
 import AppLayout from '../../../Layouts/AppLayout.vue'
 import RecruiterApplicationCard from '../../../Components/Applications/RecruiterApplicationCard.vue'
 import { useLoadMore } from '../../../composables/useLoadMore'
@@ -20,8 +21,7 @@ const props = defineProps<{
 }>()
 
 const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const jobApplicationsUrl = computed(() => localeUrl(`/recruiter/jobs/${props.job.id}/applications`))
 

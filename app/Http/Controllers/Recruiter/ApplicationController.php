@@ -8,12 +8,17 @@ use App\Http\Requests\UpdateApplicationStatusRequest;
 use App\Models\Application;
 use App\Models\Job;
 use App\Notifications\ApplicationStatusUpdatedNotification;
+use App\Support\ApplicationTimelineSerializer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ApplicationController extends Controller
 {
+    public function __construct(
+        private readonly ApplicationTimelineSerializer $timeline,
+    ) {}
+
     /**
      * Page-string keys rendered by Recruiter/Applications/Index.vue, resolved
      * in the current locale and passed as a flat `labels` prop (keeps the
@@ -138,18 +143,6 @@ class ApplicationController extends Controller
 
         $hasResume = (bool) ($application->resume_path || $profile?->resume_path);
 
-        $interview = null;
-        if ($statusValue === ApplicationStatus::Interview->value && $application->interview_at) {
-            $interview = [
-                'at' => $application->interview_at->toIso8601String(),
-                'mode' => $application->interview_mode,
-                'location' => $application->interview_location,
-                'url' => $application->interview_url,
-                'instructions' => $application->interview_instructions,
-                'formatted_at' => $application->interview_at->translatedFormat('l, F j, Y \\a\\t g:i A'),
-            ];
-        }
-
         return [
             'id' => $application->id,
             'status' => $statusValue,
@@ -174,15 +167,8 @@ class ApplicationController extends Controller
             'status_changed_at' => $application->status_changed_at?->toIso8601String(),
             'created_at' => $application->created_at?->toIso8601String(),
             'applied_label' => __('recruiter.applied_time', ['time' => $application->created_at->diffForHumans()]),
-            'timeline' => $application->statusEvents->map(fn ($event) => [
-                'to_status' => $event->to_status,
-                'from_status' => $event->from_status,
-                'created_at' => $event->created_at->toIso8601String(),
-                'formatted_at' => $event->created_at->translatedFormat('M j, Y H:i'),
-                'label' => __("applications.status_{$event->to_status}"),
-                'changed_by_name' => $event->changedBy?->name,
-            ])->values()->all(),
-            'interview' => $interview,
+            'timeline' => $this->timeline->events($application),
+            'interview' => $this->timeline->interview($application),
             'can_review' => ! in_array($statusValue, ['accepted', 'rejected', 'withdrawn'], true),
             'is_withdrawn' => $statusValue === ApplicationStatus::Withdrawn->value,
         ];

@@ -15,10 +15,12 @@ use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 class JobExpiryTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -266,15 +268,6 @@ class JobExpiryTest extends TestCase
 
         $jobCard = File::get(resource_path('js/Components/Jobs/JobCard.vue'));
         $this->assertStringContainsString('v-if="job.is_closing_soon"', $jobCard);
-    }
-
-    private function makeRecruiter(): User
-    {
-        $company = Company::factory()->create();
-        $recruiter = User::factory()->for($company)->create(['email_verified_at' => now()]);
-        $recruiter->assignRole('Recruiter');
-
-        return $recruiter;
     }
 
     public function test_applicant_can_view_expired_job_they_applied_for(): void

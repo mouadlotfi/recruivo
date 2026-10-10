@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import GuestLayout from '../../Layouts/GuestLayout.vue'
 import Alert from '../../Components/Layout/Alert.vue'
 import { useDismiss } from '../../composables/useDismiss'
@@ -20,7 +21,7 @@ const demoRoot = ref<HTMLElement | null>(null)
 useDismiss(demoOpen, demoRoot)
 const showPassword = ref(false)
 const errors = computed(() => Object.values(page.props.errors ?? {}))
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { localeUrl } = useTranslation()
 const selectDemoAccount = (account: DemoAccount) => {
     form.email = account.email
     form.password = account.password

@@ -36,7 +36,6 @@ class CandidatePreferencesTest extends TestCase
             'preferred_categories' => ['Software Development', 'DevOps'],
         ]);
 
-        $this->assertIsArray($profile->preferred_categories);
         $this->assertSame(['Software Development', 'DevOps'], $profile->preferred_categories);
     }
 

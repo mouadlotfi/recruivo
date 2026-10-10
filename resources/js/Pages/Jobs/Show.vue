@@ -2,9 +2,11 @@
 import { computed } from 'vue'
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
 import type { PageProps, JobDetail, JobSummary } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 import AppLayout from '../../Layouts/AppLayout.vue'
 import ExpandedTextarea from '../../Components/Applications/ExpandedTextarea.vue'
 import JobCard from '../../Components/Jobs/JobCard.vue'
+import { formatRemoteTypeLabel, formatSalaryRange } from '../../utils/jobDisplay'
 
 const props = defineProps<{
     job: JobDetail
@@ -18,19 +20,14 @@ const props = defineProps<{
 }>()
 
 const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const user = computed(() => page.props.auth.user)
 const isAuthenticated = computed(() => user.value !== null)
 const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
 const companyInitial = computed(() => (props.job.company ? props.job.company.name.charAt(0) : 'J'))
 
-const salaryRange = computed(() => {
-    const { salary_min: min, salary_max: max } = props.job
-    if (!min && !max) return null
-    return `$${Number(min ?? 0).toLocaleString()} - $${Number(max ?? 0).toLocaleString()}`
-})
+const salaryRange = computed(() => formatSalaryRange(props.job.salary_min, props.job.salary_max))
 
 const REMOTE_TYPE_STYLES: Record<string, string> = {
     hybrid: 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-500/10 dark:text-green-300 dark:hover:bg-green-500/20',
@@ -43,11 +40,7 @@ const remoteTypeClass = computed(() => {
     return REMOTE_TYPE_STYLES[type] ?? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20'
 })
 
-const remoteTypeLabel = computed(() => {
-    const type = props.job.remote_type
-    if (!type) return null
-    return props.labels[type.toLowerCase()] ?? type.charAt(0).toUpperCase() + type.slice(1)
-})
+const remoteTypeLabel = computed(() => formatRemoteTypeLabel(props.job.remote_type, props.labels))
 
 const searchUrl = computed(() => localeUrl('/search'))
 const applyUrl = computed(() => localeUrl(`/jobs/${props.job.id}/apply`))

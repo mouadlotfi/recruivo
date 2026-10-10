@@ -45,13 +45,4 @@ class EmailChangeVerificationNotification extends Notification implements Should
         return $mailMessage
             ->line('If you did not change your email address, please contact our support team immediately.');
     }
-
-    public function toArray($notifiable): array
-    {
-        return [
-            'user_id' => $this->user->id,
-            'account_type' => $this->user->hasRole('Recruiter') ? 'recruiter' : 'candidate',
-            'action' => 'email_change_verification',
-        ];
-    }
 }

@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Link, usePage } from '@inertiajs/vue3'
-import type { CompanyCardSummary, PageProps } from '../../types'
+import { Link } from '@inertiajs/vue3'
+import type { CompanyCardSummary } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
 
 // Card uses a stretched link overlay (before:absolute); interactive elements require relative z-10.
 const props = defineProps<{
     company: CompanyCardSummary
 }>()
 
-const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const companyUrl = computed(() => localeUrl(`/companies/${props.company.slug}`))
 const searchUrl = computed(() => localeUrl('/search'))

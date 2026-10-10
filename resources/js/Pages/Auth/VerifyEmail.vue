@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { Head, router, useForm, usePage } from '@inertiajs/vue3'
-import type { PageProps } from '../../types'
+import { Head, router, useForm } from '@inertiajs/vue3'
+import { useTranslation } from '../../composables/useTranslation'
 import GuestLayout from '../../Layouts/GuestLayout.vue'
 const props = defineProps<{ email: string; labels: Record<string, string>; message?: string | null }>()
-const page = usePage<PageProps>()
 const form = useForm({})
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { localeUrl } = useTranslation()
 const resend = () => form.post(localeUrl('/email/verification-notification'), { preserveScroll: true })
 const logout = () => router.post(localeUrl('/logout'))
 </script>

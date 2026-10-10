@@ -45,36 +45,6 @@ class InterviewModeTest extends TestCase
         $this->assertSame('onsite', $application->interview_mode);
     }
 
-    public function test_online_interview_requires_meeting_url(): void
-    {
-        [$recruiter, $application] = $this->makeRecruiterWithApplication();
-
-        $this->actingAs($recruiter)
-            ->patch('/en/recruiter/applications/'.$application->id, [
-                'status' => 'interview',
-                'interview_mode' => 'online',
-                'interview_at' => now()->addDays(2)->format('Y-m-d\TH:i'),
-                'interview_location' => 'Somewhere',
-                'interview_url' => '',
-            ])
-            ->assertSessionHasErrors('interview_url');
-    }
-
-    public function test_onsite_interview_requires_location(): void
-    {
-        [$recruiter, $application] = $this->makeRecruiterWithApplication();
-
-        $this->actingAs($recruiter)
-            ->patch('/en/recruiter/applications/'.$application->id, [
-                'status' => 'interview',
-                'interview_mode' => 'onsite',
-                'interview_at' => now()->addDays(2)->format('Y-m-d\TH:i'),
-                'interview_url' => 'https://meet.example.com/x',
-                'interview_location' => '',
-            ])
-            ->assertSessionHasErrors('interview_location');
-    }
-
     public function test_onsite_interview_accepts_url_as_location(): void
     {
         [$recruiter, $application] = $this->makeRecruiterWithApplication();

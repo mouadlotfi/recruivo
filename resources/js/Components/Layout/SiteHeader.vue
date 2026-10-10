@@ -20,11 +20,10 @@ defineProps<{
 }>()
 
 const page = usePage<PageProps>()
-const { t } = useTranslation()
+const { t, localeUrl } = useTranslation()
 const user = computed(() => page.props.auth.user)
 const isRecruiter = computed(() => user.value?.roles.includes('Recruiter') ?? false)
 const isAdmin = computed(() => user.value?.roles.includes('Admin') ?? false)
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
 
 const searchOpen = ref(false)
 const searchTrigger = ref<HTMLButtonElement | null>(null)

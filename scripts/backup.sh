@@ -16,20 +16,12 @@
 # Restore with scripts/restore.sh.
 set -euo pipefail
 
-PROJECT_NAME="${COMPOSE_PROJECT_NAME:-recruivo}"
+source "$(dirname "$0")/lib/compose.sh"
+
 BACKUP_DIR="${BACKUP_DIR:-$(cd "$(dirname "$0")/.." && pwd)/backups}"
 BACKUP_KEEP_DAYS="${BACKUP_KEEP_DAYS:-7}"
 BACKUP_STORAGE="${BACKUP_STORAGE:-1}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-
-COMPOSE_ENV_ARGS=()
-if [ -n "${APP_ENV_FILE:-}" ] && [ -f "${APP_ENV_FILE}" ]; then
-    COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
-fi
-
-compose() {
-    docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" "$@"
-}
 
 TARGET="${BACKUP_DIR}/${STAMP}"
 mkdir -p "${TARGET}"

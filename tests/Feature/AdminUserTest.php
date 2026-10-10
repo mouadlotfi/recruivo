@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 class AdminUserTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -25,17 +27,9 @@ class AdminUserTest extends TestCase
         }
     }
 
-    private function admin(): User
-    {
-        $admin = User::factory()->create(['name' => 'System Admin']);
-        $admin->assignRole('Admin');
-
-        return $admin;
-    }
-
     public function test_only_admin_can_view_users_list_and_sees_candidate_and_company_links(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin(['name' => 'System Admin']);
         $company = Company::factory()->create(['name' => 'Tech Corp', 'slug' => 'tech-corp']);
         $recruiter = User::factory()->for($company)->create(['name' => 'Rick Recruiter', 'is_recruiter' => true]);
         $recruiter->assignRole('Recruiter');
@@ -62,7 +56,7 @@ class AdminUserTest extends TestCase
 
     public function test_admin_can_view_candidate_profile_preview(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin(['name' => 'System Admin']);
         $candidate = User::factory()->create([
             'name' => 'Alice Engineer',
             'email' => 'alice@example.com',
@@ -88,7 +82,7 @@ class AdminUserTest extends TestCase
 
     public function test_admin_viewing_non_candidate_aborts_404(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin(['name' => 'System Admin']);
         $recruiter = User::factory()->create();
         $recruiter->assignRole('Recruiter');
 
@@ -99,7 +93,7 @@ class AdminUserTest extends TestCase
 
     public function test_admin_visiting_jobs_or_companies_is_redirected_to_admin_dashboard(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin(['name' => 'System Admin']);
 
         $this->actingAs($admin)
             ->get('/en/jobs')

@@ -11,10 +11,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\CreatesRoleUsers;
 use Tests\TestCase;
 
 class AdminJobTest extends TestCase
 {
+    use CreatesRoleUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -38,7 +40,7 @@ class AdminJobTest extends TestCase
         $recruiter->assignRole('Recruiter');
         $this->actingAs($recruiter)->get('/en/admin/jobs')->assertForbidden();
 
-        $this->actingAs($this->admin())
+        $this->actingAs($this->makeAdmin())
             ->get('/en/admin/jobs')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
@@ -53,7 +55,7 @@ class AdminJobTest extends TestCase
 
     public function test_admin_jobs_search_status_no_application_and_job_filters_serialize_counts(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create(['name' => 'Acme Search']);
         $recruiter = User::factory()->for($company)->create(['name' => 'Rita Recruiter']);
         $recruiter->assignRole('Recruiter');
@@ -130,7 +132,7 @@ class AdminJobTest extends TestCase
 
     public function test_admin_jobs_are_paginated_and_have_no_edit_or_delete_endpoint(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create();
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
@@ -155,7 +157,7 @@ class AdminJobTest extends TestCase
 
     public function test_admin_jobs_page_resolves_french_labels_and_status_labels(): void
     {
-        $this->actingAs($this->admin())
+        $this->actingAs($this->makeAdmin())
             ->get('/fr/admin/jobs?status=published')
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->where('labels.job_management_title', 'Gestion des emplois')
@@ -168,7 +170,7 @@ class AdminJobTest extends TestCase
 
     public function test_company_pages_opened_from_admin_jobs_point_back_at_admin_jobs(): void
     {
-        $admin = $this->admin();
+        $admin = $this->makeAdmin();
         $company = Company::factory()->create(['name' => 'Hint Co', 'slug' => 'hint-co']);
         $recruiter = User::factory()->for($company)->create();
         $recruiter->assignRole('Recruiter');
@@ -203,13 +205,5 @@ class AdminJobTest extends TestCase
 
         $jobsPage = File::get(resource_path('js/Pages/Admin/Jobs.vue'));
         $this->assertStringContainsString("'?from=admin_jobs'", $jobsPage);
-    }
-
-    private function admin(): User
-    {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
-
-        return $admin;
     }
 }

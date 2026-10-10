@@ -14,8 +14,7 @@ const emit = defineEmits<{
 }>()
 
 const page = usePage<PageProps>()
-const { t } = useTranslation()
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { t, localeUrl } = useTranslation()
 
 // Below `lg` the drawer slides off-screen instead of unmounting, so its links stay
 // focusable while invisible; on `lg` and up it is always visible and never inert.

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\UserAccountDeletionService;
+use App\Support\CandidateProfilePreview;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -123,49 +124,14 @@ class UserController extends Controller
         return back()->with('success', __('admin.user_deleted'));
     }
 
-    public function candidateProfile(string $locale, User $user)
+    public function candidateProfile(string $locale, User $user, CandidateProfilePreview $preview)
     {
         abort_unless($user->hasRole('Candidate'), 404);
 
         return Inertia::render('Profile/Preview', [
-            'applicant' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'profile_summary' => $user->profile_summary,
-                'candidateProfile' => $user->candidateProfile ? [
-                    'headline' => $user->candidateProfile->headline,
-                    'skills' => $user->candidateProfile->skills,
-                    'languages_data' => $user->candidateProfile->languages_data ?? [],
-                    'profile_links' => $user->candidateProfile->profile_links ?? [],
-                    'experiences' => $user->candidateProfile->experiences ?? [],
-                    'educations' => $user->candidateProfile->educations ?? [],
-                ] : null,
-            ],
+            'applicant' => $preview->applicant($user),
             'backUrl' => "/{$locale}/admin/users",
-            'labels' => [
-                'recruiter_preview' => __('admin.candidate_profile'),
-                'back_to_profile_settings' => __('common.back'),
-                'email_address' => __('profile.email_address'),
-                'phone_number' => __('profile.phone_number'),
-                'about' => __('profile.about'),
-                'present' => __('profile.present'),
-                'proficiency_beginner' => __('profile.proficiency_beginner'),
-                'proficiency_elementary' => __('profile.proficiency_elementary'),
-                'proficiency_intermediate' => __('profile.proficiency_intermediate'),
-                'proficiency_professional_working' => __('profile.proficiency_professional_working'),
-                'proficiency_fluent' => __('profile.proficiency_fluent'),
-                'proficiency_native_bilingual' => __('profile.proficiency_native_bilingual'),
-                'about_heading' => __('profile.about'),
-                'contact_information' => __('recruiter.contact_information'),
-                'not_provided' => __('recruiter.not_provided'),
-                'skills' => __('recruiter.skills'),
-                'languages' => __('recruiter.languages'),
-                'links' => __('profile.links'),
-                'experience' => __('recruiter.experience'),
-                'education' => __('recruiter.education'),
-            ],
+            'labels' => $preview->labels('admin.candidate_profile', 'common.back'),
         ]);
     }
 }

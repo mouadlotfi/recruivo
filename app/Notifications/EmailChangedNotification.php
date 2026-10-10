@@ -31,14 +31,4 @@ class EmailChangedNotification extends Notification implements ShouldQueue
             ->action('Sign in to your account', $loginUrl)
             ->line('For security reasons, if you did not make this change, we recommend changing your password.');
     }
-
-    public function toArray($notifiable): array
-    {
-        return [
-            'user_id' => $this->user->id,
-            'old_email' => $this->oldEmail,
-            'new_email' => $this->user->email,
-            'action' => 'email_changed',
-        ];
-    }
 }

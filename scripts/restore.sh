@@ -25,7 +25,7 @@
 #                         the app owns it, so the operator cannot write there.
 set -euo pipefail
 
-PROJECT_NAME="${COMPOSE_PROJECT_NAME:-recruivo}"
+source "$(dirname "$0")/lib/compose.sh"
 
 if [ "${1:-}" != "--force" ]; then
     echo "Usage: $0 --force <backup-directory|backup.zip>" >&2
@@ -34,15 +34,6 @@ if [ "${1:-}" != "--force" ]; then
 fi
 
 SOURCE="${2:-}"
-
-COMPOSE_ENV_ARGS=()
-if [ -n "${APP_ENV_FILE:-}" ] && [ -f "${APP_ENV_FILE}" ]; then
-    COMPOSE_ENV_ARGS=(--env-file "${APP_ENV_FILE}")
-fi
-
-compose() {
-    docker compose "${COMPOSE_ENV_ARGS[@]}" -p "${PROJECT_NAME}" "$@"
-}
 
 # Where the archive password comes from - the same source the app reads it from.
 # APP_ENV_FILE is how the deploy host is documented to be restored; the repository

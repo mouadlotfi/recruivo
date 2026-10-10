@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3'
-import type { PageProps } from '../../types'
+import { Head, Link } from '@inertiajs/vue3'
+import { useTranslation } from '../../composables/useTranslation'
 import AppLayout from '../../Layouts/AppLayout.vue'
 
 type LegalSection = { heading: string; body: string }
@@ -13,8 +13,7 @@ const props = defineProps<{
     meta: { title: string; description: string }
 }>()
 
-const page = usePage<PageProps>()
-const localeUrl = (path: string) => `/${page.props.locale}${path}`
+const { localeUrl } = useTranslation()
 </script>
 
 <template>

@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import type { PageProps, JobSummary } from '../../types'
+import { useTranslation } from '../../composables/useTranslation'
+import { formatRemoteTypeLabel, formatSalaryRange } from '../../utils/jobDisplay'
 
 // Card uses a stretched link overlay (before:absolute); interactive elements require relative z-10.
 const props = defineProps<{
@@ -14,8 +16,7 @@ const emit = defineEmits<{
 }>()
 
 const page = usePage<PageProps>()
-const locale = computed(() => page.props.locale)
-const localeUrl = (path: string) => `/${locale.value}${path}`
+const { localeUrl } = useTranslation()
 
 const user = computed(() => page.props.auth.user)
 const isCandidate = computed(() => user.value?.roles.includes('Candidate') ?? false)
@@ -39,17 +40,9 @@ const remoteTypeClass = computed(() => {
     return REMOTE_TYPE_STYLES[type] ?? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20'
 })
 
-const remoteTypeLabel = computed(() => {
-    const type = props.job.remote_type
-    if (!type) return null
-    return props.labels[type.toLowerCase()] ?? type.charAt(0).toUpperCase() + type.slice(1)
-})
+const remoteTypeLabel = computed(() => formatRemoteTypeLabel(props.job.remote_type, props.labels))
 
-const salaryRange = computed(() => {
-    const { salary_min: min, salary_max: max } = props.job
-    if (!min && !max) return null
-    return `$${Number(min ?? 0).toLocaleString()} - $${Number(max ?? 0).toLocaleString()}`
-})
+const salaryRange = computed(() => formatSalaryRange(props.job.salary_min, props.job.salary_max))
 
 const bookmarkInFlight = ref(false)
 
