@@ -4,9 +4,16 @@ import { Link, usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
 import { useDismiss } from '../../composables/useDismiss'
+import { useLocaleSwitch } from '../../composables/useLocaleSwitch'
+import { useTheme } from '../../composables/useTheme'
 
 const page = usePage<PageProps>()
 const { t } = useTranslation()
+
+// The site header passes `compact`: below xl it has no room for the account name
+// or for the two toggles, so they move into this menu. The admin bar keeps its own
+// always-visible toggles and name, so it leaves the prop off.
+const props = withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
 
 type AuthUser = NonNullable<PageProps['auth']['user']>
 const user = computed(() => page.props.auth.user as AuthUser)
@@ -17,6 +24,16 @@ const initials = computed(() => user.value.name.trim().charAt(0).toUpperCase())
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 useDismiss(open, root)
+
+// Language and theme live here whenever the surrounding bar has no room for them.
+const { targetHref, label: localeSwitchLabel } = useLocaleSwitch()
+const { toggleTheme } = useTheme()
+
+// The menu closes because the action is done; the language row navigates away.
+const toggleThemeAndClose = () => {
+    toggleTheme()
+    open.value = false
+}
 
 const profileUrl = `/${page.props.locale}/profile`
 const adminDashboardUrl = `/${page.props.locale}/admin/dashboard`
@@ -41,7 +58,7 @@ const logoutUrl = `/${page.props.locale}/logout`
             <svg v-else class="h-5 w-5 text-stone-500 dark:text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span class="hidden max-w-[120px] truncate text-sm font-medium leading-none sm:inline-block">{{ user.name }}</span>
+            <span class="hidden max-w-[120px] truncate text-sm font-medium leading-none" :class="props.compact ? 'xl:inline-block' : 'sm:inline-block'">{{ user.name }}</span>
         </button>
 
         <div
@@ -51,6 +68,35 @@ const logoutUrl = `/${page.props.locale}/logout`
         >
             <div class="border-b border-stone-200 px-4 py-3 dark:border-stone-700">
                 <p class="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-200">{{ user.email }}</p>
+            </div>
+            <div class="border-b border-stone-200 dark:border-stone-700" :class="props.compact ? 'xl:hidden' : 'hidden'">
+                <Link
+                    :href="targetHref"
+                    role="menuitem"
+                    :title="localeSwitchLabel"
+                    :aria-label="localeSwitchLabel"
+                    class="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"
+                >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+                    </svg>
+                    {{ localeSwitchLabel }}
+                </Link>
+                <button
+                    type="button"
+                    role="menuitem"
+                    :aria-label="t('toggle_theme')"
+                    class="flex w-full items-center gap-2 whitespace-nowrap px-4 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"
+                    @click="toggleThemeAndClose"
+                >
+                    <svg class="h-4 w-4 dark:hidden" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                    <svg class="hidden h-4 w-4 dark:block" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                    </svg>
+                    {{ t('toggle_theme') }}
+                </button>
             </div>
             <Link
                 v-if="isAdmin"

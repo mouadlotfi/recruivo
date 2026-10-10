@@ -1,38 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Link, usePage } from '@inertiajs/vue3'
-import type { PageProps } from '../../types'
+import { Link } from '@inertiajs/vue3'
+import { useLocaleSwitch } from '../../composables/useLocaleSwitch'
 
-const page = usePage<PageProps>()
-
-const currentLocale = computed(() => {
-    const url = page.url
-    const match = url.match(/^\/(en|fr)(\b|\/|\?|$)/)
-    if (match) {
-        return match[1]
-    }
-    return page.props.locale
-})
-
-const targetLocale = computed(() => (currentLocale.value === 'en' ? 'fr' : 'en'))
-
-const targetHref = computed(() => {
-    const url = page.url
-    const prefix = `/${currentLocale.value}`
-
-    if (url === prefix) {
-        return `/${targetLocale.value}`
-    }
-
-    if (url.startsWith(`${prefix}/`) || url.startsWith(`${prefix}?`)) {
-        return `/${targetLocale.value}${url.slice(prefix.length)}`
-    }
-
-    return `/${targetLocale.value}`
-})
-
-const label = computed(() => (currentLocale.value === 'en' ? 'Passer en Français' : 'Switch to English'))
-const displayCode = computed(() => targetLocale.value.toUpperCase())
+const { targetHref, label, displayCode } = useLocaleSwitch()
 </script>
 
 <template>

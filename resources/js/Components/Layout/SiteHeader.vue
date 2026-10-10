@@ -31,8 +31,10 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
 
 <template>
     <header class="sticky top-0 z-[9999] border-b border-stone-200/60 bg-white/75 backdrop-blur-xl dark:border-stone-800/70 dark:bg-stone-950/80">
-        <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-            <div class="flex h-full items-center gap-6 lg:gap-8">
+        <!-- Wide container from xl: the recruiter CTA and the longer French labels need
+             more than the 72rem content column to stay inside symmetric margins. -->
+        <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 xl:max-w-7xl">
+            <div class="flex h-full items-center gap-6">
                 <div class="flex items-center gap-2.5">
                     <Link :href="logoHref" class="group flex items-center gap-2.5 text-lg font-semibold">
                         <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center transition group-hover:scale-105">
@@ -52,13 +54,15 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                                 <circle cx="24" cy="24" r="5" fill="url(#logo-amber)" />
                             </svg>
                         </span>
-                        <span class="font-semibold tracking-tight text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
+                        <!-- Below 360px the wordmark is the only element that can go
+                             without dropping a control. -->
+                        <span class="max-[359px]:hidden font-semibold tracking-tight text-stone-900 transition group-hover:text-amber-600 dark:text-white dark:group-hover:text-amber-400">
                             Recruivo
                         </span>
                     </Link>
                     <span
                         v-if="page.props.isDemoEnvironment"
-                        class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
+                        class="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-amber-500/10 px-1.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 sm:px-2 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/30"
                         :title="t('demo_environment_notice')"
                     >
                         {{ t('demo_environment_badge') }}
@@ -66,7 +70,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                 </div>
                 <Navigation v-if="!hideNavigationForAdmin || !isAdmin" />
             </div>
-            <div class="flex items-center gap-1.5 sm:gap-2">
+            <div class="flex items-center gap-1 xl:gap-2">
                 <button
                     v-if="!isAdmin"
                     ref="searchTrigger"
@@ -94,7 +98,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                     </Link>
                     <template v-if="!isAdmin">
                         <NotificationCenter />
-                        <UserDropdown />
+                        <UserDropdown compact />
                     </template>
                     <Link
                         v-else-if="signOutForAdmin"
@@ -108,7 +112,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                         </svg>
                         <span class="hidden sm:inline">{{ t('sign_out') }}</span>
                     </Link>
-                    <UserDropdown v-else />
+                    <UserDropdown v-else compact />
                 </template>
                 <template v-else>
                     <Link
@@ -125,8 +129,9 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                     </Link>
                 </template>
 
-                <LanguageToggle />
-                <ThemeToggle />
+                <!-- Below xl these live in the account menu instead (guests have no menu). -->
+                <LanguageToggle :class="user ? 'hidden xl:block' : ''" />
+                <ThemeToggle :class="user ? 'hidden xl:block' : ''" />
             </div>
         </div>
     </header>

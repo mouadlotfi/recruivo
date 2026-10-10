@@ -1,22 +1,9 @@
 <script setup lang="ts">
 import { useTranslation } from '../../composables/useTranslation'
+import { useTheme } from '../../composables/useTheme'
 
 const { t } = useTranslation()
-
-// Syncs theme state across <html> class, localStorage, and cookie.
-const THEME_COOKIE = 'recruivo:theme'
-
-const syncTheme = (dark: boolean) => {
-    const value = dark ? 'dark' : 'light'
-    document.documentElement.classList.toggle('dark', dark)
-    localStorage.setItem(THEME_COOKIE, value)
-    document.cookie = `${THEME_COOKIE}=${value}; path=/; max-age=31536000`
-}
-
-const stored = localStorage.getItem(THEME_COOKIE)
-if (stored === 'light' || stored === 'dark') syncTheme(stored === 'dark')
-
-const toggleTheme = () => syncTheme(!document.documentElement.classList.contains('dark'))
+const { toggleTheme } = useTheme()
 </script>
 
 <template>

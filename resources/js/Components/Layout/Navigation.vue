@@ -41,7 +41,7 @@ const exploreItemClass = (href: string) => [
 <template>
     <nav
         :aria-label="t('primary_navigation')"
-        class="hidden h-full items-center gap-1 text-sm font-medium text-stone-600 lg:flex lg:gap-1.5 dark:text-stone-300"
+        class="hidden h-full items-center gap-1 text-sm font-medium text-stone-600 lg:flex dark:text-stone-300"
     >
         <template v-if="isRecruiter">
             <div ref="exploreRoot" class="relative flex h-full items-center">
