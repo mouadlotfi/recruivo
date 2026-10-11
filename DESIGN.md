@@ -181,8 +181,9 @@ Two self-hosted variable fonts, both OFL, served from this origin.
 
 - **Content column:** `{spacing.container}` (`max-w-6xl`) with `px-4 sm:px-6` and main padding
   `pb-20 pt-10 sm:pb-16`. The admin shell uses `{spacing.container-wide}` (`max-w-7xl`); reading and
-  form surfaces re-narrow the same column with `max-w-4xl`/`3xl`/`2xl`. The site header uses
-  `{spacing.container-wide}` from `xl`, where the recruiter CTA and the longer French labels need it.
+  form surfaces re-narrow the same column with `max-w-4xl`/`3xl`/`2xl`. The site header sizes itself
+  to its content (`w-fit`) with a floor of `min(72rem, 100%)`, so it is never narrower than the
+  content column nor wider than the window.
 - **Chrome bars:** `h-16` for the site header, admin header and admin sidebar logo row. The site
   header keeps the language switch in the account menu and, below `xl`, the theme row and the account
   name too.

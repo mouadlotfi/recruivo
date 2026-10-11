@@ -31,9 +31,9 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
 
 <template>
     <header class="sticky top-0 z-[9999] border-b border-stone-200/60 bg-white/75 backdrop-blur-xl dark:border-stone-800/70 dark:bg-stone-950/80">
-        <!-- Wide container from xl: the recruiter CTA and the longer French labels need
-             more than the 72rem content column to stay inside symmetric margins. -->
-        <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 xl:max-w-7xl">
+        <!-- Sized to its content: never narrower than the content column, never wider
+             than the window, so the bar needs no breakpoint step. -->
+        <div class="mx-auto flex h-16 w-fit max-w-full min-w-[min(72rem,100%)] items-center justify-between gap-6 px-4 sm:px-6">
             <div class="flex h-full items-center gap-6">
                 <div class="flex items-center gap-2.5">
                     <Link :href="logoHref" class="group flex items-center gap-2.5 text-lg font-semibold">
