@@ -2,10 +2,7 @@ import { computed } from 'vue'
 import { usePage } from '@inertiajs/vue3'
 import type { PageProps } from '../types'
 
-/**
- * The other locale's URL for the page the visitor is on. Shared so the header
- * toggle and the phone account menu point at the same place.
- */
+/** Shared so the header toggle and the account menu point at the same place. */
 export function useLocaleSwitch() {
     const page = usePage<PageProps>()
 

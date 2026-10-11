@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { useTranslation } from '../../composables/useTranslation'
-import { useTheme } from '../../composables/useTheme'
+import { toggleTheme } from '../../composables/theme'
 
 const { t } = useTranslation()
-const { toggleTheme } = useTheme()
 </script>
 
 <template>
     <button
-        id="theme-toggle"
         type="button"
         :aria-label="t('toggle_theme')"
         class="inline-flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"

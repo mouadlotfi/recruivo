@@ -5,7 +5,7 @@ import type { PageProps } from '../../types'
 import { useTranslation } from '../../composables/useTranslation'
 import { useDismiss } from '../../composables/useDismiss'
 import { useLocaleSwitch } from '../../composables/useLocaleSwitch'
-import { useTheme } from '../../composables/useTheme'
+import { toggleTheme } from '../../composables/theme'
 
 const page = usePage<PageProps>()
 const { t } = useTranslation()
@@ -28,7 +28,6 @@ useDismiss(open, root)
 
 // Language and theme live here whenever the surrounding bar has no room for them.
 const { targetHref, label: localeSwitchLabel } = useLocaleSwitch()
-const { toggleTheme } = useTheme()
 
 // The menu closes because the action is done; the language row navigates away.
 const toggleThemeAndClose = () => {
