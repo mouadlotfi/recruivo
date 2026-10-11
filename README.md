@@ -53,15 +53,21 @@ Node 22 or Bun; PostgreSQL 17 and Redis 7.
 
 ## Run it locally
 
-For working on the code. Docker brings up the app, PostgreSQL, Redis, Mailpit and Vite in
-one command:
+For working on the code. Docker brings up the app, PostgreSQL, Redis, Mailpit and Vite in one
+command, and `scripts/dev.sh` wraps it: it creates `.env` from `.env.example`, generates the
+app key before the containers start, applies the dev compose overlay and waits for
+`/api/health` to answer.
 
 ```bash
 git clone https://github.com/mouadlotfi/recruivo.git && cd recruivo
-cp .env.example .env
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app php artisan migrate --seed
+./scripts/dev.sh up
+./scripts/dev.sh seed
 ```
+
+The same script runs the demo stack — `./scripts/dev.sh demo up`, with its own database and
+Redis keyspace, then `demo seed` for the canonical dataset — and takes `logs`, `shell`,
+`restart`, `down` and `artisan <command>`. Its header comment lists every form, including the
+two-file `docker compose` invocation it wraps.
 
 Open **<http://localhost:8000>** and log in as any of the three roles:
 
