@@ -304,3 +304,7 @@ php artisan make:admin --email=you@example.com --name="Your Name"
 php artisan roles:backfill-legacy --dry-run        # inspect accounts left role-less
 php artisan queue:health
 ```
+
+## License
+
+[PolyForm Strict License 1.0.0](LICENSE), a source-available license. Anyone may read and audit the source. Nobody may redistribute it, modify it, or use it commercially. The full terms live in [LICENSE](LICENSE).
