@@ -132,7 +132,7 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                 <!-- The language switch lives in the account menu for signed-in visitors;
                      theme stays in the bar from xl. Guests have no menu, so they keep both. -->
                 <LanguageToggle v-if="!user" />
-                <ThemeToggle :class="user ? 'hidden xl:block' : ''" />
+                <ThemeToggle :class="user ? 'hidden xl:inline-flex' : ''" />
             </div>
         </div>
     </header>
