@@ -129,8 +129,9 @@ const searchTrigger = ref<HTMLButtonElement | null>(null)
                     </Link>
                 </template>
 
-                <!-- Below xl these live in the account menu instead (guests have no menu). -->
-                <LanguageToggle :class="user ? 'hidden xl:block' : ''" />
+                <!-- The language switch lives in the account menu for signed-in visitors;
+                     theme stays in the bar from xl. Guests have no menu, so they keep both. -->
+                <LanguageToggle v-if="!user" />
                 <ThemeToggle :class="user ? 'hidden xl:block' : ''" />
             </div>
         </div>

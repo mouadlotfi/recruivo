@@ -183,8 +183,9 @@ Two self-hosted variable fonts, both OFL, served from this origin.
   `pb-20 pt-10 sm:pb-16`. The admin shell uses `{spacing.container-wide}` (`max-w-7xl`); reading and
   form surfaces re-narrow the same column with `max-w-4xl`/`3xl`/`2xl`. The site header uses
   `{spacing.container-wide}` from `xl`, where the recruiter CTA and the longer French labels need it.
-- **Chrome bars:** `h-16` for the site header, admin header and admin sidebar logo row. Below `xl` the
-  site header drops the account name and serves language and theme from the account menu.
+- **Chrome bars:** `h-16` for the site header, admin header and admin sidebar logo row. The site
+  header keeps the language switch in the account menu and, below `xl`, the theme row and the account
+  name too.
 - **Page rhythm:** `space-y-8` between page sections (Home `space-y-12`, Search `space-y-6`), and
   `gap-6` grids — `grid gap-6 md:grid-cols-2` for card lists, `grid gap-4 sm:grid-cols-2 sm:gap-6
   lg:grid-cols-3` for results.

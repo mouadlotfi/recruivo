@@ -10,9 +10,10 @@ import { useTheme } from '../../composables/useTheme'
 const page = usePage<PageProps>()
 const { t } = useTranslation()
 
-// The site header passes `compact`: below xl it has no room for the account name
-// or for the two toggles, so they move into this menu. The admin bar keeps its own
-// always-visible toggles and name, so it leaves the prop off.
+// The site header passes `compact`: the language switch lives in this menu at every
+// width, along with the account name the bar drops below xl, and the theme row the
+// bar only carries from xl. The admin bar keeps its own always-visible toggles and
+// name, so it leaves the prop off.
 const props = withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
 
 type AuthUser = NonNullable<PageProps['auth']['user']>
@@ -69,7 +70,7 @@ const logoutUrl = `/${page.props.locale}/logout`
             <div class="border-b border-stone-200 px-4 py-3 dark:border-stone-700">
                 <p class="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-200">{{ user.email }}</p>
             </div>
-            <div class="border-b border-stone-200 dark:border-stone-700" :class="props.compact ? 'xl:hidden' : 'hidden'">
+            <div class="border-b border-stone-200 dark:border-stone-700" :class="props.compact ? '' : 'hidden'">
                 <Link
                     :href="targetHref"
                     role="menuitem"
@@ -86,7 +87,7 @@ const logoutUrl = `/${page.props.locale}/logout`
                     type="button"
                     role="menuitem"
                     :aria-label="t('toggle_theme')"
-                    class="flex w-full items-center gap-2 whitespace-nowrap px-4 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"
+                    class="flex w-full items-center gap-2 whitespace-nowrap px-4 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-100 xl:hidden dark:text-stone-200 dark:hover:bg-stone-700"
                     @click="toggleThemeAndClose"
                 >
                     <svg class="h-4 w-4 dark:hidden" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
