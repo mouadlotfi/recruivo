@@ -126,7 +126,7 @@ Ops / app commands: `php artisan demo:reset --force`, `php artisan make:admin --
 
 ## Runtime/Tooling Preferences
 
-- PHP `^8.3` (image: `dunglas/frankenphp:1.12-php8.4-trixie`, ARG `PHP_VERSION=8.4`), FrankenPHP/Caddy on `:80` — **not** php-fpm; `ARG NODE_VERSION=22` in the builder stage. Compose deps: `postgres:17`, `redis:7-alpine` (+ `redis-demo`), mailpit/vite in dev; no search container.
+- PHP `^8.3` (image: `dunglas/frankenphp:1.13.2-php8.4.27-trixie`, ARG `PHP_VERSION=8.4.27`), FrankenPHP/Caddy on `:80` — **not** php-fpm; `ARG NODE_VERSION=22` in the builder stage. Compose deps: `postgres:17`, `redis:7-alpine` (+ `redis-demo`), mailpit/vite in dev; no search container.
 - Extensions: bcmath, exif, gd, mbstring, opcache, pcntl, pdo_pgsql, zip, redis, plus `postgresql-client` 17 (`pg_dump` must match the server). Prod `opcache.validate_timestamps=0`; dev revalidates.
 - JS: committed lockfile is `package-lock.json` and the Docker build uses `npm ci` (npm is the source of truth); CI uses Bun (`bun install`, `bun run typecheck|build`) and no `bun.lock` is committed. Use `bun` only where CI does.
 - Static analysis: Larastan **level 5**, `paths: [app]`, carried by a ~158-entry `phpstan-baseline.neon` — prefer fixing over appending ignores. Pint: `vendor/bin/pint --test` in CI; fix with `vendor/bin/pint <files>`. **`--dirty` fails inside the image (git is absent)** — always pass changed files explicitly.
